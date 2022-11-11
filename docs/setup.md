@@ -81,23 +81,23 @@ outlined below.
    **Core** fields, as well as the **Port** field for the row with type
    **Serial**.
 6. Install the core for the board by executing
-   `arduino-cli core install *value_from_core_field*`, then verify the
+   `arduino-cli core install [value_from_core_field]`, then verify the
    installation with `arduino-cli core list`.
 7. The example "sketch" (Arduino's term for a project) can be found in a
    subdirectory of the installed audio library. By default, this is
-   `$HOME/Arduino/libraries/Audio-*X.XX*/examples/Tutorial/Part_1_03_Playing_Music`.
+   `$HOME/Arduino/libraries/Audio-X.XX/examples/Tutorial/Part_1_03_Playing_Music`.
    To compile the project, execute the following command from the `Tutorial`
    directory:
 
 ```
-arduino-cli compile --fqbn *value_from_fqbn_field* Part_1_03_Playing_Music
+arduino-cli compile --fqbn [value_from_fqbn_field] Part_1_03_Playing_Music
 ```
 
 8. Upon success, use the serial port noted previously to upload the program to
    the device:
 
 ```
-arduino-cli upload -p *value_from_serial_port_field* --fqbn *value_from_fqbn_field* Part_1_03_Playing_Music
+arduino-cli upload -p [value_from_serial_port_field] --fqbn [value_from_fqbn_field] Part_1_03_Playing_Music
 ```
 
 9. Plug headphones into the audio adaptor, music should be playing.
