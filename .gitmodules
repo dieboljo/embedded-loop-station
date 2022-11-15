@@ -1,0 +1,3 @@
+[submodule "utils/teensy41_psram_memtest"]
+	path = utils/teensy41_psram_memtest
+	url = https://github.com/PaulStoffregen/teensy41_psram_memtest
