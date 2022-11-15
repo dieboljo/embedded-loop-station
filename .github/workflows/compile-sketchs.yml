@@ -1,0 +1,20 @@
+name: compile-sketch
+on: [push]
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - uses: arduino/compile-sketches@v1.0.1
+        with:
+          enable-deltas-report: true
+          fqbn: teensy:avr:teensy41
+          libraries: |
+            - source-url: https://github.com/PaulStoffregen/Audio.git
+          platforms: |
+            - name: teensy:avr
+              source-url: https://www.pjrc.com/teensy/package_teensy_index.json
+          sketch-paths: |
+            - project
