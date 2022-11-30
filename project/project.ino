@@ -1,100 +1,191 @@
-// Advanced Microcontroller-based Audio Workshop
-// 
-// Part 1-2: Test Hardware
-//
-// Simple beeping is pre-loaded on the Teensy, so
-// it will create sound and print info to the serial
-// monitor when plugged into a PC.
-//
-// This program is supposed to be pre-loaded before
-// the workshop, so Teensy+Audio will beep when
-// plugged in.
-
+#include "play-sd-raw.hpp"
 #include <Audio.h>
-#include <Wire.h>
+#include <Bounce.h>
 #include <SD.h>
 #include <SPI.h>
 #include <SerialFlash.h>
-#include <Bounce.h>
+#include <Wire.h>
 
-AudioSynthWaveform    waveform1;
-AudioOutputI2S        i2s1;
-AudioConnection       patchCord1(waveform1, 0, i2s1, 0);
-AudioConnection       patchCord2(waveform1, 0, i2s1, 1);
-AudioControlSGTL5000  sgtl5000_1;
+#define SDCARD_CS_PIN BUILTIN_SDCARD
+#define SDCARD_MOSI_PIN 11 // not actually used
+#define SDCARD_SCK_PIN 13  // not actually used
 
-Bounce button0 = Bounce(0, 15);
-Bounce button1 = Bounce(1, 15);
-Bounce button2 = Bounce(2, 15);
+AudioControlSGTL5000 sgtl5000_1;
+AudioInputI2S i2s2;
+AudioOutputI2S i2s1;
+MyAudioPlaySdRaw playRaw1;
+AudioRecordQueue queue1;
 
-int count=1;
-int a1history=0, a2history=0, a3history=0;
+AudioConnection patchCord1(i2s2, 0, queue1, 0);
+AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
+AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
+
+// which input on the audio shield will be used?
+const int myInput = AUDIO_INPUT_MIC;
+
+// Remember which mode we're doing
+int mode = 0; // 0=stopped, 1=recording, 2=playing
+
+// The file where data is recorded
+File track1[2];
+int frame1 = 0;
+uint64_t position1 = 0;
+
+// Bounce objects to easily and reliably read the buttons
+Bounce buttonRecord = Bounce(0, 8);
+Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
+Bounce buttonPlay = Bounce(2, 8);
 
 void setup() {
-  AudioMemory(10);
+  // Configure the pushbutton pins
   pinMode(0, INPUT_PULLUP);
   pinMode(1, INPUT_PULLUP);
   pinMode(2, INPUT_PULLUP);
-  Serial.begin(115200);
+
+  // Audio connections require memory, and the record queue
+  // uses this memory to buffer incoming audio.
+  AudioMemory(60);
+
+  // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
-  sgtl5000_1.volume(0.3);
-  waveform1.begin(WAVEFORM_SINE);
-  delay(1000);
-  button0.update();
-  button1.update();
-  button2.update();
-  a1history = analogRead(A1);
-  a2history = analogRead(A2);
-  a3history = analogRead(A3);
-}
+  sgtl5000_1.inputSelect(myInput);
+  sgtl5000_1.micGain(4);
+  sgtl5000_1.volume(0.5);
 
-
-
-
-void loop() {
-  Serial.print("Beep #");
-  Serial.println(count);
-  count = count + 1;
-  waveform1.frequency(440);
-  waveform1.amplitude(0.9);
-  wait(250);
-  waveform1.amplitude(0);
-  wait(1750);
-}
-
-void wait(unsigned int milliseconds)
-{
-  elapsedMillis msec=0;
-
-  while (msec <= milliseconds) {
-    button0.update();
-    button1.update();
-    button2.update();
-    if (button0.fallingEdge()) Serial.println("Button (pin 0) Press");
-    if (button1.fallingEdge()) Serial.println("Button (pin 1) Press");
-    if (button2.fallingEdge()) Serial.println("Button (pin 2) Press");
-    if (button0.risingEdge()) Serial.println("Button (pin 0) Release");
-    if (button1.risingEdge()) Serial.println("Button (pin 1) Release");
-    if (button2.risingEdge()) Serial.println("Button (pin 2) Release");
-    int a1 = analogRead(A1);
-    int a2 = analogRead(A2);
-    int a3 = analogRead(A3);
-    if (a1 > a1history + 50 || a1 < a1history - 50) {
-      Serial.print("Knob (pin A1) = ");
-      Serial.println(a1);
-      a1history = a1;
-    }
-    if (a2 > a2history + 50 || a2 < a2history - 50) {
-      Serial.print("Knob (pin A2) = ");
-      Serial.println(a2);
-      a2history = a2;
-    }
-    if (a3 > a3history + 50 || a3 < a3history - 50) {
-      Serial.print("Knob (pin A3) = ");
-      Serial.println(a3);
-      a3history = a3;
+  // Initialize the SD card
+  SPI.setMOSI(SDCARD_MOSI_PIN);
+  SPI.setSCK(SDCARD_SCK_PIN);
+  if (!(SD.begin(SDCARD_CS_PIN))) {
+    // stop here if no SD card, but print a message
+    while (1) {
+      Serial.println("Unable to access the SD card");
+      delay(500);
     }
   }
 }
 
+void loop() {
+  // First, read the buttons
+  buttonRecord.update();
+  buttonStop.update();
+  buttonPlay.update();
 
+  // read the knob position (analog input A1)
+  int knob = analogRead(A1);
+  float vol = (float)knob / 1280.0;
+  sgtl5000_1.volume(vol);
+  /* Serial.print("volume = ");
+  Serial.println(vol); */
+
+  // Respond to button presses
+  if (buttonRecord.fallingEdge()) {
+    Serial.println("Record Button Press");
+    if (mode == 2)
+      stopPlaying();
+    if (mode == 0)
+      startRecording();
+  }
+  if (buttonStop.fallingEdge()) {
+    Serial.println("Stop Button Press");
+    if (mode == 1)
+      stopRecording();
+    if (mode == 2)
+      stopPlaying();
+  }
+  if (buttonPlay.fallingEdge()) {
+    Serial.println("Play Button Press");
+    if (mode == 1)
+      stopRecording();
+    if (mode == 0)
+      startPlaying();
+  }
+
+  // If we're playing or recording, carry on...
+  if (mode == 1) {
+    continueRecording();
+  }
+  if (mode == 2) {
+    continuePlaying();
+  }
+
+  // when using a microphone, continuously adjust gain
+  if (myInput == AUDIO_INPUT_MIC)
+    adjustMicLevel();
+}
+
+void startRecording() {
+  Serial.println("startRecording");
+  track1[frame1] = SD.open("RECORD.RAW", FILE_WRITE);
+  if (track1[frame1]) {
+    track1[frame1].seek(0); // move cursor to beginning
+    queue1.begin();
+    mode = 1;
+  }
+}
+
+void continueRecording() {
+  if (queue1.available() >= 2) {
+    byte buffer[512];
+    // Fetch 2 blocks from the audio library and copy
+    // into a 512 byte buffer.  The Arduino SD library
+    // is most efficient when full 512 byte sector size
+    // writes are used.
+    memcpy(buffer, queue1.readBuffer(), 256);
+    queue1.freeBuffer();
+    memcpy(buffer + 256, queue1.readBuffer(), 256);
+    queue1.freeBuffer();
+    // write all 512 bytes to the SD card
+    track1[frame1].write(buffer, 512);
+    // Uncomment these lines to see how long SD writes
+    // are taking.  A pair of audio blocks arrives every
+    // 5802 microseconds, so hopefully most of the writes
+    // take well under 5802 us.  Some will take more, as
+    // the SD library also must write to the FAT tables
+    // and the SD card controller manages media erase and
+    // wear leveling.  The queue1 object can buffer
+    // approximately 301700 us of audio, to allow time
+    // for occasional high SD card latency, as long as
+    // the average write time is under 5802 us.
+    // elapsedMicros usec = 0;
+    // Serial.print("SD write, us=");
+    // Serial.println(usec);
+  }
+}
+
+void stopRecording() {
+  Serial.println("stopRecording");
+  queue1.end();
+  if (mode == 1) {
+    while (queue1.available() > 0) {
+      track1[frame1].write((byte *)queue1.readBuffer(), 256);
+      queue1.freeBuffer();
+    }
+    track1[frame1].close();
+  }
+  mode = 0;
+}
+
+void startPlaying() {
+  Serial.println("startPlaying");
+  playRaw1.play("RECORD.RAW", position1);
+  mode = 2;
+}
+
+void continuePlaying() {
+  if (!playRaw1.isPlaying()) {
+    playRaw1.play("RECORD.RAW", 0);
+  }
+}
+
+void stopPlaying() {
+  Serial.println("stopPlaying");
+  position1 = playRaw1.getOffset();
+  if (mode == 2)
+    playRaw1.stop();
+  mode = 0;
+}
+
+void adjustMicLevel() {
+  // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
+  // if anyone gets this working, please submit a github pull request :-)
+}

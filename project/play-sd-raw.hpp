@@ -1,0 +1,27 @@
+#ifndef play_sd_raw_hpp_
+#define play_sd_raw_hpp_
+
+#include <Arduino.h>
+#include <AudioStream.h>
+#include <SD.h>
+
+class MyAudioPlaySdRaw : public AudioStream {
+public:
+  MyAudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
+  bool play(const char *filename, uint32_t offset);
+  void begin(void);
+  void stop(void);
+  bool isPlaying(void) { return playing; }
+  uint32_t positionMillis(void);
+  uint32_t getOffset(void);
+  uint32_t lengthMillis(void);
+  virtual void update(void);
+
+private:
+  File rawfile;
+  uint32_t file_size;
+  volatile uint32_t file_offset;
+  volatile bool playing;
+};
+
+#endif
