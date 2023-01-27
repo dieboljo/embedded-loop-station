@@ -1,13 +1,14 @@
-#ifndef play_sd_raw_hpp_
-#define play_sd_raw_hpp_
+#ifndef project_play_sd_raw_h_
+#define project_play_sd_raw_h_
 
 #include <Arduino.h>
 #include <AudioStream.h>
 #include <SD.h>
 
-class MyAudioPlaySdRaw : public AudioStream {
+namespace Project {
+class AudioPlaySdRaw : public AudioStream {
 public:
-  MyAudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
+  AudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
   bool play(const char *filename, uint32_t offset);
   void begin(void);
   void stop(void);
@@ -22,6 +23,7 @@ private:
   uint32_t file_size;
   volatile uint32_t file_offset;
   volatile bool playing;
-};
+}
+}; // namespace Project
 
 #endif

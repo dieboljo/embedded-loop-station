@@ -1,10 +1,11 @@
-#include "play-sd-raw.hpp"
+#include "play-sd-raw.h"
 #include <Arduino.h>
 #include <SD.h>
 #include <SerialFlash.h>
 #include <spi_interrupt.h>
 
-bool MyAudioPlaySdRaw::play(const char *filename, uint32_t offset) {
+namespace Project {
+bool AudioPlaySdRaw::play(const char *filename, uint32_t offset) {
   stop();
 #if defined(HAS_KINETIS_SDHC)
   if (!(SIM_SCGC3 & SIM_SCGC3_SDHC))
@@ -34,13 +35,13 @@ bool MyAudioPlaySdRaw::play(const char *filename, uint32_t offset) {
   return true;
 }
 
-void MyAudioPlaySdRaw::begin(void) {
+void AudioPlaySdRaw::begin(void) {
   playing = false;
   file_offset = 0;
   file_size = 0;
 }
 
-void MyAudioPlaySdRaw::stop(void) {
+void AudioPlaySdRaw::stop(void) {
   __disable_irq();
   if (playing) {
     playing = false;
@@ -57,7 +58,7 @@ void MyAudioPlaySdRaw::stop(void) {
   }
 }
 
-void MyAudioPlaySdRaw::update(void) {
+void AudioPlaySdRaw::update(void) {
   unsigned int i, n;
   audio_block_t *block;
 
@@ -95,12 +96,13 @@ void MyAudioPlaySdRaw::update(void) {
   (uint32_t)((double)4294967296000.0 / AUDIO_SAMPLE_RATE_EXACT /               \
              2.0) // 97352592
 
-uint32_t MyAudioPlaySdRaw::positionMillis(void) {
+uint32_t AudioPlaySdRaw::positionMillis(void) {
   return ((uint64_t)file_offset * B2M) >> 32;
 }
 
-uint32_t MyAudioPlaySdRaw::getOffset(void) { return file_offset; }
+uint32_t AudioPlaySdRaw::getOffset(void) { return file_offset; }
 
-uint32_t MyAudioPlaySdRaw::lengthMillis(void) {
+uint32_t AudioPlaySdRaw::lengthMillis(void) {
   return ((uint64_t)file_size * B2M) >> 32;
 }
+} // namespace Project

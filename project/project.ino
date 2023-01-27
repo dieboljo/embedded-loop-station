@@ -1,4 +1,4 @@
-#include "play-sd-raw.hpp"
+#include "play-sd-raw.h"
 #include <Audio.h>
 #include <Bounce.h>
 #include <SD.h>
@@ -9,24 +9,33 @@
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
-
-AudioControlSGTL5000 sgtl5000_1;
-AudioInputI2S i2s2;
-AudioOutputI2S i2s1;
-MyAudioPlaySdRaw playRaw1;
-AudioRecordQueue queue1;
-
-AudioConnection patchCord1(i2s2, 0, queue1, 0);
-AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
-AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
+#define STOP 0
+#define REC 1
+#define PLAY 2
 
 // which input on the audio shield will be used?
 const int myInput = AUDIO_INPUT_MIC;
 
-// Remember which mode we're doing
-int mode = 0; // 0=stopped, 1=recording, 2=playing
+AudioControlSGTL5000 sgtl5000_1;
+AudioInputI2S i2s2;
+AudioOutputI2S i2s1;
+Project::AudioPlaySdRaw playRaw1;
+AudioRecordQueue queue1;
+AudioAnalyzePeak peak1;
 
-// The file where data is recorded
+AudioConnection patchCord1(i2s2, 0, queue1, 0);
+AudioConnection patchCord2(i2s2, 0, peak1, 0);
+AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
+AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
+
+// Remember which mode we're doing
+int mode = STOP; // 0=stopped, 1=recording, 2=playing
+
+// The files where data is recorded
+Track tracks[] = {Track("0A.WAV", "0B.WAV"), Track("1A.WAV", "1B.WAV"),
+                  Track("2A.WAV", "2B.WAV"), Track("3A.WAV", "3B.WAV")};
+int selected = 0;
+
 File track1[2];
 int frame1 = 0;
 uint64_t position1 = 0;
@@ -35,6 +44,8 @@ uint64_t position1 = 0;
 Bounce buttonRecord = Bounce(0, 8);
 Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
 Bounce buttonPlay = Bounce(2, 8);
+
+elapsedMillis msecs;
 
 void setup() {
   // Configure the pushbutton pins
@@ -49,7 +60,7 @@ void setup() {
   // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
   sgtl5000_1.inputSelect(myInput);
-  sgtl5000_1.micGain(4);
+  sgtl5000_1.micGain(20);
   sgtl5000_1.volume(0.5);
 
   // Initialize the SD card
@@ -74,37 +85,46 @@ void loop() {
   int knob = analogRead(A1);
   float vol = (float)knob / 1280.0;
   sgtl5000_1.volume(vol);
-  /* Serial.print("volume = ");
-  Serial.println(vol); */
+
+  if (msecs > 15) {
+    Serial.print("volume = ");
+    Serial.println(vol);
+    if (peak1.available()) {
+      msecs = 0;
+      float leftNumber = peak1.read();
+      Serial.print(leftNumber);
+      Serial.println();
+    }
+  }
 
   // Respond to button presses
   if (buttonRecord.fallingEdge()) {
     Serial.println("Record Button Press");
-    if (mode == 2)
+    if (mode == PLAY)
       stopPlaying();
-    if (mode == 0)
+    if (mode == STOP)
       startRecording();
   }
   if (buttonStop.fallingEdge()) {
     Serial.println("Stop Button Press");
-    if (mode == 1)
+    if (mode == REC)
       stopRecording();
-    if (mode == 2)
+    if (mode == PLAY)
       stopPlaying();
   }
   if (buttonPlay.fallingEdge()) {
     Serial.println("Play Button Press");
-    if (mode == 1)
+    if (mode == REC)
       stopRecording();
-    if (mode == 0)
+    if (mode == STOP)
       startPlaying();
   }
 
   // If we're playing or recording, carry on...
-  if (mode == 1) {
+  if (mode == REC) {
     continueRecording();
   }
-  if (mode == 2) {
+  if (mode == PLAY) {
     continuePlaying();
   }
 
@@ -115,11 +135,17 @@ void loop() {
 
 void startRecording() {
   Serial.println("startRecording");
+  if (SD.exists("RECORD.RAW")) {
+    // The SD library writes new data to the end of the
+    // file, so to start a new recording, the old file
+    // must be deleted before new data is written.
+    SD.remove("RECORD.RAW");
+  }
   track1[frame1] = SD.open("RECORD.RAW", FILE_WRITE);
   if (track1[frame1]) {
-    track1[frame1].seek(0); // move cursor to beginning
+    /* track1[frame1].seek(0); // move cursor to beginning */
     queue1.begin();
-    mode = 1;
+    mode = REC;
   }
 }
 
@@ -155,37 +181,62 @@ void continueRecording() {
 void stopRecording() {
   Serial.println("stopRecording");
   queue1.end();
-  if (mode == 1) {
+  if (mode == REC) {
     while (queue1.available() > 0) {
       track1[frame1].write((byte *)queue1.readBuffer(), 256);
       queue1.freeBuffer();
     }
     track1[frame1].close();
   }
-  mode = 0;
+  mode = STOP;
 }
 
 void startPlaying() {
   Serial.println("startPlaying");
   playRaw1.play("RECORD.RAW", position1);
-  mode = 2;
+  mode = PLAY;
 }
 
 void continuePlaying() {
   if (!playRaw1.isPlaying()) {
+    // loop to start
     playRaw1.play("RECORD.RAW", 0);
   }
 }
 
+void pausePlaying() {
+  Serial.println("pausePlaying");
+  position1 = playRaw1.getOffset();
+  if (mode == PLAY)
+    playRaw1.stop();
+  mode = STOP;
+}
+
 void stopPlaying() {
   Serial.println("stopPlaying");
-  position1 = playRaw1.getOffset();
-  if (mode == 2)
+  position1 = 0;
+  if (mode == PLAY)
     playRaw1.stop();
-  mode = 0;
+  mode = STOP;
 }
 
 void adjustMicLevel() {
   // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
   // if anyone gets this working, please submit a github pull request :-)
+}
+
+Track::Track(const char *frameName0, const char *frameName1) {
+  frames[0] = frameName0;
+  frames[1] = frameName1;
+  position = 0;
+  readFrameIdx = 0;
+  readFrameIdx = !readFrameIdx;
+}
+
+void Track::swap(void) {
+  if (playRaw.isPlaying()) {
+    position = playRaw.getOffset();
+    playRaw.stop();
+  }
+  readFrame = !readFrame;
 }
