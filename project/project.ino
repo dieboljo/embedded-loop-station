@@ -7,10 +7,12 @@
 #include <SerialFlash.h>
 #include <Wire.h>
 
+#define SDCARD_MOSI_PIN 11
+#define SDCARD_SCK_PIN 13
 #define SDCARD_CS_PIN BUILTIN_SDCARD
-#define INPUT AUDIO_INPUT_MIC
 
-enum Status = { stop, rec, play }
+enum class Status { Stop, Record, Play };
+const int input = AUDIO_INPUT_MIC;
 
 AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
@@ -25,7 +27,7 @@ AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
 AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
 
 // Remember which mode we're doing
-int mode = STOP; // 0=stopped, 1=recording, 2=playing
+Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing
 
 // The files where data is recorded
 Track tracks[] = {Track("0A.WAV", "0B.WAV"), Track("1A.WAV", "1B.WAV"),
@@ -55,7 +57,7 @@ void setup() {
 
   // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
-  sgtl5000_1.inputSelect(myInput);
+  sgtl5000_1.inputSelect(input);
   sgtl5000_1.micGain(20);
   sgtl5000_1.volume(0.5);
 
@@ -96,36 +98,36 @@ void loop() {
   // Respond to button presses
   if (buttonRecord.fallingEdge()) {
     Serial.println("Record Button Press");
-    if (mode == PLAY)
+    if (mode == Status::Play)
       stopPlaying();
-    if (mode == STOP)
+    if (mode == Status::Stop)
       startRecording();
   }
   if (buttonStop.fallingEdge()) {
     Serial.println("Stop Button Press");
-    if (mode == REC)
+    if (mode == Status::Record)
       stopRecording();
-    if (mode == PLAY)
+    if (mode == Status::Play)
       stopPlaying();
   }
   if (buttonPlay.fallingEdge()) {
     Serial.println("Play Button Press");
-    if (mode == REC)
+    if (mode == Status::Record)
       stopRecording();
-    if (mode == STOP)
+    if (mode == Status::Stop)
       startPlaying();
   }
 
   // If we're playing or recording, carry on...
-  if (mode == REC) {
+  if (mode == Status::Record) {
     continueRecording();
   }
-  if (mode == PLAY) {
+  if (mode == Status::Play) {
     continuePlaying();
   }
 
   // when using a microphone, continuously adjust gain
-  if (myInput == AUDIO_INPUT_MIC)
+  if (input == AUDIO_INPUT_MIC)
     adjustMicLevel();
 }
 
@@ -141,7 +143,7 @@ void startRecording() {
   if (track1[frame1]) {
     /* track1[frame1].seek(0); // move cursor to beginning */
     queue1.begin();
-    mode = REC;
+    mode = Status::Record;
   }
 }
 
@@ -177,20 +179,20 @@ void continueRecording() {
 void stopRecording() {
   Serial.println("stopRecording");
   queue1.end();
-  if (mode == REC) {
+  if (mode == Status::Record) {
     while (queue1.available() > 0) {
       track1[frame1].write((byte *)queue1.readBuffer(), 256);
       queue1.freeBuffer();
     }
     track1[frame1].close();
   }
-  mode = STOP;
+  mode = Status::Stop;
 }
 
 void startPlaying() {
   Serial.println("startPlaying");
   playRaw1.play("RECORD.RAW", position1);
-  mode = PLAY;
+  mode = Status::Stop;
 }
 
 void continuePlaying() {
@@ -203,17 +205,17 @@ void continuePlaying() {
 void pausePlaying() {
   Serial.println("pausePlaying");
   position1 = playRaw1.getOffset();
-  if (mode == PLAY)
+  if (mode == Status::Play)
     playRaw1.stop();
-  mode = STOP;
+  mode = Status::Stop;
 }
 
 void stopPlaying() {
   Serial.println("stopPlaying");
   position1 = 0;
-  if (mode == PLAY)
+  if (mode == Status::Play)
     playRaw1.stop();
-  mode = STOP;
+  mode = Status::Stop;
 }
 
 void adjustMicLevel() {

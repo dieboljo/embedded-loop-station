@@ -21,9 +21,8 @@ public:
   void startRecording();
   void stopPlaying();
   void stopRecording();
-  void swapStreams();
+  void swapFiles();
   Track(const char *fileName0, const char *fileName1);
-
 };
 
 #endif
