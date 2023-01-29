@@ -1,20 +1,29 @@
 #ifndef track_h_
 #define track_h_
 
+#include "play-sd-raw.h"
+#include <Arduino.h>
+#include <Audio.h>
+
 class Track {
-  const char *frames[2];
-  File frame[2];
+  const char *fileNames[2];
   uint64_t position;
-  int readIdx;
-  Project::AudioPlaySdRaw playRaw;
+  int readFileIdx;
+  int writeFileIdx;
+  Project::AudioPlaySdRaw readStream;
+  File writeStream;
   AudioRecordQueue queue;
   AudioAnalyzePeak peak;
 
 public:
-  File readFrame;
-  File writeFrame;
-  void swap();
-  Track(const char *frameName1, const char *frameName2);
+  void pausePlaying();
+  void startPlaying();
+  void startRecording();
+  void stopPlaying();
+  void stopRecording();
+  void swapStreams();
+  Track(const char *fileName0, const char *fileName1);
+
 };
 
 #endif

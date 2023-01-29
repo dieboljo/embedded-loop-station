@@ -1,4 +1,5 @@
 #include "play-sd-raw.h"
+#include "track.h"
 #include <Audio.h>
 #include <Bounce.h>
 #include <SD.h>
@@ -7,14 +8,9 @@
 #include <Wire.h>
 
 #define SDCARD_CS_PIN BUILTIN_SDCARD
-#define SDCARD_MOSI_PIN 11 // not actually used
-#define SDCARD_SCK_PIN 13  // not actually used
-#define STOP 0
-#define REC 1
-#define PLAY 2
+#define INPUT AUDIO_INPUT_MIC
 
-// which input on the audio shield will be used?
-const int myInput = AUDIO_INPUT_MIC;
+enum Status = { stop, rec, play }
 
 AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
@@ -223,20 +219,4 @@ void stopPlaying() {
 void adjustMicLevel() {
   // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
   // if anyone gets this working, please submit a github pull request :-)
-}
-
-Track::Track(const char *frameName0, const char *frameName1) {
-  frames[0] = frameName0;
-  frames[1] = frameName1;
-  position = 0;
-  readFrameIdx = 0;
-  readFrameIdx = !readFrameIdx;
-}
-
-void Track::swap(void) {
-  if (playRaw.isPlaying()) {
-    position = playRaw.getOffset();
-    playRaw.stop();
-  }
-  readFrame = !readFrame;
 }
