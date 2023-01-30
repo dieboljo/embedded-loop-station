@@ -1,7 +1,7 @@
 {
   "cpu": {
-    "fqbn": "teensy:avr:teensy31",
-    "name": "Teensy 3.2 / 3.1",
+    "fqbn": "teensy:avr:teensy41",
+    "name": "Teensy 4.1",
     "port": "serial:///dev/ttyACM0"
   }
 }

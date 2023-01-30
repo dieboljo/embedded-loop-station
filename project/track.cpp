@@ -36,10 +36,12 @@ void Track::stopRecording(void) {
     queue.freeBuffer();
   }
   writeStream.close();
-  const bool isPlaying = readStream.isplaying();
+  const bool playing = readStream.isPlaying();
   readStream.stop();
   swapFiles();
-  if (isPlaying) startPlaying()
+  if (playing) {
+    startPlaying();
+  }
 }
 
 void Track::swapFiles(void) {
