@@ -35,3 +35,6 @@
 .ccls-cache
 .compile-commands.json
 compile-commands.json
+
+# build files
+build/

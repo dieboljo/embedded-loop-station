@@ -2,6 +2,12 @@
 #include <SD.h>
 
 Track::Track(const char *fileName0, const char *fileName1) {
+  if (SD.exists(fileName0)) {
+    SD.remove(fileName0);
+  }
+  if (SD.exists(fileName1)) {
+    SD.remove(fileName1);
+  }
   fileNames[0] = fileName0;
   fileNames[1] = fileName1;
   position = 0;

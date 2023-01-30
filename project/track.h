@@ -14,6 +14,7 @@ class Track {
   File writeStream;
   AudioRecordQueue queue;
   AudioAnalyzePeak peak;
+  void swapFiles();
 
 public:
   void pausePlaying();
@@ -21,7 +22,6 @@ public:
   void startRecording();
   void stopPlaying();
   void stopRecording();
-  void swapFiles();
   Track(const char *fileName0, const char *fileName1);
 };
 
