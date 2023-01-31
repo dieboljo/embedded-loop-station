@@ -51,18 +51,10 @@ outlined below.
    and follow the instructions for your development platform to install the
    Arduino CLI.
 
-2. Execute the following commands from the sketch directory (`project`):
-
-- Update the index of the cores:
+2. Run the following script from the project root directory:
 
 ```
-arduino-cli core update-index
-```
-
-- Install the necessary core:
-
-```
-arduino-cli core install teensy:avr
+./setup
 ```
 
 ### Deploy to the device
@@ -76,15 +68,8 @@ arduino-cli core install teensy:avr
 arduino-cli compile -tu --build-path ./build
 ```
 
-4. Get the attached port by locating the value in the **Port** columnn of the
-   row corresponding to the board name **Teensy 4.1** after running the command:
-
-```
-arduino-cli board list
-```
-
 3. Then execute the following command to monitor the program's output:
 
 ```
-arduino-cli monitor -p [port-value]
+arduino-cli monitor
 ```

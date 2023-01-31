@@ -52,7 +52,7 @@ void setup() {
   // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
   sgtl5000_1.inputSelect(input);
-  sgtl5000_1.micGain(20);
+  sgtl5000_1.micGain(30);
   sgtl5000_1.volume(0.5);
 
   // Initialize the SD card

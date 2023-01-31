@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cd project
+arduino-cli core update-index
+arduino-cli core install arduino:avr
+arduino-cli core install teensy:avr
