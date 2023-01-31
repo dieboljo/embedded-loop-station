@@ -1,5 +1,6 @@
 #include "play-sd-raw.h"
 #include "track.h"
+#include "tracks.h"
 #include <Audio.h>
 #include <Bounce.h>
 #include <SD.h>
@@ -18,14 +19,15 @@ const int input = AUDIO_INPUT_MIC;
 AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
 AudioOutputI2S i2s1;
+AudioAnalyzePeak monitor;
 
-Tracks tracks;
-Track track1 = tracks.selected;
+/* Tracks tracks; */
+Track track1 = Track("0A.WAV", "0B.WAV");
 
-AudioConnection patchCord1(i2s2, 0, track1.queue, 0);
-AudioConnection patchCord2(i2s2, 0, track1.peak, 0);
-AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
-AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
+AudioConnection patchCord1(i2s2, 0, track1.record, 0);
+AudioConnection patchCord2(i2s2, 0, monitor, 0);
+AudioConnection patchCord3(track1.playback, 0, i2s1, 0);
+AudioConnection patchCord4(track1.playback, 0, i2s1, 1);
 
 // Remember which mode we're doing
 Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing
@@ -76,12 +78,12 @@ void loop() {
   float vol = (float)knob / 1280.0;
   sgtl5000_1.volume(vol);
 
-  if (msecs > 15) {
+  if (msecs > 1000) {
     Serial.print("volume = ");
     Serial.println(vol);
-    if (track1.monitor.available()) {
+    if (monitor.available()) {
       msecs = 0;
-      float leftNumber = track1.monitor.read();
+      float leftNumber = monitor.read();
       Serial.print(leftNumber);
       Serial.println();
     }
@@ -144,7 +146,7 @@ void stopRecording() {
 void startPlaying() {
   Serial.println("startPlaying");
   track1.startPlaying();
-  mode = Status::Stop;
+  mode = Status::Play;
 }
 
 void continuePlaying() { track1.continuePlaying(); }

@@ -6,17 +6,15 @@
 #include <Audio.h>
 
 class Track {
-  const char *fileNames[2];
-  uint64_t position;
-  int readFileIdx;
-  int writeFileIdx;
+  const char *readFileName;
+  const char *writeFileName;
   File fileBuffer;
-  AudioRecordQueue record;
-  Project::AudioPlaySdRaw playback;
+  uint64_t position;
   void swapFiles();
 
 public:
-  AudioAnalyzePeak monitor;
+  AudioRecordQueue record;
+  Project::AudioPlaySdRaw playback;
   void continuePlaying();
   void continueRecording();
   void pausePlaying();
@@ -24,7 +22,7 @@ public:
   boolean startRecording();
   void stopPlaying();
   void stopRecording();
-  Track(const char *fileName0, const char *fileName1);
+  Track(const char *fileName1, const char *fileName2);
 };
 
 #endif

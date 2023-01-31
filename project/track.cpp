@@ -1,18 +1,16 @@
 #include "track.h"
 #include <SD.h>
 
-Track::Track(const char *fileName0, const char *fileName1) {
-  if (SD.exists(fileName0)) {
-    SD.remove(fileName0);
-  }
+Track::Track(const char *fileName1, const char *fileName2) {
   if (SD.exists(fileName1)) {
     SD.remove(fileName1);
   }
-  fileNames[0] = fileName0;
-  fileNames[1] = fileName1;
+  if (SD.exists(fileName2)) {
+    SD.remove(fileName2);
+  }
+  readFileName = fileName1;
+  writeFileName = fileName2;
   position = 0;
-  readFileIdx = 0;
-  writeFileIdx = 1;
 }
 
 void Track::continuePlaying(void) {
@@ -38,12 +36,10 @@ void Track::pausePlaying(void) {
   playback.stop();
 }
 
-void Track::startPlaying(void) {
-  playback.play(fileNames[readFileIdx], position);
-}
+void Track::startPlaying(void) { playback.play(readFileName, position); }
 
 boolean Track::startRecording(void) {
-  fileBuffer = SD.open(fileNames[writeFileIdx], FILE_WRITE);
+  fileBuffer = SD.open(writeFileName, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
     record.begin();
@@ -73,6 +69,7 @@ void Track::stopRecording(void) {
 }
 
 void Track::swapFiles(void) {
-  readFileIdx = !readFileIdx;
-  writeFileIdx = !readFileIdx;
+  const char *temp = writeFileName;
+  writeFileName = readFileName;
+  readFileName = temp;
 }
