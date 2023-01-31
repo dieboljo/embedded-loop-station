@@ -10,16 +10,18 @@ class Track {
   uint64_t position;
   int readFileIdx;
   int writeFileIdx;
-  Project::AudioPlaySdRaw readStream;
-  File writeStream;
-  AudioRecordQueue queue;
-  AudioAnalyzePeak peak;
+  File fileBuffer;
+  AudioRecordQueue record;
+  Project::AudioPlaySdRaw playback;
   void swapFiles();
 
 public:
+  AudioAnalyzePeak monitor;
+  void continuePlaying();
+  void continueRecording();
   void pausePlaying();
   void startPlaying();
-  void startRecording();
+  boolean startRecording();
   void stopPlaying();
   void stopRecording();
   Track(const char *fileName0, const char *fileName1);

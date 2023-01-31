@@ -10,7 +10,8 @@ class Tracks {
 
 public:
   Track selected = tracks[0];
-  void setSelected(int t);
+  void setSelected(int i);
+  Track getTrack(int i);
   Tracks();
 };
 

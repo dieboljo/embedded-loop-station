@@ -12,31 +12,23 @@
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 
 enum class Status { Stop, Record, Play };
+
 const int input = AUDIO_INPUT_MIC;
 
 AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
 AudioOutputI2S i2s1;
-Project::AudioPlaySdRaw playRaw1;
-AudioRecordQueue queue1;
-AudioAnalyzePeak peak1;
 
-AudioConnection patchCord1(i2s2, 0, queue1, 0);
-AudioConnection patchCord2(i2s2, 0, peak1, 0);
+Tracks tracks;
+Track track1 = tracks.selected;
+
+AudioConnection patchCord1(i2s2, 0, track1.queue, 0);
+AudioConnection patchCord2(i2s2, 0, track1.peak, 0);
 AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
 AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
 
 // Remember which mode we're doing
 Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing
-
-// The files where data is recorded
-Track tracks[] = {Track("0A.WAV", "0B.WAV"), Track("1A.WAV", "1B.WAV"),
-                  Track("2A.WAV", "2B.WAV"), Track("3A.WAV", "3B.WAV")};
-int selected = 0;
-
-File track1[2];
-int frame1 = 0;
-uint64_t position1 = 0;
 
 // Bounce objects to easily and reliably read the buttons
 Bounce buttonRecord = Bounce(0, 8);
@@ -87,9 +79,9 @@ void loop() {
   if (msecs > 15) {
     Serial.print("volume = ");
     Serial.println(vol);
-    if (peak1.available()) {
+    if (track1.monitor.available()) {
       msecs = 0;
-      float leftNumber = peak1.read();
+      float leftNumber = track1.monitor.read();
       Serial.print(leftNumber);
       Serial.println();
     }
@@ -133,88 +125,39 @@ void loop() {
 
 void startRecording() {
   Serial.println("startRecording");
-  if (SD.exists("RECORD.RAW")) {
-    // The SD library writes new data to the end of the
-    // file, so to start a new recording, the old file
-    // must be deleted before new data is written.
-    SD.remove("RECORD.RAW");
-  }
-  track1[frame1] = SD.open("RECORD.RAW", FILE_WRITE);
-  if (track1[frame1]) {
-    /* track1[frame1].seek(0); // move cursor to beginning */
-    queue1.begin();
+  const boolean recording = track1.startRecording();
+  if (recording) {
     mode = Status::Record;
+  } else {
+    Serial.println("Failed to start recording");
   }
 }
 
-void continueRecording() {
-  if (queue1.available() >= 2) {
-    byte buffer[512];
-    // Fetch 2 blocks from the audio library and copy
-    // into a 512 byte buffer.  The Arduino SD library
-    // is most efficient when full 512 byte sector size
-    // writes are used.
-    memcpy(buffer, queue1.readBuffer(), 256);
-    queue1.freeBuffer();
-    memcpy(buffer + 256, queue1.readBuffer(), 256);
-    queue1.freeBuffer();
-    // write all 512 bytes to the SD card
-    track1[frame1].write(buffer, 512);
-    // Uncomment these lines to see how long SD writes
-    // are taking.  A pair of audio blocks arrives every
-    // 5802 microseconds, so hopefully most of the writes
-    // take well under 5802 us.  Some will take more, as
-    // the SD library also must write to the FAT tables
-    // and the SD card controller manages media erase and
-    // wear leveling.  The queue1 object can buffer
-    // approximately 301700 us of audio, to allow time
-    // for occasional high SD card latency, as long as
-    // the average write time is under 5802 us.
-    // elapsedMicros usec = 0;
-    // Serial.print("SD write, us=");
-    // Serial.println(usec);
-  }
-}
+void continueRecording() { track1.continueRecording(); }
 
 void stopRecording() {
   Serial.println("stopRecording");
-  queue1.end();
-  if (mode == Status::Record) {
-    while (queue1.available() > 0) {
-      track1[frame1].write((byte *)queue1.readBuffer(), 256);
-      queue1.freeBuffer();
-    }
-    track1[frame1].close();
-  }
+  track1.stopRecording();
   mode = Status::Stop;
 }
 
 void startPlaying() {
   Serial.println("startPlaying");
-  playRaw1.play("RECORD.RAW", position1);
+  track1.startPlaying();
   mode = Status::Stop;
 }
 
-void continuePlaying() {
-  if (!playRaw1.isPlaying()) {
-    // loop to start
-    playRaw1.play("RECORD.RAW", 0);
-  }
-}
+void continuePlaying() { track1.continuePlaying(); }
 
 void pausePlaying() {
   Serial.println("pausePlaying");
-  position1 = playRaw1.getOffset();
-  if (mode == Status::Play)
-    playRaw1.stop();
+  track1.pausePlaying();
   mode = Status::Stop;
 }
 
 void stopPlaying() {
   Serial.println("stopPlaying");
-  position1 = 0;
-  if (mode == Status::Play)
-    playRaw1.stop();
+  track1.stopPlaying();
   mode = Status::Stop;
 }
 

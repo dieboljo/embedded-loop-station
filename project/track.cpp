@@ -15,35 +15,57 @@ Track::Track(const char *fileName0, const char *fileName1) {
   writeFileIdx = 1;
 }
 
+void Track::continuePlaying(void) {
+  if (!playback.isPlaying()) {
+    position = 0;
+    startPlaying();
+  }
+}
+
+void Track::continueRecording(void) {
+  if (record.available() >= 2) {
+    byte buffer[512];
+    memcpy(buffer, record.readBuffer(), 256);
+    record.freeBuffer();
+    memcpy(buffer + 256, record.readBuffer(), 256);
+    record.freeBuffer();
+    fileBuffer.write(buffer, 512);
+  }
+}
+
 void Track::pausePlaying(void) {
-  position = readStream.getOffset();
-  readStream.stop();
+  position = playback.getOffset();
+  playback.stop();
 }
 
 void Track::startPlaying(void) {
-  readStream.play(fileNames[readFileIdx], position);
+  playback.play(fileNames[readFileIdx], position);
 }
 
-void Track::startRecording(void) {
-  writeStream = SD.open(fileNames[writeFileIdx], FILE_WRITE);
-  writeStream.seek(position);
-  queue.begin();
+boolean Track::startRecording(void) {
+  fileBuffer = SD.open(fileNames[writeFileIdx], FILE_WRITE);
+  if (fileBuffer) {
+    fileBuffer.seek(position);
+    record.begin();
+    return true;
+  }
+  return false;
 }
 
 void Track::stopPlaying(void) {
   position = 0;
-  readStream.stop();
+  playback.stop();
 }
 
 void Track::stopRecording(void) {
-  queue.end();
-  while (queue.available() > 0) {
-    writeStream.write((byte *)queue.readBuffer(), 256);
-    queue.freeBuffer();
+  record.end();
+  while (record.available() > 0) {
+    fileBuffer.write((byte *)record.readBuffer(), 256);
+    record.freeBuffer();
   }
-  writeStream.close();
-  const bool playing = readStream.isPlaying();
-  readStream.stop();
+  fileBuffer.close();
+  const bool playing = playback.isPlaying();
+  playback.stop();
   swapFiles();
   if (playing) {
     startPlaying();
@@ -54,22 +76,3 @@ void Track::swapFiles(void) {
   readFileIdx = !readFileIdx;
   writeFileIdx = !readFileIdx;
 }
-
-/* class Track {
-  const char *fileNames[2];
-  uint64_t position;
-  int readFileIdx;
-  int writeFileIdx;
-  Project::AudioPlaySdRaw readStream;
-  File writeStream;
-  AudioRecordQueue queue;
-  AudioAnalyzePeak peak;
-
-public:
-  void pausePlaying();
-  void startRecording();
-  void stopPlaying();
-  void stopRecording();
-  void swapStreams();
-  Track(const char *fileName0, const char *fileName1);
-}; */
