@@ -1,6 +1,7 @@
+#include "constants.h"
 #include "play-sd-raw.h"
+#include "recorder.h"
 #include "track.h"
-#include "tracks.h"
 #include <Audio.h>
 #include <Bounce.h>
 #include <SD.h>
@@ -12,22 +13,22 @@
 #define SDCARD_SCK_PIN 13
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 
-enum class Status { Stop, Record, Play };
-
 const int input = AUDIO_INPUT_MIC;
 
-AudioControlSGTL5000 sgtl5000_1;
-AudioInputI2S i2s2;
-AudioOutputI2S i2s1;
+AudioControlSGTL5000 interface;
+AudioInputI2S source;
+AudioOutputI2S sink;
 AudioAnalyzePeak monitor;
+AudioMixer4 sinkInput;
 
 /* Tracks tracks; */
 Track track1 = Track("0A.WAV", "0B.WAV");
 
-AudioConnection patchCord1(i2s2, 0, track1.record, 0);
-AudioConnection patchCord2(i2s2, 0, monitor, 0);
-AudioConnection patchCord3(track1.playback, 0, i2s1, 0);
-AudioConnection patchCord4(track1.playback, 0, i2s1, 1);
+AudioConnection sourceToTrack(source, 0, track1.sourceOutput, 0);
+AudioConnection sourceToMonitor(source, 0, monitor, 0);
+AudioConnection playbackToSinkInput(track1.playback, 0, sinkInput, 0);
+AudioConnection sinkInputToSinkChannelLeft(sinkInput, 0, sink, 0);
+AudioConnection sinkInputToSinkChannelRight(sinkInput, 0, sink, 1);
 
 // Remember which mode we're doing
 Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing
@@ -50,10 +51,10 @@ void setup() {
   AudioMemory(60);
 
   // Enable the audio shield, select input, and enable output
-  sgtl5000_1.enable();
-  sgtl5000_1.inputSelect(input);
-  sgtl5000_1.micGain(30);
-  sgtl5000_1.volume(0.5);
+  interface.enable();
+  interface.inputSelect(input);
+  interface.micGain(30);
+  interface.volume(0.5);
 
   // Initialize the SD card
   SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -76,7 +77,7 @@ void loop() {
   // read the knob position (analog input A1)
   int knob = analogRead(A1);
   float vol = (float)knob / 1280.0;
-  sgtl5000_1.volume(vol);
+  interface.volume(vol);
 
   if (msecs > 1000) {
     Serial.print("volume = ");
@@ -164,6 +165,6 @@ void stopPlaying() {
 }
 
 void adjustMicLevel() {
-  // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
+  // TODO: read the peak1 object and adjust interface.micGain()
   // if anyone gets this working, please submit a github pull request :-)
 }

@@ -1,26 +1,29 @@
 #include "track.h"
+#include "constants.h"
+#include <Arduino.h>
 #include <SD.h>
 
-Track::Track(const char *fileName1, const char *fileName2) {
-  if (SD.exists(fileName1)) {
-    SD.remove(fileName1);
+void Track::advance(Status status, Mode mode) {
+  switch (status) {
+  case Status::Play:
+    if (!playback.isPlaying()) {
+      position = 0;
+      fileBuffer.seek(position);
+      sourceOutput.gain(AUX_CHANNEL, GAIN_ACTIVE);
+      sourceOutput.gain(AUDIO_CHANNEL, GAIN_MUTED);
+      startPlaying();
+    }
+  case Status::Record:
+    sourceOutput.gain(AUX_CHANNEL,
+                      mode == Mode::Overdub ? GAIN_ACTIVE : GAIN_MUTED);
+    sourceOutput.gain(AUDIO_CHANNEL, GAIN_ACTIVE);
+  case Status::Stop:
+    break;
   }
-  if (SD.exists(fileName2)) {
-    SD.remove(fileName2);
-  }
-  readFileName = fileName1;
-  writeFileName = fileName2;
-  position = 0;
+  writeBuffer();
 }
 
-void Track::continuePlaying(void) {
-  if (!playback.isPlaying()) {
-    position = 0;
-    startPlaying();
-  }
-}
-
-void Track::continueRecording(void) {
+void Track::writeBuffer() {
   if (record.available() >= 2) {
     byte buffer[512];
     memcpy(buffer, record.readBuffer(), 256);
@@ -31,21 +34,39 @@ void Track::continueRecording(void) {
   }
 }
 
-void Track::pausePlaying(void) {
-  position = playback.getOffset();
-  playback.stop();
-}
-
-void Track::startPlaying(void) { playback.play(readFileName, position); }
-
-boolean Track::startRecording(void) {
+bool Track::openBuffer() {
   fileBuffer = SD.open(writeFileName, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
     record.begin();
     return true;
+  } else {
+    Serial.println("Failed to open buffer for writing!");
+    return false;
   }
-  return false;
+}
+
+void Track::pausePlaying(void) {
+  position = playback.getOffset();
+  playback.stop();
+  record.end();
+}
+
+bool Track::startPlaying(void) {
+  if (playback.lengthMillis()) {
+    bool bufferOpen = openBuffer();
+    if (!bufferOpen)
+      return false;
+  }
+  playback.play(readFileName, position);
+  return true;
+}
+
+bool Track::startRecording() {
+  if (!fileBuffer) {
+    return openBuffer();
+  }
+  return true;
 }
 
 void Track::stopPlaying(void) {
