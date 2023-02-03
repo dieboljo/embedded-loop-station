@@ -3,38 +3,49 @@
 #include <Arduino.h>
 #include <SD.h>
 
-void Track::advance(Status status, Mode mode) {
+void Track::advance(Status status, Mode mode, bool selected) {
+  position = playback.getOffset();
   switch (status) {
   case Status::Play:
-    if (!playback.isPlaying()) {
+    if (playback.lengthMillis() == playback.positionMillis()) {
       position = 0;
-      fileBuffer.seek(position);
-      sourceOutput.gain(AUX_CHANNEL, GAIN_ACTIVE);
-      sourceOutput.gain(AUDIO_CHANNEL, GAIN_MUTED);
-      startPlaying();
     }
-  case Status::Record:
-    sourceOutput.gain(AUX_CHANNEL,
-                      mode == Mode::Overdub ? GAIN_ACTIVE : GAIN_MUTED);
-    sourceOutput.gain(AUDIO_CHANNEL, GAIN_ACTIVE);
-  case Status::Stop:
+    if (!playback.isPlaying()) {
+      playback.play(readFileName, position);
+    }
+    if (playback.lengthMillis()) {
+      patchFeedback();
+    }
     break;
+  case Status::Record:
+    if (mode == Mode::Overdub) {
+      patchOverdub();
+    } else {
+      patchReplace();
+    }
+    break;
+  case Status::Pause:
+    playback.stop();
+    record.end();
+    closeBuffer();
+    return;
+  case Status::Stop:
+    position = 0;
+    playback.stop();
+    record.end();
+    closeBuffer();
+    return;
   }
-  writeBuffer();
-}
-
-void Track::writeBuffer() {
-  if (record.available() >= 2) {
-    byte buffer[512];
-    memcpy(buffer, record.readBuffer(), 256);
-    record.freeBuffer();
-    memcpy(buffer + 256, record.readBuffer(), 256);
-    record.freeBuffer();
-    fileBuffer.write(buffer, 512);
+  if (selected) {
+    if (fileBuffer.position() != position)
+      fileBuffer.seek(position);
+    writeBuffer();
   }
 }
 
 bool Track::openBuffer() {
+  if (fileBuffer)
+    return true;
   fileBuffer = SD.open(writeFileName, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
@@ -46,51 +57,44 @@ bool Track::openBuffer() {
   }
 }
 
-void Track::pausePlaying(void) {
-  position = playback.getOffset();
-  playback.stop();
-  record.end();
+void Track::patchFeedback() {
+  sourceToMix.disconnect();
+  auxToMix.connect();
+  mix.gain(AUX_CHANNEL, FULL_GAIN);
 }
 
-bool Track::startPlaying(void) {
-  if (playback.lengthMillis()) {
-    bool bufferOpen = openBuffer();
-    if (!bufferOpen)
-      return false;
-  }
-  playback.play(readFileName, position);
-  return true;
+void Track::patchOverdub() {
+  auxToMix.connect();
+  sourceToMix.connect();
+  mix.gain(AUX_CHANNEL, SPLIT_GAIN);
+  mix.gain(SOURCE_CHANNEL, SPLIT_GAIN);
 }
 
-bool Track::startRecording() {
-  if (!fileBuffer) {
-    return openBuffer();
-  }
-  return true;
+void Track::patchReplace() {
+  auxToMix.disconnect();
+  sourceToMix.connect();
+  mix.gain(SOURCE_CHANNEL, FULL_GAIN);
 }
 
-void Track::stopPlaying(void) {
-  position = 0;
-  playback.stop();
-}
-
-void Track::stopRecording(void) {
-  record.end();
+void Track::closeBuffer(void) {
   while (record.available() > 0) {
     fileBuffer.write((byte *)record.readBuffer(), 256);
     record.freeBuffer();
   }
   fileBuffer.close();
-  const bool playing = playback.isPlaying();
-  playback.stop();
-  swapFiles();
-  if (playing) {
-    startPlaying();
-  }
-}
-
-void Track::swapFiles(void) {
   const char *temp = writeFileName;
   writeFileName = readFileName;
   readFileName = temp;
+}
+
+void Track::writeBuffer() {
+  openBuffer();
+  if (record.available() >= 2) {
+    byte buffer[512];
+    memcpy(buffer, record.readBuffer(), 256);
+    record.freeBuffer();
+    memcpy(buffer + 256, record.readBuffer(), 256);
+    record.freeBuffer();
+    fileBuffer.write(buffer, 512);
+  }
 }

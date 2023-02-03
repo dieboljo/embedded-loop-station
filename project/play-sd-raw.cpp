@@ -5,7 +5,7 @@
 #include <spi_interrupt.h>
 
 namespace Project {
-bool AudioPlaySdRaw::play(const char *filename, uint32_t offset) {
+bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
   stop();
 #if defined(HAS_KINETIS_SDHC)
   if (!(SIM_SCGC3 & SIM_SCGC3_SDHC))
