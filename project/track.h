@@ -5,23 +5,23 @@
 #include "play-sd-raw.h"
 #include <Audio.h>
 
-#define SOURCE_CHANNEL 0
-#define AUX_CHANNEL 1
-
-#define SPLIT_GAIN 0.4
-#define FULL_GAIN 0.8
-
 class Track {
-  uint64_t position = 0;
+  enum Channel { Source, Aux };
+
   const char *readFileName;
   const char *writeFileName;
+
+  uint64_t position = 0;
   File fileBuffer;
-  AudioRecordQueue record;
+
+  // Order of signal flow
   AudioInputI2S *source;
-  AudioConnection auxToMix;
+  AudioConnection auxToMix; // feedback `playback` back into `mix`
   AudioConnection sourceToMix;
-  AudioConnection mixToRecord;
   AudioMixer4 mix;
+  AudioConnection mixToRecord;
+  AudioRecordQueue record;
+
   void closeBuffer();
   bool openBuffer();
   void patchFeedback();
@@ -32,20 +32,12 @@ class Track {
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
       : readFileName(f1), writeFileName(f2), source(s),
-        auxToMix(playback, 0, mix, AUX_CHANNEL),
-        sourceToMix(*source, 0, mix, SOURCE_CHANNEL),
-        mixToRecord(mix, 0, record, 0) {
-    if (SD.exists(readFileName)) {
-      SD.remove(readFileName);
-    }
-    if (SD.exists(writeFileName)) {
-      SD.remove(writeFileName);
-    }
-    mix.gain(SOURCE_CHANNEL, SPLIT_GAIN);
-    mix.gain(AUX_CHANNEL, SPLIT_GAIN);
-  };
+        auxToMix(playback, 0, mix, Channel::Aux),
+        sourceToMix(*source, 0, mix, Channel::Source),
+        mixToRecord(mix, 0, record, 0){};
   Project::AudioPlaySdRaw playback;
   void advance(Status status, Mode mode, boolean selected);
+  bool begin();
 };
 
 #endif

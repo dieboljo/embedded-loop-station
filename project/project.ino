@@ -9,17 +9,17 @@
 #include <SerialFlash.h>
 #include <Wire.h>
 
-#define SDCARD_MOSI_PIN 11
+/* #define SDCARD_MOSI_PIN 11
 #define SDCARD_SCK_PIN 13
-#define SDCARD_CS_PIN BUILTIN_SDCARD
+#define SDCARD_CS_PIN BUILTIN_SDCARD */
 
-const int input = AUDIO_INPUT_MIC;
+/* const int input = AUDIO_INPUT_MIC; */
 
-AudioControlSGTL5000 interface;
+/* AudioControlSGTL5000 interface;
 AudioInputI2S source;
-AudioOutputI2S sink;
-AudioAnalyzePeak monitor;
-AudioMixer4 sinkInput;
+AudioOutputI2S sink; */
+/* audioAnalyzePeak monitor;
+AudioMixer4 sinkInput; */
 
 /* Tracks tracks; */
 Track track1 = Track("0A.WAV", "0B.WAV");
@@ -31,33 +31,33 @@ AudioConnection sinkInputToSinkChannelLeft(sinkInput, 0, sink, 0);
 AudioConnection sinkInputToSinkChannelRight(sinkInput, 0, sink, 1);
 
 // Remember which mode we're doing
-Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing
+/* Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing */
 
 // Bounce objects to easily and reliably read the buttons
-Bounce buttonRecord = Bounce(0, 8);
+/* Bounce buttonRecord = Bounce(0, 8);
 Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
-Bounce buttonPlay = Bounce(2, 8);
+Bounce buttonPlay = Bounce(2, 8); */
 
 elapsedMillis msecs;
 
 void setup() {
-  // Configure the pushbutton pins
+  /* // Configure the pushbutton pins
   pinMode(0, INPUT_PULLUP);
   pinMode(1, INPUT_PULLUP);
-  pinMode(2, INPUT_PULLUP);
+  pinMode(2, INPUT_PULLUP); */
 
-  // Audio connections require memory, and the record queue
+  /* // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
-  AudioMemory(60);
+  AudioMemory(60); */
 
   // Enable the audio shield, select input, and enable output
-  interface.enable();
+  /* interface.enable();
   interface.inputSelect(input);
   interface.micGain(30);
   interface.volume(0.5);
-
+ */
   // Initialize the SD card
-  SPI.setMOSI(SDCARD_MOSI_PIN);
+  /* SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
   if (!(SD.begin(SDCARD_CS_PIN))) {
     // stop here if no SD card, but print a message
@@ -65,7 +65,7 @@ void setup() {
       Serial.println("Unable to access the SD card");
       delay(500);
     }
-  }
+  } */
 }
 
 void loop() {

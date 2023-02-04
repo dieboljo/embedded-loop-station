@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include <SD.h>
 
+const float SPLIT_GAIN = 0.4;
+const float FULL_GAIN = 0.8;
+
 void Track::advance(Status status, Mode mode, bool selected) {
   position = playback.getOffset();
   switch (status) {
@@ -43,6 +46,18 @@ void Track::advance(Status status, Mode mode, bool selected) {
   }
 }
 
+bool Track::begin() {
+  if (SD.exists(readFileName)) {
+    SD.remove(readFileName);
+  }
+  if (SD.exists(writeFileName)) {
+    SD.remove(writeFileName);
+  }
+  mix.gain(Channel::Source, SPLIT_GAIN);
+  mix.gain(Channel::Aux, SPLIT_GAIN);
+  return true;
+}
+
 bool Track::openBuffer() {
   if (fileBuffer)
     return true;
@@ -60,20 +75,20 @@ bool Track::openBuffer() {
 void Track::patchFeedback() {
   sourceToMix.disconnect();
   auxToMix.connect();
-  mix.gain(AUX_CHANNEL, FULL_GAIN);
+  mix.gain(Channel::Aux, FULL_GAIN);
 }
 
 void Track::patchOverdub() {
   auxToMix.connect();
   sourceToMix.connect();
-  mix.gain(AUX_CHANNEL, SPLIT_GAIN);
-  mix.gain(SOURCE_CHANNEL, SPLIT_GAIN);
+  mix.gain(Channel::Aux, FULL_GAIN);
+  mix.gain(Channel::Source, SPLIT_GAIN);
 }
 
 void Track::patchReplace() {
   auxToMix.disconnect();
   sourceToMix.connect();
-  mix.gain(SOURCE_CHANNEL, FULL_GAIN);
+  mix.gain(Channel::Source, FULL_GAIN);
 }
 
 void Track::closeBuffer(void) {
