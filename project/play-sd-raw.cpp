@@ -18,7 +18,7 @@ bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
   rawfile.seek(offset);
   __enable_irq();
   if (!rawfile) {
-    Serial.println("unable to open file");
+    Serial.println("Unable to open file");
 #if defined(HAS_KINETIS_SDHC)
     if (!(SIM_SCGC3 & SIM_SCGC3_SDHC))
       AudioStopUsingSPI();

@@ -36,7 +36,7 @@
 compile-commands.json
 
 # build files
-build/
+**/build/
 
 # package files
 arduino/

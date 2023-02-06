@@ -10,12 +10,15 @@ void Track::advance(Status status, Mode mode, bool selected) {
   position = playback.getOffset();
   switch (status) {
   case Status::Play:
+    // Reset position to beginning if at end of track
     if (playback.lengthMillis() == playback.positionMillis()) {
       position = 0;
     }
+    // Restart playing from current position
     if (!playback.isPlaying()) {
       playback.play(readFileName, position);
     }
+    // If readfile contents not empty, sync with writefile
     if (playback.lengthMillis()) {
       patchFeedback();
     }
@@ -31,14 +34,16 @@ void Track::advance(Status status, Mode mode, bool selected) {
     playback.stop();
     record.end();
     closeBuffer();
-    return;
+    break;
   case Status::Stop:
     position = 0;
     playback.stop();
     record.end();
     closeBuffer();
-    return;
+    break;
   }
+  if (status == Status::Pause || status == Status::Stop)
+    return;
   if (selected) {
     if (fileBuffer.position() != position)
       fileBuffer.seek(position);
@@ -98,8 +103,11 @@ void Track::closeBuffer(void) {
   }
   fileBuffer.close();
   const char *temp = writeFileName;
+  Serial.println(temp);
   writeFileName = readFileName;
+  Serial.println(writeFileName);
   readFileName = temp;
+  Serial.println(readFileName);
 }
 
 void Track::writeBuffer() {

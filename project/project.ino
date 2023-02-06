@@ -45,6 +45,7 @@ void setup() {
   pinMode(1, INPUT_PULLUP);
   pinMode(2, INPUT_PULLUP);
 
+  Serial.begin(38400);
   interface.begin();
   /* // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
@@ -83,12 +84,9 @@ void loop() {
   if (msecs > 1000) {
     Serial.print("volume = ");
     Serial.println(vol);
-    if (interface.monitor.available()) {
-      msecs = 0;
-      float leftNumber = inteface.monitor.read();
-      Serial.print(leftNumber);
-      Serial.println();
-    }
+    msecs = 0;
+    Serial.print(interface.getPeak());
+    Serial.println();
   }
 
   // Respond to button presses

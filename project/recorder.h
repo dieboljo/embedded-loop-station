@@ -7,7 +7,6 @@
 class Recorder {
   Status status = Status::Stop;
   Mode mode = Mode::Replace;
-  Track *selected = &tracks[0];
 
   AudioInputI2S *source;
   Track tracks[4];
@@ -19,15 +18,15 @@ class Recorder {
 
 public:
   Recorder(AudioInputI2S *s)
-      : source(s), tracks{Track("0A.WAV", "0B.WAV", source),
-                          Track("1A.WAV", "1B.WAV", source),
-                          Track("2A.WAV", "2B.WAV", source),
-                          Track("3A.WAV", "3B.WAV", source)},
+      : source(s), tracks{Track("0A.WAV", "0B.WAV", source, 1),
+                          Track("1A.WAV", "1B.WAV", source, 2),
+                          Track("2A.WAV", "2B.WAV", source, 3),
+                          Track("3A.WAV", "3B.WAV", source, 4)},
         track1ToMix(tracks[0].playback, 0, mix, 0),
         track2ToMix(tracks[1].playback, 0, mix, 1),
         track3ToMix(tracks[2].playback, 0, mix, 2),
         track4ToMix(tracks[3].playback, 0, mix, 3){};
-  int selectedTrackIdx = 0;
+  int selectedTrack = 1;
   AudioMixer4 mix;
   bool begin();
   void advance();

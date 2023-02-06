@@ -33,7 +33,8 @@ public:
         sinkInputToSinkChannelRight(recorder.mix, 0, sink, 1){};
   void advance();
   bool begin();
-  void setVolume(float vol);
+  void setVolume(float vol) { controller.volume(vol); }
+  float getPeak();
   void handleButtonPress(Button button);
 };
 

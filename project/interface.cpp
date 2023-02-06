@@ -18,12 +18,20 @@ bool Interface::begin() {
   controller.micGain(30);
   controller.volume(0.5);
 
-  recorder.begin();
+  return recorder.begin();
 }
 
 void Interface::advance() {
   adjustMicLevel();
   recorder.advance();
+}
+
+float Interface::getPeak() {
+  if (monitor.available()) {
+    return monitor.read();
+  } else {
+    return 0.0;
+  }
 }
 
 void Interface::handleButtonPress(Button button) {
@@ -41,5 +49,3 @@ void Interface::handleButtonPress(Button button) {
     break;
   }
 }
-
-void Interface::setVolume(float vol) { controller.volume(vol); }

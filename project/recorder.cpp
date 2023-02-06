@@ -1,4 +1,5 @@
 #include "recorder.h"
+#include <Arduino.h>
 #include <SD.h>
 
 const int SDCARD_MOSI_PIN = 11;
@@ -7,7 +8,7 @@ const int SDCARD_CS_PIN = BUILTIN_SDCARD;
 
 void Recorder::advance() {
   for (Track track : tracks) {
-    track.advance(status, mode, &track == selected);
+    track.advance(status, mode, track.id == selectedTrack);
   }
 }
 
@@ -22,10 +23,13 @@ bool Recorder::begin() {
       delay(500);
     }
   }
+  for (Track track : tracks) {
+    track.begin();
+  }
   return true;
 }
 
-Track Recorder::getTrack(int i) { return tracks[i]; }
+Track Recorder::getTrack(int i) { return tracks[i - 1]; }
 
 void Recorder::handlePlayPress() {
   if (status == Status::Play) {
@@ -45,7 +49,4 @@ void Recorder::handleRecordPress() {
 
 void Recorder::handleStopPress() { status = Status::Stop; };
 
-void Recorder::setSelected(int i) {
-  selectedTrackIdx = i;
-  selected = &tracks[i];
-}
+void Recorder::setSelected(int i) { selectedTrack = i; }
