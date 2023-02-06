@@ -30,7 +30,7 @@ float Interface::getPeak() {
   if (monitor.available()) {
     return monitor.read();
   } else {
-    return 0.0;
+    return -1.0;
   }
 }
 
