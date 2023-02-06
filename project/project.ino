@@ -1,7 +1,5 @@
 #include "constants.h"
-#include "play-sd-raw.h"
-#include "recorder.h"
-#include "track.h"
+#include "interface.h"
 #include <Audio.h>
 #include <Bounce.h>
 #include <SD.h>
@@ -21,31 +19,33 @@ AudioOutputI2S sink; */
 /* audioAnalyzePeak monitor;
 AudioMixer4 sinkInput; */
 
+Interface interface;
 /* Tracks tracks; */
-Track track1 = Track("0A.WAV", "0B.WAV");
+/* Track track1 = Track("0A.WAV", "0B.WAV"); */
 
-AudioConnection sourceToTrack(source, 0, track1.sourceOutput, 0);
+/* AudioConnection sourceToTrack(source, 0, track1.sourceOutput, 0);
 AudioConnection sourceToMonitor(source, 0, monitor, 0);
 AudioConnection playbackToSinkInput(track1.playback, 0, sinkInput, 0);
 AudioConnection sinkInputToSinkChannelLeft(sinkInput, 0, sink, 0);
-AudioConnection sinkInputToSinkChannelRight(sinkInput, 0, sink, 1);
+AudioConnection sinkInputToSinkChannelRight(sinkInput, 0, sink, 1); */
 
 // Remember which mode we're doing
 /* Status mode = Status::Stop; // 0=stopped, 1=recording, 2=playing */
 
 // Bounce objects to easily and reliably read the buttons
-/* Bounce buttonRecord = Bounce(0, 8);
+Bounce buttonRecord = Bounce(0, 8);
 Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
-Bounce buttonPlay = Bounce(2, 8); */
+Bounce buttonPlay = Bounce(2, 8);
 
 elapsedMillis msecs;
 
 void setup() {
-  /* // Configure the pushbutton pins
+  // Configure the pushbutton pins
   pinMode(0, INPUT_PULLUP);
   pinMode(1, INPUT_PULLUP);
-  pinMode(2, INPUT_PULLUP); */
+  pinMode(2, INPUT_PULLUP);
 
+  interface.begin();
   /* // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
   AudioMemory(60); */
@@ -77,14 +77,15 @@ void loop() {
   // read the knob position (analog input A1)
   int knob = analogRead(A1);
   float vol = (float)knob / 1280.0;
-  interface.volume(vol);
+  interface.setVolume(vol);
+  /* interface.volume(vol); */
 
   if (msecs > 1000) {
     Serial.print("volume = ");
     Serial.println(vol);
-    if (monitor.available()) {
+    if (interface.monitor.available()) {
       msecs = 0;
-      float leftNumber = monitor.read();
+      float leftNumber = inteface.monitor.read();
       Serial.print(leftNumber);
       Serial.println();
     }
@@ -93,40 +94,47 @@ void loop() {
   // Respond to button presses
   if (buttonRecord.fallingEdge()) {
     Serial.println("Record Button Press");
-    if (mode == Status::Play)
+    interface.handleButtonPress(Button::Record);
+    /* if (mode == Status::Play)
       stopPlaying();
     if (mode == Status::Stop)
-      startRecording();
-  }
-  if (buttonStop.fallingEdge()) {
-    Serial.println("Stop Button Press");
-    if (mode == Status::Record)
-      stopRecording();
-    if (mode == Status::Play)
-      stopPlaying();
-  }
-  if (buttonPlay.fallingEdge()) {
-    Serial.println("Play Button Press");
-    if (mode == Status::Record)
-      stopRecording();
-    if (mode == Status::Stop)
-      startPlaying();
+      startRecording(); */
   }
 
+  if (buttonStop.fallingEdge()) {
+    Serial.println("Stop Button Press");
+    interface.handleButtonPress(Button::Stop);
+    /* if (mode == Status::Record)
+      stopRecording();
+    if (mode == Status::Play)
+      stopPlaying(); */
+  }
+
+  if (buttonPlay.fallingEdge()) {
+    Serial.println("Play Button Press");
+    interface.handleButtonPress(Button::Play);
+    /* if (mode == Status::Record)
+      stopRecording();
+    if (mode == Status::Stop)
+      startPlaying(); */
+  }
+
+  interface.advance();
+
   // If we're playing or recording, carry on...
-  if (mode == Status::Record) {
+  /* if (mode == Status::Record) {
     continueRecording();
   }
   if (mode == Status::Play) {
     continuePlaying();
-  }
+  } */
 
   // when using a microphone, continuously adjust gain
-  if (input == AUDIO_INPUT_MIC)
-    adjustMicLevel();
+  /* if (input == AUDIO_INPUT_MIC)
+    adjustMicLevel(); */
 }
 
-void startRecording() {
+/* void startRecording() {
   Serial.println("startRecording");
   const boolean recording = track1.startRecording();
   if (recording) {
@@ -134,37 +142,37 @@ void startRecording() {
   } else {
     Serial.println("Failed to start recording");
   }
-}
+} */
 
-void continueRecording() { track1.continueRecording(); }
+/* void continueRecording() { track1.continueRecording(); } */
 
-void stopRecording() {
+/* void stopRecording() {
   Serial.println("stopRecording");
   track1.stopRecording();
   mode = Status::Stop;
-}
+} */
 
-void startPlaying() {
+/* void startPlaying() {
   Serial.println("startPlaying");
   track1.startPlaying();
   mode = Status::Play;
-}
+} */
 
-void continuePlaying() { track1.continuePlaying(); }
+/* void continuePlaying() { track1.continuePlaying(); } */
 
-void pausePlaying() {
+/* void pausePlaying() {
   Serial.println("pausePlaying");
   track1.pausePlaying();
   mode = Status::Stop;
-}
+} */
 
-void stopPlaying() {
+/* void stopPlaying() {
   Serial.println("stopPlaying");
   track1.stopPlaying();
   mode = Status::Stop;
-}
+} */
 
-void adjustMicLevel() {
-  // TODO: read the peak1 object and adjust interface.micGain()
-  // if anyone gets this working, please submit a github pull request :-)
-}
+/* void adjustMicLevel() { */
+// TODO: read the peak1 object and adjust interface.micGain()
+// if anyone gets this working, please submit a github pull request :-)
+/* } */

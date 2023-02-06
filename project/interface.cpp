@@ -4,9 +4,9 @@ const int INPUT_DEVICE = AUDIO_INPUT_MIC;
 
 bool Interface::begin() {
   // Configure the pushbutton pins
-  pinMode(0, INPUT_PULLUP);
+  /* pinMode(0, INPUT_PULLUP);
   pinMode(1, INPUT_PULLUP);
-  pinMode(2, INPUT_PULLUP);
+  pinMode(2, INPUT_PULLUP); */
 
   // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
@@ -17,4 +17,29 @@ bool Interface::begin() {
   controller.inputSelect(INPUT_DEVICE);
   controller.micGain(30);
   controller.volume(0.5);
+
+  recorder.begin();
 }
+
+void Interface::advance() {
+  adjustMicLevel();
+  recorder.advance();
+}
+
+void Interface::handleButtonPress(Button button) {
+  switch (button) {
+  case Button::Play:
+    recorder.handlePlayPress();
+    break;
+  case Button::Record:
+    recorder.handleRecordPress();
+    break;
+  case Button::Stop:
+    recorder.handleStopPress();
+    break;
+  default:
+    break;
+  }
+}
+
+void Interface::setVolume(float vol) { controller.volume(vol); }
