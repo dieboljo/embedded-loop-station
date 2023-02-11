@@ -1,0 +1,12 @@
+packages:
+  teensy:avr:
+    url: https://www.pjrc.com/teensy/package_teensy_index.json
+
+platforms:
+  teensy41:
+    board: teensy:avr:teensy41
+    package: teensy:avr
+
+compile:
+  platforms:
+    - teensy41

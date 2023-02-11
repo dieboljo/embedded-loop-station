@@ -1,0 +1,10 @@
+profiles:
+  teensy41:
+    fqbn: teensy:avr:teensy41
+    platforms:
+      - platform: teensy:avr (1.57.2)
+        platform_index_url: https://www.pjrc.com/teensy/package_teensy_index.json
+
+default_fqbn: teensy:avr:teensy41
+default_port: /dev/ttyACM0
+default_protocol: serial
