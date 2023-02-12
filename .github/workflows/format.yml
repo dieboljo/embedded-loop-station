@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: "app/src app/include"
@@ -16,7 +16,7 @@ jobs:
           clangFormatVersion: 14
           inplace: True
           style: llvm
-      - uses: EndBug/add-and-commit@v4
+      - uses: EndBug/add-and-commit@v9
         with:
           author_name: Clang Robot
           author_email: robot@example.com
