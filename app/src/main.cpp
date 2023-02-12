@@ -13,7 +13,7 @@ void startRecording();
 void stopPlaying();
 void stopRecording();
 
-  AudioControlSGTL5000 sgtl5000_1;
+AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
 AudioOutputI2S i2s1;
 App::AudioPlaySdRaw playRaw1;
