@@ -1,5 +1,5 @@
-#ifndef project_play_sd_raw_hpp
-#define project_play_sd_raw_hpp
+#ifndef PROJECT_PLAY_SD_RAW_HPP
+#define PROJECT_PLAY_SD_RAW_HPP
 
 #include <Audio.h>
 

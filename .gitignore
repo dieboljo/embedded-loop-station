@@ -1,6 +1,6 @@
 # Cache
 .ccls-cache
-compile-commands.json
+compile_commands.json
 
 # VSCode preferences
 .vscode
