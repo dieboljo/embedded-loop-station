@@ -43,3 +43,6 @@ arduino/data
 
 # downloaded achives
 arduino/downloads
+
+# VSCode preferences
+**/.vscode/*

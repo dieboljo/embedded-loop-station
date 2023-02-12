@@ -3,7 +3,7 @@
 
 #include <Audio.h>
 
-namespace Loop {
+namespace App {
 class AudioPlaySdRaw : public AudioStream {
 public:
   AudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
@@ -22,6 +22,6 @@ private:
   volatile uint32_t file_offset;
   volatile bool playing;
 };
-} // namespace Loop
+} // namespace App
 
 #endif

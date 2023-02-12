@@ -1,20 +1,28 @@
-#include "main.hpp"
+// #include "main.hpp"
 #include "play-sd-raw.hpp"
-#include <Audio.h>
+// #include <Audio.h>
 #include <Bounce.h>
-#include <SD.h>
-#include <SPI.h>
-#include <SerialFlash.h>
-#include <Wire.h>
+// #include <SD.h>
+// #include <SPI.h>
+// #include <SerialFlash.h>
+// #include <Wire.h>
 
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
 
+void adjustMicLevel();
+void continuePlaying();
+void continueRecording();
+void startPlaying();
+void startRecording();
+void stopPlaying();
+void stopRecording();
+
 AudioControlSGTL5000 sgtl5000_1;
 AudioInputI2S i2s2;
 AudioOutputI2S i2s1;
-Loop::AudioPlaySdRaw playRaw1;
+App::AudioPlaySdRaw playRaw1;
 AudioRecordQueue queue1;
 
 AudioConnection patchCord1(i2s2, 0, queue1, 0);
@@ -37,7 +45,7 @@ Bounce buttonRecord = Bounce(0, 8);
 Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
 Bounce buttonPlay = Bounce(2, 8);
 
-void Main::setup() {
+void setup() {
   // Configure the pushbutton pins
   pinMode(0, INPUT_PULLUP);
   pinMode(1, INPUT_PULLUP);
@@ -65,7 +73,7 @@ void Main::setup() {
   }
 }
 
-void Main::loop() {
+void loop() {
   // First, read the buttons
   buttonRecord.update();
   buttonStop.update();
@@ -114,7 +122,7 @@ void Main::loop() {
     adjustMicLevel();
 }
 
-void Main::startRecording() {
+void startRecording() {
   Serial.println("startRecording");
   track1[frame1] = SD.open("RECORD.RAW", FILE_WRITE);
   if (track1[frame1]) {
@@ -124,7 +132,7 @@ void Main::startRecording() {
   }
 }
 
-void Main::continueRecording() {
+void continueRecording() {
   if (queue1.available() >= 2) {
     byte buffer[512];
     // Fetch 2 blocks from the audio library and copy
@@ -153,7 +161,7 @@ void Main::continueRecording() {
   }
 }
 
-void Main::stopRecording() {
+void stopRecording() {
   Serial.println("stopRecording");
   queue1.end();
   if (mode == 1) {
@@ -166,19 +174,19 @@ void Main::stopRecording() {
   mode = 0;
 }
 
-void Main::startPlaying() {
+void startPlaying() {
   Serial.println("startPlaying");
   playRaw1.play("RECORD.RAW", position1);
   mode = 2;
 }
 
-void Main::continuePlaying() {
+void continuePlaying() {
   if (!playRaw1.isPlaying()) {
     playRaw1.play("RECORD.RAW", 0);
   }
 }
 
-void Main::stopPlaying() {
+void stopPlaying() {
   Serial.println("stopPlaying");
   position1 = playRaw1.getOffset();
   if (mode == 2)
@@ -186,7 +194,7 @@ void Main::stopPlaying() {
   mode = 0;
 }
 
-void Main::adjustMicLevel() {
+void adjustMicLevel() {
   // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
   // if anyone gets this working, please submit a github pull request :-)
 }
