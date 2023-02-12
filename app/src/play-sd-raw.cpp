@@ -1,6 +1,4 @@
 #include "play-sd-raw.hpp"
-#include <SD.h>
-#include <spi_interrupt.h>
 
 namespace App {
 bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {

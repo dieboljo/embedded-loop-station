@@ -1,11 +1,5 @@
-// #include "main.hpp"
 #include "play-sd-raw.hpp"
-// #include <Audio.h>
 #include <Bounce.h>
-// #include <SD.h>
-// #include <SPI.h>
-// #include <SerialFlash.h>
-// #include <Wire.h>
 
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
