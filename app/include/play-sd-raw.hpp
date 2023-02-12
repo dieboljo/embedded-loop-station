@@ -1,11 +1,9 @@
-#ifndef project_play_sd_raw_h
-#define project_play_sd_raw_h
+#ifndef project_play_sd_raw_hpp
+#define project_play_sd_raw_hpp
 
-#include <Arduino.h>
-#include <AudioStream.h>
-#include <SD.h>
+#include <Audio.h>
 
-namespace Project {
+namespace Loop {
 class AudioPlaySdRaw : public AudioStream {
 public:
   AudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
@@ -24,6 +22,6 @@ private:
   volatile uint32_t file_offset;
   volatile bool playing;
 };
-}; // namespace Project
+} // namespace Loop
 
 #endif

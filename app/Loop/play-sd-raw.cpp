@@ -1,10 +1,8 @@
-#include "play-sd-raw.h"
-#include <Arduino.h>
+#include "play-sd-raw.hpp"
 #include <SD.h>
-#include <SerialFlash.h>
 #include <spi_interrupt.h>
 
-namespace Project {
+namespace Loop {
 bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
   stop();
 #if defined(HAS_KINETIS_SDHC)
@@ -105,4 +103,4 @@ uint32_t AudioPlaySdRaw::getOffset(void) { return file_offset; }
 uint32_t AudioPlaySdRaw::lengthMillis(void) {
   return ((uint64_t)file_size * B2M) >> 32;
 }
-} // namespace Project
+} // namespace Loop
