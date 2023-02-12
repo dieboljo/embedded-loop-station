@@ -39,4 +39,7 @@ compile-commands.json
 **/build/
 
 # package files
-arduino/
+arduino/data
+
+# downloaded achives
+arduino/downloads

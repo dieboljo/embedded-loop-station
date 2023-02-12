@@ -3,10 +3,13 @@
 # Arduino Library base folder and example structure
 SKETCH_BASE ?= $(PWD)
 SKETCH ?= sketch
+SKETCH_FILE = $(SKETCH).ino
 
-# Arduino CLI executable name and directory location
-ARDUINO_CLI = arduino-cli
-ARDUINO_CLI_DIR = /bin
+# Arduino CLI executable
+ARDUINO_CLI = /bin/arduino-cli
+
+# Teensy Loader executable
+TEENSY_LOADER = /bin/teensy_loader_cli
 
 # Arduino CLI Board type
 BOARD_TYPE ?= teensy:avr:teensy41
@@ -28,25 +31,34 @@ ifneq ($(V), 0)
     VERBOSE=-v
 endif
 
-CORES = arduino:avr teensy:avr:teensy41@1\.57\.2
+ARDUINO_CORE = arduino:avr
 
-.PHONY: all compile upload clean
+TEENSY_CORE_VERSION = 1.57.2
+TEENSY_MCU = TEENSY41
+TEENSY_CORE = teensy:avr@$(TEENSY_CORE_VERSION)
+
+CORES = $(ARDUINO_CORE) $(TEENSY_CORE)
+
+UDEV_URL = https://www.pjrc.com/teensy/00-teensy.rules
+
+.PHONY: all setup compile upload clean
 
 all: compile upload
 
 setup:
-	$(ARDUINO_CLI_DIR)/$(ARDUINO_CLI) core update-index
+	$(ARDUINO_CLI) core update-index
 	for core in $(CORES); do \
-		$(ARDUINO_CLI_DIR)/$(ARDUINO_CLI) core install $$core; \
+		$(ARDUINO_CLI) core install $$core; \
 	done
-	sudo cp $(ARDUINO_PATH)/data/packages/teensy/tools/teensy-tools/1.57.2/00-teensy.rules /etc/udev/rules.d
+	sudo wget -N -P /etc/udev/rules.d $(UDEV_URL)
 
 
 compile:
-	$(ARDUINO_CLI_DIR)/$(ARDUINO_CLI) compile $(VERBOSE) --build-path=$(BUILD_PATH) --build-cache-path=$(BUILD_PATH) -b $(BOARD_TYPE) $(SKETCH_BASE)/$(SKETCH)
+	$(ARDUINO_CLI) compile $(VERBOSE) --build-path=$(BUILD_PATH) --build-cache-path=$(BUILD_PATH) -b $(BOARD_TYPE) $(SKETCH_BASE)/$(SKETCH)
 
 upload:
-	$(ARDUINO_CLI_DIR)/$(ARDUINO_CLI) upload $(VERBOSE) -t -p $(SERIAL_PORT) -b $(BOARD_TYPE) $(SKETCH_BASE)/$(SKETCH)
+	$(TEENSY_LOADER) --mcu=$(TEENSY_MCU) -s -v $(BUILD_PATH)/$(SKETCH_FILE).hex
+	# $(ARDUINO_CLI) upload $(VERBOSE) -t -p $(SERIAL_PORT) -b $(BOARD_TYPE) $(SKETCH_BASE)/$(SKETCH)
 
 clean:
 	@rm -rf $(BUILD_PATH)
