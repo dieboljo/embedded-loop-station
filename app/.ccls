@@ -16,7 +16,10 @@ clang
 -I/home/max/.platformio/packages/framework-arduinoteensy/libraries/SPI
 -I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/.pio/libdeps/teensy41/Unity/src
 -I/home/max/.platformio/packages/framework-arduinoteensy/cores/teensy4
--I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/lib/calculator
+-I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/lib/calculator/include
+-I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/lib/calculator/src
+-I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/lib/mixer
+-I/home/max/Dropbox/school/osu/cs-461/project/embedded-loop-station/app/lib/track
 -I/home/max/.platformio/packages/framework-arduinoteensy/libraries/ADC
 -I/home/max/.platformio/packages/framework-arduinoteensy/libraries/AccelStepper/src
 -I/home/max/.platformio/packages/framework-arduinoteensy/libraries/Adafruit_NeoPixel
