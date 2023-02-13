@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <SD.h>
 
-const float SPLIT_GAIN = 0.4;
-const float FULL_GAIN = 0.8;
+const float splitGain = 0.4;
+const float fullGain = 0.8;
 
 void Track::advance(int selectedTrack) {
   position = playback.getOffset();
@@ -30,8 +30,8 @@ bool Track::begin() {
   if (SD.exists(writeFileName)) {
     SD.remove(writeFileName);
   }
-  bus.gain(Channel::Source, SPLIT_GAIN);
-  bus.gain(Channel::Aux, SPLIT_GAIN);
+  bus.gain(Channel::Source, splitGain);
+  bus.gain(Channel::Aux, splitGain);
   return true;
 }
 
@@ -63,20 +63,20 @@ bool Track::openBuffer() {
 void Track::patchCopy() {
   sourceToBus.disconnect();
   auxToBus.connect();
-  bus.gain(Channel::Aux, FULL_GAIN);
+  bus.gain(Channel::Aux, fullGain);
 }
 
 void Track::patchOverdub() {
   auxToBus.connect();
   sourceToBus.connect();
-  bus.gain(Channel::Aux, FULL_GAIN);
-  bus.gain(Channel::Source, SPLIT_GAIN);
+  bus.gain(Channel::Aux, fullGain);
+  bus.gain(Channel::Source, splitGain);
 }
 
 void Track::patchReplace() {
   auxToBus.disconnect();
   sourceToBus.connect();
-  bus.gain(Channel::Source, FULL_GAIN);
+  bus.gain(Channel::Source, fullGain);
 }
 
 void Track::pause() {

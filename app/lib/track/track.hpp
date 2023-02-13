@@ -40,7 +40,7 @@ public:
   void play();
   void stop();
   void pause();
-  void record(Mode mode);
+  void record(Mode mode = Mode::Replace);
   bool begin();
   int id;
 };

@@ -9,7 +9,7 @@ const int SDCARD_CS_PIN = BUILTIN_SDCARD;
 
 void Mixer::advance(Status status, Mode mode) {
   for (Track track : tracks) {
-    track.advance(status, mode, track.id == selectedTrack);
+    track.advance(selectedTrack);
   }
 }
 
