@@ -1,7 +1,6 @@
-#include "track.hpp"
-#include "constants.h"
 #include <Arduino.h>
 #include <SD.h>
+#include <track.hpp>
 
 const float splitGain = 0.4;
 const float fullGain = 0.8;

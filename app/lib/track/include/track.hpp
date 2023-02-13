@@ -1,9 +1,10 @@
 #ifndef TRACK_HPP
 #define TRACK_HPP
 
-#include "constants.hpp"
-#include "play-sd-raw.hpp"
 #include <Audio.h>
+#include <play-sd-raw.hpp>
+
+enum class Mode { Replace, Overdub };
 
 class Track {
   enum Channel { Source, Aux };
@@ -33,7 +34,7 @@ public:
   Track(const char *f1, const char *f2, AudioInputI2S *s, int i)
       : readFileName(f1), writeFileName(f2), position(0), source(s),
         auxToBus(playback, 0, bus, Channel::Aux),
-        sourceToMix(*source, 0, bus, Channel::Source),
+        sourceToBus(*source, 0, bus, Channel::Source),
         busToRecordQueue(bus, 0, recordQueue, 0), id(i){};
   App::AudioPlaySdRaw playback;
   void advance(int selected);
