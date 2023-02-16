@@ -1,9 +1,6 @@
 #include <Bounce.h>
+#include <config.h>
 #include <play-sd-raw.hpp>
-
-#define SDCARD_CS_PIN BUILTIN_SDCARD
-#define SDCARD_MOSI_PIN 11 // not actually used
-#define SDCARD_SCK_PIN 13  // not actually used
 
 void adjustMicLevel();
 void continuePlaying();
@@ -16,15 +13,17 @@ void stopRecording();
 AudioControlSGTL5000 interface;
 AudioInputI2S source;
 AudioOutputI2S sink;
+AudioAnalyzePeak monitor;
 App::AudioPlaySdRaw playback;
 AudioRecordQueue recordQueue;
 
-AudioConnection patchCord1(source, 0, recordQueue, 0);
-AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
-AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
+AudioConnection sourceToMonitor(source, monitor);
+AudioConnection sourceToRecordQueue(source, recordQueue);
+AudioConnection playbackToSinkLeft(playback, 0, sink, 0);
+AudioConnection playbackToSinkRight(playback, 0, sink, 1);
 
 // which input on the audio shield will be used?
-const int myInput = AUDIO_INPUT_MIC;
+const int input = audioInput;
 
 // Remember which mode we're doing
 int mode = 0; // 0=stopped, 1=recording, 2=playing
@@ -35,9 +34,9 @@ int frame1 = 0;
 uint64_t position1 = 0;
 
 // Bounce objects to easily and reliably read the buttons
-Bounce buttonRecord = Bounce(3, 8);
-Bounce buttonStop = Bounce(4, 8); // 8 = 8 ms debounce time
-Bounce buttonPlay = Bounce(5, 8);
+Bounce buttonRecord = Bounce(buttonRecordPin, 8);
+Bounce buttonStop = Bounce(buttonStopPin, 8); // 8 = 8 ms debounce time
+Bounce buttonPlay = Bounce(buttonPlayPin, 8);
 
 elapsedMillis msecs;
 
@@ -52,15 +51,15 @@ void setup() {
   AudioMemory(60);
 
   // Enable the audio shield, select input, and enable output
-  sgtl5000_1.enable();
-  sgtl5000_1.inputSelect(myInput);
-  sgtl5000_1.micGain(20);
-  sgtl5000_1.volume(0.5);
+  interface.enable();
+  interface.inputSelect(input);
+  interface.micGain(20);
+  interface.volume(0.5);
 
   // Initialize the SD card
-  SPI.setMOSI(SDCARD_MOSI_PIN);
-  SPI.setSCK(SDCARD_SCK_PIN);
-  if (!(SD.begin(SDCARD_CS_PIN))) {
+  SPI.setMOSI(sdCardMosiPin);
+  SPI.setSCK(sdCardSckPin);
+  if (!(SD.begin(sdCardCsPin))) {
     // stop here if no SD card, but print a message
     while (1) {
       Serial.println("Unable to access the SD card");
@@ -78,9 +77,16 @@ void loop() {
   // read the knob position (analog input A1)
   int knob = analogRead(A1);
   float vol = (float)knob / 1280.0;
-  sgtl5000_1.volume(vol);
-  Serial.print("volume = ");
-  Serial.println(vol);
+  interface.volume(vol);
+  if (msecs > 1000) {
+    Serial.print("volume = ");
+    Serial.println(vol);
+    msecs = 0;
+    if (monitor.available()) {
+      Serial.print(monitor.read());
+      Serial.println();
+    }
+  }
 
   // Respond to button presses
   if (buttonRecord.fallingEdge()) {
@@ -114,7 +120,7 @@ void loop() {
   }
 
   // when using a microphone, continuously adjust gain
-  if (myInput == AUDIO_INPUT_MIC)
+  if (input == AUDIO_INPUT_MIC)
     adjustMicLevel();
 }
 
@@ -123,22 +129,22 @@ void startRecording() {
   track1[frame1] = SD.open("RECORD.RAW", FILE_WRITE);
   if (track1[frame1]) {
     track1[frame1].seek(0); // move cursor to beginning
-    queue1.begin();
+    recordQueue.begin();
     mode = 1;
   }
 }
 
 void continueRecording() {
-  if (queue1.available() >= 2) {
+  if (recordQueue.available() >= 2) {
     byte buffer[512];
     // Fetch 2 blocks from the audio library and copy
     // into a 512 byte buffer.  The Arduino SD library
     // is most efficient when full 512 byte sector size
     // writes are used.
-    memcpy(buffer, queue1.readBuffer(), 256);
-    queue1.freeBuffer();
-    memcpy(buffer + 256, queue1.readBuffer(), 256);
-    queue1.freeBuffer();
+    memcpy(buffer, recordQueue.readBuffer(), 256);
+    recordQueue.freeBuffer();
+    memcpy(buffer + 256, recordQueue.readBuffer(), 256);
+    recordQueue.freeBuffer();
     // write all 512 bytes to the SD card
     track1[frame1].write(buffer, 512);
     // Uncomment these lines to see how long SD writes
@@ -147,7 +153,7 @@ void continueRecording() {
     // take well under 5802 us.  Some will take more, as
     // the SD library also must write to the FAT tables
     // and the SD card controller manages media erase and
-    // wear leveling.  The queue1 object can buffer
+    // wear leveling.  The recordQueue object can buffer
     // approximately 301700 us of audio, to allow time
     // for occasional high SD card latency, as long as
     // the average write time is under 5802 us.
@@ -159,11 +165,11 @@ void continueRecording() {
 
 void stopRecording() {
   Serial.println("stopRecording");
-  queue1.end();
+  recordQueue.end();
   if (mode == 1) {
-    while (queue1.available() > 0) {
-      track1[frame1].write((byte *)queue1.readBuffer(), 256);
-      queue1.freeBuffer();
+    while (recordQueue.available() > 0) {
+      track1[frame1].write((byte *)recordQueue.readBuffer(), 256);
+      recordQueue.freeBuffer();
     }
     track1[frame1].close();
   }
@@ -172,21 +178,21 @@ void stopRecording() {
 
 void startPlaying() {
   Serial.println("startPlaying");
-  playRaw1.play("RECORD.RAW", position1);
+  playback.play("RECORD.RAW", position1);
   mode = 2;
 }
 
 void continuePlaying() {
-  if (!playRaw1.isPlaying()) {
-    playRaw1.play("RECORD.RAW", 0);
+  if (!playback.isPlaying()) {
+    playback.play("RECORD.RAW", 0);
   }
 }
 
 void stopPlaying() {
   Serial.println("stopPlaying");
-  position1 = playRaw1.getOffset();
+  position1 = playback.getOffset();
   if (mode == 2)
-    playRaw1.stop();
+    playback.stop();
   mode = 0;
 }
 
