@@ -13,13 +13,13 @@ void startRecording();
 void stopPlaying();
 void stopRecording();
 
-AudioControlSGTL5000 sgtl5000_1;
-AudioInputI2S i2s2;
-AudioOutputI2S i2s1;
-App::AudioPlaySdRaw playRaw1;
-AudioRecordQueue queue1;
+AudioControlSGTL5000 interface;
+AudioInputI2S source;
+AudioOutputI2S sink;
+App::AudioPlaySdRaw playback;
+AudioRecordQueue recordQueue;
 
-AudioConnection patchCord1(i2s2, 0, queue1, 0);
+AudioConnection patchCord1(source, 0, recordQueue, 0);
 AudioConnection patchCord3(playRaw1, 0, i2s1, 0);
 AudioConnection patchCord4(playRaw1, 0, i2s1, 1);
 
@@ -35,15 +35,17 @@ int frame1 = 0;
 uint64_t position1 = 0;
 
 // Bounce objects to easily and reliably read the buttons
-Bounce buttonRecord = Bounce(0, 8);
-Bounce buttonStop = Bounce(1, 8); // 8 = 8 ms debounce time
-Bounce buttonPlay = Bounce(2, 8);
+Bounce buttonRecord = Bounce(3, 8);
+Bounce buttonStop = Bounce(4, 8); // 8 = 8 ms debounce time
+Bounce buttonPlay = Bounce(5, 8);
+
+elapsedMillis msecs;
 
 void setup() {
   // Configure the pushbutton pins
-  pinMode(0, INPUT_PULLUP);
-  pinMode(1, INPUT_PULLUP);
-  pinMode(2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
+  pinMode(4, INPUT_PULLUP);
+  pinMode(5, INPUT_PULLUP);
 
   // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
@@ -52,7 +54,7 @@ void setup() {
   // Enable the audio shield, select input, and enable output
   sgtl5000_1.enable();
   sgtl5000_1.inputSelect(myInput);
-  sgtl5000_1.micGain(4);
+  sgtl5000_1.micGain(20);
   sgtl5000_1.volume(0.5);
 
   // Initialize the SD card
@@ -77,8 +79,8 @@ void loop() {
   int knob = analogRead(A1);
   float vol = (float)knob / 1280.0;
   sgtl5000_1.volume(vol);
-  /* Serial.print("volume = ");
-  Serial.println(vol); */
+  Serial.print("volume = ");
+  Serial.println(vol);
 
   // Respond to button presses
   if (buttonRecord.fallingEdge()) {
