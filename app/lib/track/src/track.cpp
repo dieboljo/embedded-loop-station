@@ -2,53 +2,46 @@
 #include <SD.h>
 #include <track.hpp>
 
-const float splitGain = 0.4;
-const float fullGain = 0.8;
+elapsedMillis msecs;
 
-void Track::advance(int selectedTrack) {
-  position = playback.getOffset();
+void Track::advance(Status status) {
+  if (msecs % 1000 == 0)
+    Serial.println(fileBuffer.size());
+  // position = playback.getOffset();
   // Reset position to beginning if at end of track
-  if (playback.lengthMillis() == playback.positionMillis()) {
-    position = 0;
-  }
-  // Restart playing from current position
-  if (!playback.isPlaying()) {
-    playback.play(readFileName, position);
-  }
-  if (selectedTrack == id) {
-    if (fileBuffer.position() != position)
-      fileBuffer.seek(position);
-    writeBuffer();
+  if (status == Status::Play) {
+    // Restart playing from current position
+    if (!playback.isPlaying()) {
+      play();
+    }
+  } else if (status == Status::Record) {
+    record();
   }
 }
 
 bool Track::begin() {
-  if (SD.exists(readFileName)) {
-    SD.remove(readFileName);
+  if (SD.exists(fileName)) {
+    SD.remove(fileName);
   }
-  if (SD.exists(writeFileName)) {
-    SD.remove(writeFileName);
+  if (SD.exists(fileName)) {
+    SD.remove(fileName);
   }
-  bus.gain(Channel::Source, splitGain);
-  bus.gain(Channel::Aux, splitGain);
   return true;
 }
 
 void Track::closeBuffer(void) {
+  recordQueue.end();
   while (recordQueue.available() > 0) {
     fileBuffer.write((byte *)recordQueue.readBuffer(), 256);
     recordQueue.freeBuffer();
   }
   fileBuffer.close();
-  const char *temp = writeFileName;
-  writeFileName = readFileName;
-  readFileName = temp;
 }
 
 bool Track::openBuffer() {
   if (fileBuffer)
     return true;
-  fileBuffer = SD.open(writeFileName, FILE_WRITE);
+  fileBuffer = SD.open(fileName, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
     recordQueue.begin();
@@ -59,43 +52,18 @@ bool Track::openBuffer() {
   }
 }
 
-void Track::patchCopy() {
-  sourceToBus.disconnect();
-  auxToBus.connect();
-  bus.gain(Channel::Aux, fullGain);
-}
-
-void Track::patchOverdub() {
-  auxToBus.connect();
-  sourceToBus.connect();
-  bus.gain(Channel::Aux, fullGain);
-  bus.gain(Channel::Source, splitGain);
-}
-
-void Track::patchReplace() {
-  auxToBus.disconnect();
-  sourceToBus.connect();
-  bus.gain(Channel::Source, fullGain);
-}
-
 void Track::pause() {
   playback.stop();
-  recordQueue.end();
   closeBuffer();
 };
 
 void Track::play() {
-  patchCopy();
-  playback.play(readFileName, position);
+  if (fileBuffer)
+    fileBuffer.close();
+  playback.play(fileName, position);
 };
 
-void Track::record(Mode mode) {
-  if (mode == Mode::Overdub) {
-    patchOverdub();
-  } else {
-    patchReplace();
-  }
-};
+void Track::record() { writeBuffer(); };
 
 void Track::stop() {
   position = 0;

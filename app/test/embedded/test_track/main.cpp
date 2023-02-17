@@ -2,19 +2,48 @@
 #include <track.hpp>
 #include <unity.h>
 
-int initialized = 0;
-
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
-Track track("FILE_1.WAV", "FILE_2.WAV", &source, 1);
+Track track("FILE.RAW", &source);
+
+boolean initialized = false;
+int i = 0;
+int j = 0;
 
 elapsedMillis msecs;
 
-void setUp(void) {}
+/*
+## Tests
+*/
+void test_bufferWrite() {
+  if (msecs < 1000) {
+    track.advance(Status::Record);
+    i++;
+  }
+  if (!initialized) {
+    track.play();
+    initialized = true;
+  }
+  if (msecs < 2000) {
+    track.playback.update();
+    j++;
+  } else {
+    track.playback.stop();
+    TEST_ASSERT_GREATER_THAN(0, track.playback.lengthMillis());
+  }
+}
 
-void tearDown(void) {}
+/*
+## Test Runner
+*/
+
+void setUp(void) { track.begin(); }
+
+void tearDown(void) { i = 0, j = 0; }
 
 void setup() {
+  Serial.begin(9600);
+
   AudioMemory(60);
 
   // Enable the audio shield, select input, and enable output
@@ -32,8 +61,6 @@ void setup() {
     UNITY_END();
   }
 
-  track.begin();
-
   // Wait ~2 seconds before the Unity test runner
   // establishes connection with a board Serial interface
   delay(2000);
@@ -42,16 +69,7 @@ void setup() {
 }
 
 void loop() {
-  if (!initialized) {
-    track.record();
-  }
-
-  if (msecs > 10000) {
-    track.stop();
-    track.play();
-    TEST_ASSERT_GREATER_THAN(0, track.playback.lengthMillis());
+  RUN_TEST(test_bufferWrite);
+  if (msecs > 3000)
     UNITY_END();
-  }
-
-  track.advance(1);
 }

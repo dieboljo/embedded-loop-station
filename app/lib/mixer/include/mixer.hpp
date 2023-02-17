@@ -15,10 +15,10 @@ class Mixer {
 
 public:
   Mixer(AudioInputI2S *source)
-      : source(source), tracks{Track("0A.WAV", "0B.WAV", source, 1),
-                               Track("1A.WAV", "1B.WAV", source, 2),
-                               Track("2A.WAV", "2B.WAV", source, 3),
-                               Track("3A.WAV", "3B.WAV", source, 4)},
+      : source(source), tracks{Track("0A.RAW", "0B.RAW", source, 1),
+                               Track("1A.RAW", "1B.RAW", source, 2),
+                               Track("2A.RAW", "2B.RAW", source, 3),
+                               Track("3A.RAW", "3B.RAW", source, 4)},
         track1ToMix(tracks[0].playback, 0, mix, 0),
         track2ToMix(tracks[1].playback, 0, mix, 1),
         track3ToMix(tracks[2].playback, 0, mix, 2),
