@@ -2,11 +2,7 @@
 #include <SD.h>
 #include <track.hpp>
 
-elapsedMillis msecs;
-
 void Track::advance(Status status) {
-  if (msecs % 1000 == 0)
-    Serial.println(fileBuffer.size());
   // position = playback.getOffset();
   // Reset position to beginning if at end of track
   if (status == Status::Play) {
@@ -19,14 +15,12 @@ void Track::advance(Status status) {
   }
 }
 
-bool Track::begin() {
+void Track::begin() {
   if (SD.exists(fileName)) {
     SD.remove(fileName);
   }
-  if (SD.exists(fileName)) {
-    SD.remove(fileName);
-  }
-  return true;
+  File temp = SD.open(fileName, FILE_WRITE);
+  temp.close();
 }
 
 void Track::closeBuffer(void) {
@@ -57,21 +51,24 @@ void Track::pause() {
   closeBuffer();
 };
 
-void Track::play() {
+bool Track::play() {
   if (fileBuffer)
     fileBuffer.close();
-  playback.play(fileName, position);
+  return playback.play(fileName, position);
 };
 
-void Track::record() { writeBuffer(); };
+bool Track::record() { return writeBuffer(); };
 
 void Track::stop() {
   position = 0;
   pause();
 };
 
-void Track::writeBuffer() {
-  openBuffer();
+bool Track::writeBuffer() {
+  bool opened = openBuffer();
+  if (!opened) {
+    return false;
+  }
   if (recordQueue.available() >= 2) {
     byte buffer[512];
     memcpy(buffer, recordQueue.readBuffer(), 256);
@@ -80,4 +77,5 @@ void Track::writeBuffer() {
     recordQueue.freeBuffer();
     fileBuffer.write(buffer, 512);
   }
+  return true;
 }

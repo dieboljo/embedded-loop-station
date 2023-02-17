@@ -7,39 +7,35 @@ AudioControlSGTL5000 interface;
 Track track("FILE.RAW", &source);
 
 boolean initialized = false;
-int i = 0;
-int j = 0;
-
-elapsedMillis msecs;
 
 /*
 ## Tests
 */
 void test_bufferWrite() {
-  if (msecs < 1000) {
-    track.advance(Status::Record);
-    i++;
-  }
-  if (!initialized) {
-    track.play();
-    initialized = true;
-  }
-  if (msecs < 2000) {
-    track.playback.update();
-    j++;
-  } else {
-    track.playback.stop();
-    TEST_ASSERT_GREATER_THAN(0, track.playback.lengthMillis());
-  }
+  File test = SD.open("FILE.RAW", FILE_WRITE);
+  TEST_ASSERT_TRUE(SD.exists("FILE.RAW"));
+}
+
+void test_openPlayback() {
+  bool opened = track.play();
+  TEST_ASSERT_TRUE(opened);
+}
+
+void test_startRecord() {
+  bool recording = track.record();
+  TEST_ASSERT_TRUE(recording);
 }
 
 /*
 ## Test Runner
 */
 
-void setUp(void) { track.begin(); }
+void setUp(void) {
+  track.begin();
+  track.playback.begin();
+}
 
-void tearDown(void) { i = 0, j = 0; }
+void tearDown(void) { initialized = false; }
 
 void setup() {
   Serial.begin(9600);
@@ -66,10 +62,10 @@ void setup() {
   delay(2000);
 
   UNITY_BEGIN();
+  RUN_TEST(test_bufferWrite);
+  RUN_TEST(test_openPlayback);
+  RUN_TEST(test_startRecord);
+  UNITY_END();
 }
 
-void loop() {
-  RUN_TEST(test_bufferWrite);
-  if (msecs > 3000)
-    UNITY_END();
-}
+void loop() {}

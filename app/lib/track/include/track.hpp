@@ -19,7 +19,7 @@ class Track {
 
   void closeBuffer();
   bool openBuffer();
-  void writeBuffer();
+  bool writeBuffer();
 
 public:
   Track(const char *f, AudioInputI2S *s)
@@ -27,11 +27,11 @@ public:
         sourceToRecordQueue(*source, 0, recordQueue, 0){};
   App::AudioPlaySdRaw playback;
   void advance(Status status);
-  void play();
+  bool play();
   void stop();
   void pause();
-  void record();
-  bool begin();
+  bool record();
+  void begin();
 };
 
 #endif

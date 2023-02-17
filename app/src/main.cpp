@@ -43,9 +43,9 @@ elapsedMillis msecs;
 void setup() {
   Serial.begin(9600);
   // Configure the pushbutton pins
-  pinMode(3, INPUT_PULLUP);
-  pinMode(4, INPUT_PULLUP);
-  pinMode(5, INPUT_PULLUP);
+  pinMode(buttonRecordPin, INPUT_PULLUP);
+  pinMode(buttonStopPin, INPUT_PULLUP);
+  pinMode(buttonPlayPin, INPUT_PULLUP);
 
   // Audio connections require memory, and the record queue
   // uses this memory to buffer incoming audio.
