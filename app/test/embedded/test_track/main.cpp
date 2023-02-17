@@ -6,7 +6,29 @@ AudioInputI2S source;
 AudioControlSGTL5000 interface;
 Track track("FILE.RAW", &source);
 
-boolean initialized = false;
+int i = 0;
+bool loopTestsStarted = false;
+bool stop = false;
+
+/*
+## Test-specific Setup Utilities
+*/
+
+void recordAndPlay() {
+  if (i < 20) {
+    track.advance(Status::Record);
+    i++;
+  } else if (i == 20) {
+    track.stop();
+    i++;
+  } else if (i > 20 && i < 40) {
+    track.advance(Status::Play);
+    i++;
+  } else if (i < 50) {
+    track.play();
+    i++;
+  }
+}
 
 /*
 ## Tests
@@ -21,9 +43,34 @@ void test_openPlayback() {
   TEST_ASSERT_TRUE(opened);
 }
 
+void test_recordQueue() {
+  recordAndPlay();
+  if (i == 50) {
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.lengthMillis());
+  }
+}
+
 void test_startRecord() {
   bool recording = track.record();
   TEST_ASSERT_TRUE(recording);
+}
+
+void test_stop() {
+  recordAndPlay();
+  if (i == 50) {
+    track.stop();
+    TEST_ASSERT_EQUAL_INT32(track.playback.getOffset(), 0);
+    TEST_ASSERT_FALSE(track.playback.isPlaying());
+  }
+}
+
+void test_pause() {
+  recordAndPlay();
+  if (i == 50) {
+    track.pause();
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
+    TEST_ASSERT_FALSE(track.playback.isPlaying());
+  }
 }
 
 /*
@@ -35,7 +82,7 @@ void setUp(void) {
   track.playback.begin();
 }
 
-void tearDown(void) { initialized = false; }
+void tearDown(void) { i = 0; }
 
 void setup() {
   Serial.begin(9600);
@@ -65,7 +112,20 @@ void setup() {
   RUN_TEST(test_bufferWrite);
   RUN_TEST(test_openPlayback);
   RUN_TEST(test_startRecord);
-  UNITY_END();
 }
 
-void loop() {}
+void loop() {
+  if (!loopTestsStarted) {
+    loopTestsStarted = true;
+    RUN_TEST(test_recordQueue);
+    delay(500);
+    RUN_TEST(test_stop);
+    delay(500);
+    RUN_TEST(test_pause);
+    delay(500);
+    stop = true;
+  }
+  if (stop) {
+    UNITY_END();
+  }
+}

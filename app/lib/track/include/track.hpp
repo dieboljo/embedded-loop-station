@@ -22,8 +22,8 @@ class Track {
   bool writeBuffer();
 
 public:
-  Track(const char *f, AudioInputI2S *s)
-      : fileName(f), position(0), source(s),
+  Track(const char *f1, AudioInputI2S *s)
+      : fileName(f1), position(0), source(s),
         sourceToRecordQueue(*source, 0, recordQueue, 0){};
   App::AudioPlaySdRaw playback;
   void advance(Status status);

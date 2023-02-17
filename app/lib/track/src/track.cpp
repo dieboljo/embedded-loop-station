@@ -3,7 +3,7 @@
 #include <track.hpp>
 
 void Track::advance(Status status) {
-  // position = playback.getOffset();
+  position = playback.getOffset();
   // Reset position to beginning if at end of track
   if (status == Status::Play) {
     // Restart playing from current position
@@ -19,7 +19,13 @@ void Track::begin() {
   if (SD.exists(fileName)) {
     SD.remove(fileName);
   }
+  if (SD.exists(fileName)) {
+    SD.remove(fileName);
+  }
+  // Create the read file buffers
   File temp = SD.open(fileName, FILE_WRITE);
+  temp.close();
+  temp = SD.open(fileName, FILE_WRITE);
   temp.close();
 }
 
