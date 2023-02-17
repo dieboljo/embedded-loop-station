@@ -7,8 +7,6 @@
 enum class Status { Stop, Record, Play, Pause };
 
 class Track {
-  const char *fileName;
-
   uint64_t position;
   File fileBuffer;
 
@@ -21,10 +19,15 @@ class Track {
   bool openBuffer();
   bool writeBuffer();
 
+protected:
+  const char *fileName1;
+  const char *fileName2;
+  void swapBuffers();
+
 public:
-  Track(const char *f1, AudioInputI2S *s)
-      : fileName(f1), position(0), source(s),
-        sourceToRecordQueue(*source, 0, recordQueue, 0){};
+  Track(const char *f1, const char *f2, AudioInputI2S *s)
+      : position(0), source(s), sourceToRecordQueue(*source, 0, recordQueue, 0),
+        fileName1(f1), fileName2(f2){};
   App::AudioPlaySdRaw playback;
   void advance(Status status);
   bool play();

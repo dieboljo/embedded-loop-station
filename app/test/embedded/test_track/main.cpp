@@ -1,10 +1,10 @@
 #include <config.h>
-#include <track.hpp>
+#include <include/track_test.hpp>
 #include <unity.h>
 
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
-Track track("FILE.RAW", &source);
+TrackTest trackBase("FILE1.RAW", "FILE2.RAW", &source);
 
 int i = 0;
 bool loopTestsStarted = false;
@@ -14,18 +14,18 @@ bool stop = false;
 ## Test-specific Setup Utilities
 */
 
-void recordAndPlay() {
+void recordAndPlay(Track *t) {
   if (i < 20) {
-    track.advance(Status::Record);
+    t->advance(Status::Record);
     i++;
   } else if (i == 20) {
-    track.stop();
+    t->stop();
     i++;
   } else if (i > 20 && i < 40) {
-    track.advance(Status::Play);
+    t->advance(Status::Play);
     i++;
   } else if (i < 50) {
-    track.play();
+    t->play();
     i++;
   }
 }
@@ -38,25 +38,41 @@ void test_bufferWrite() {
   TEST_ASSERT_TRUE(SD.exists("FILE.RAW"));
 }
 
-void test_openPlayback() {
+void test_play() {
+  TrackTest track = trackBase;
   bool opened = track.play();
   TEST_ASSERT_TRUE(opened);
 }
 
 void test_recordQueue() {
-  recordAndPlay();
+  TrackTest track = trackBase;
+  recordAndPlay(&track);
   if (i == 50) {
     TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.lengthMillis());
   }
 }
 
-void test_startRecord() {
+void test_record() {
+  TrackTest track = trackBase;
   bool recording = track.record();
   TEST_ASSERT_TRUE(recording);
 }
 
+void test_pause() {
+  TrackTest track = trackBase;
+  recordAndPlay(&track);
+  if (i == 50) {
+    track.pause();
+    // Just testing copy constructor worked as expected
+    TEST_ASSERT_EQUAL_INT32(0, trackBase.playback.getOffset());
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
+    TEST_ASSERT_FALSE(track.playback.isPlaying());
+  }
+}
+
 void test_stop() {
-  recordAndPlay();
+  TrackTest track = trackBase;
+  recordAndPlay(&track);
   if (i == 50) {
     track.stop();
     TEST_ASSERT_EQUAL_INT32(track.playback.getOffset(), 0);
@@ -64,13 +80,11 @@ void test_stop() {
   }
 }
 
-void test_pause() {
-  recordAndPlay();
-  if (i == 50) {
-    track.pause();
-    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
-    TEST_ASSERT_FALSE(track.playback.isPlaying());
-  }
+void test_swapBuffers() {
+  TrackTest track = trackBase;
+  track.stop();
+  TEST_ASSERT_EQUAL_STRING("FILE2.RAW", track.getFileName1());
+  TEST_ASSERT_EQUAL_STRING("FILE1.RAW", track.getFileName2());
 }
 
 /*
@@ -78,8 +92,8 @@ void test_pause() {
 */
 
 void setUp(void) {
-  track.begin();
-  track.playback.begin();
+  trackBase.begin();
+  trackBase.playback.begin();
 }
 
 void tearDown(void) { i = 0; }
@@ -110,8 +124,9 @@ void setup() {
 
   UNITY_BEGIN();
   RUN_TEST(test_bufferWrite);
-  RUN_TEST(test_openPlayback);
-  RUN_TEST(test_startRecord);
+  RUN_TEST(test_play);
+  RUN_TEST(test_record);
+  RUN_TEST(test_swapBuffers);
 }
 
 void loop() {

@@ -16,16 +16,16 @@ void Track::advance(Status status) {
 }
 
 void Track::begin() {
-  if (SD.exists(fileName)) {
-    SD.remove(fileName);
+  if (SD.exists(fileName1)) {
+    SD.remove(fileName1);
   }
-  if (SD.exists(fileName)) {
-    SD.remove(fileName);
+  if (SD.exists(fileName1)) {
+    SD.remove(fileName1);
   }
   // Create the read file buffers
-  File temp = SD.open(fileName, FILE_WRITE);
+  File temp = SD.open(fileName1, FILE_WRITE);
   temp.close();
-  temp = SD.open(fileName, FILE_WRITE);
+  temp = SD.open(fileName1, FILE_WRITE);
   temp.close();
 }
 
@@ -36,12 +36,13 @@ void Track::closeBuffer(void) {
     recordQueue.freeBuffer();
   }
   fileBuffer.close();
+  swapBuffers();
 }
 
 bool Track::openBuffer() {
   if (fileBuffer)
     return true;
-  fileBuffer = SD.open(fileName, FILE_WRITE);
+  fileBuffer = SD.open(fileName1, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
     recordQueue.begin();
@@ -60,7 +61,7 @@ void Track::pause() {
 bool Track::play() {
   if (fileBuffer)
     fileBuffer.close();
-  return playback.play(fileName, position);
+  return playback.play(fileName1, position);
 };
 
 bool Track::record() { return writeBuffer(); };
@@ -69,6 +70,12 @@ void Track::stop() {
   position = 0;
   pause();
 };
+
+void Track::swapBuffers() {
+  const char *temp = fileName1;
+  fileName1 = fileName2;
+  fileName2 = temp;
+}
 
 bool Track::writeBuffer() {
   bool opened = openBuffer();
