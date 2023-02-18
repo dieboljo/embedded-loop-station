@@ -5,6 +5,7 @@
 #include <play-sd-raw.hpp>
 
 enum class Status { Stop, Record, Play, Pause };
+enum Channel { Source, Feedback };
 
 class Track {
   uint64_t position;
@@ -12,7 +13,12 @@ class Track {
 
   // Order of signal flow
   AudioInputI2S *source;
-  AudioConnection sourceToRecordQueue;
+
+  AudioMixer4 bus;
+
+  AudioConnection sourceToBus;
+  // AudioConnection playbackToBus;
+  AudioConnection busToRecordQueue;
   AudioRecordQueue recordQueue;
 
   void closeBuffer();
@@ -20,14 +26,16 @@ class Track {
   bool writeBuffer();
 
 protected:
-  const char *fileName1;
-  const char *fileName2;
+  const char *readFileName;
+  const char *writeFileName;
   void swapBuffers();
 
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
-      : position(0), source(s), sourceToRecordQueue(*source, 0, recordQueue, 0),
-        fileName1(f1), fileName2(f2){};
+      : position(0), source(s), sourceToBus(*source, 0, bus, Channel::Source),
+        // playbackToBus(playback, 0, bus, Channel::Feedback),
+        busToRecordQueue(*source, 0, recordQueue, 0), readFileName(f1),
+        writeFileName(f2){};
   App::AudioPlaySdRaw playback;
   void advance(Status status);
   bool play();

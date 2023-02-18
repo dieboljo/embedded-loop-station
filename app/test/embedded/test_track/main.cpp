@@ -38,18 +38,24 @@ void test_bufferWrite() {
   TEST_ASSERT_TRUE(SD.exists("FILE.RAW"));
 }
 
+void test_pause() {
+  TrackTest track = trackBase;
+  recordAndPlay(&track);
+  if (i == 50) {
+    track.pause();
+
+    // Just testing copy constructor worked as expected
+    TEST_ASSERT_EQUAL_INT32(0, trackBase.playback.getOffset());
+
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
+    TEST_ASSERT_FALSE(track.playback.isPlaying());
+  }
+}
+
 void test_play() {
   TrackTest track = trackBase;
   bool opened = track.play();
   TEST_ASSERT_TRUE(opened);
-}
-
-void test_recordQueue() {
-  TrackTest track = trackBase;
-  recordAndPlay(&track);
-  if (i == 50) {
-    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.lengthMillis());
-  }
 }
 
 void test_record() {
@@ -58,15 +64,11 @@ void test_record() {
   TEST_ASSERT_TRUE(recording);
 }
 
-void test_pause() {
+void test_recordQueue() {
   TrackTest track = trackBase;
   recordAndPlay(&track);
   if (i == 50) {
-    track.pause();
-    // Just testing copy constructor worked as expected
-    TEST_ASSERT_EQUAL_INT32(0, trackBase.playback.getOffset());
-    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
-    TEST_ASSERT_FALSE(track.playback.isPlaying());
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.lengthMillis());
   }
 }
 
@@ -83,8 +85,8 @@ void test_stop() {
 void test_swapBuffers() {
   TrackTest track = trackBase;
   track.stop();
-  TEST_ASSERT_EQUAL_STRING("FILE2.RAW", track.getFileName1());
-  TEST_ASSERT_EQUAL_STRING("FILE1.RAW", track.getFileName2());
+  TEST_ASSERT_EQUAL_STRING("FILE2.RAW", track.getReadFileName());
+  TEST_ASSERT_EQUAL_STRING("FILE1.RAW", track.getWriteFileName());
 }
 
 /*

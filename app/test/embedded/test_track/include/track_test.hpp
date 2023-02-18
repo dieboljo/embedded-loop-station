@@ -7,8 +7,8 @@ class TrackTest : public Track {
 public:
   TrackTest(const char *f1, const char *f2, AudioInputI2S *s)
       : Track(f1, f2, s){};
-  const char *getFileName1() { return fileName1; }
-  const char *getFileName2() { return fileName2; }
+  const char *getReadFileName() { return readFileName; }
+  const char *getWriteFileName() { return writeFileName; }
 };
 
 #endif

@@ -2,6 +2,10 @@
 #include <SD.h>
 #include <track.hpp>
 
+const float MIX = 0.4;
+const float MUTE = 0.0;
+const float SOLO = 0.8;
+
 void Track::advance(Status status) {
   position = playback.getOffset();
   // Reset position to beginning if at end of track
@@ -16,16 +20,16 @@ void Track::advance(Status status) {
 }
 
 void Track::begin() {
-  if (SD.exists(fileName1)) {
-    SD.remove(fileName1);
+  if (SD.exists(writeFileName)) {
+    SD.remove(writeFileName);
   }
-  if (SD.exists(fileName1)) {
-    SD.remove(fileName1);
+  if (SD.exists(readFileName)) {
+    SD.remove(readFileName);
   }
   // Create the read file buffers
-  File temp = SD.open(fileName1, FILE_WRITE);
+  File temp = SD.open(readFileName, FILE_WRITE);
   temp.close();
-  temp = SD.open(fileName1, FILE_WRITE);
+  temp = SD.open(readFileName, FILE_WRITE);
   temp.close();
 }
 
@@ -42,7 +46,7 @@ void Track::closeBuffer(void) {
 bool Track::openBuffer() {
   if (fileBuffer)
     return true;
-  fileBuffer = SD.open(fileName1, FILE_WRITE);
+  fileBuffer = SD.open(writeFileName, FILE_WRITE);
   if (fileBuffer) {
     fileBuffer.seek(position);
     recordQueue.begin();
@@ -61,10 +65,13 @@ void Track::pause() {
 bool Track::play() {
   if (fileBuffer)
     fileBuffer.close();
-  return playback.play(fileName1, position);
+  return playback.play(readFileName, position);
 };
 
-bool Track::record() { return writeBuffer(); };
+bool Track::record() {
+  bus.gain(Channel::Source, SOLO);
+  return writeBuffer();
+};
 
 void Track::stop() {
   position = 0;
@@ -72,9 +79,9 @@ void Track::stop() {
 };
 
 void Track::swapBuffers() {
-  const char *temp = fileName1;
-  fileName1 = fileName2;
-  fileName2 = temp;
+  const char *temp = readFileName;
+  readFileName = writeFileName;
+  writeFileName = temp;
 }
 
 bool Track::writeBuffer() {
