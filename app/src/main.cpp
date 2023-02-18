@@ -1,6 +1,7 @@
 #include <Bounce.h>
 #include <config.h>
 #include <play-sd-raw.hpp>
+#include <usb_audio.h>
 
 void adjustMicLevel();
 void continuePlaying();
@@ -12,7 +13,16 @@ void stopRecording();
 
 AudioControlSGTL5000 interface;
 AudioInputI2S source;
-AudioOutputI2S sink;
+
+/* USB output */
+// change this to AudioOutputI2S for boards without DAC output
+AudioOutputAnalog dac;
+// AudioOutputI2S dac;
+AudioOutputUSB sink;
+
+/* Audio shield output */
+// AudioOutputI2S sink;
+
 AudioAnalyzePeak monitor;
 App::AudioPlaySdRaw playback;
 AudioRecordQueue recordQueue;
@@ -21,6 +31,9 @@ AudioConnection sourceToMonitor(source, monitor);
 AudioConnection sourceToRecordQueue(source, recordQueue);
 AudioConnection playbackToSinkLeft(playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(playback, 0, sink, 1);
+
+/* USB output */
+AudioConnection patchCord3(source, 0, dac, 0);
 
 // which input on the audio shield will be used?
 const int input = audioInput;
@@ -54,7 +67,7 @@ void setup() {
   // Enable the audio shield, select input, and enable output
   interface.enable();
   interface.inputSelect(input);
-  interface.micGain(20);
+  interface.micGain(25);
   interface.volume(0.5);
 
   // Initialize the SD card
