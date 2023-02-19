@@ -1,7 +1,7 @@
 #ifndef MIXER_H
 #define MIXER_H
 
-#include "constants.hpp"
+#include <Audio.h>
 #include <track.hpp>
 
 class Mixer {

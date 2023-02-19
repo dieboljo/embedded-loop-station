@@ -14,14 +14,16 @@ class Track {
 
   // Order of signal flow
   AudioInputI2S *source;
+
   AudioAnalyzePeak monitor;
+
   AudioMixer4 bus;
-  AudioRecordQueue recordQueue;
 
   AudioConnection sourceToBus;
   // AudioConnection playbackToBus;
   AudioConnection busToMonitor;
   AudioConnection busToRecordQueue;
+  AudioRecordQueue recordQueue;
 
   void closeBuffer();
   bool openBuffer();

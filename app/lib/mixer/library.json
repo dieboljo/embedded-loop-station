@@ -1,0 +1,6 @@
+{
+  "description": "Manages the signal flows of various tracks",
+  "keywords": ["audio"],
+  "name": "Mixer",
+  "version": "1.0.0"
+}

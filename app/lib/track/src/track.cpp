@@ -69,7 +69,7 @@ bool Track::play() {
 };
 
 bool Track::record() {
-  bus.gain(Channel::Source, SOLO);
+  // bus.gain(Channel::Source, SOLO);
   return writeBuffer();
 };
 
