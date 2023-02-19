@@ -72,6 +72,7 @@ void setup() {
       delay(500);
     }
   }
+  track.begin();
 }
 
 void loop() {

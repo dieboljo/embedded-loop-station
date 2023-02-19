@@ -7,12 +7,13 @@ const float MUTE = 0.0;
 const float SOLO = 0.8;
 
 void Track::advance(Status status) {
-  position = playback.getOffset();
-  // Reset position to beginning if at end of track
   if (status == Status::Play) {
-    // Restart playing from current position
-    if (!playback.isPlaying()) {
+    if (playback.lengthMillis() == playback.positionMillis()) {
+      // Playback reached end, restart from beginning
       play();
+    } else if (!playback.isPlaying()) {
+      // Restart playing from current position
+      play(position);
     }
   } else if (status == Status::Record) {
     record();
@@ -23,13 +24,13 @@ void Track::begin() {
   if (SD.exists(writeFileName)) {
     SD.remove(writeFileName);
   }
-  if (SD.exists(readFileName)) {
+  /* if (SD.exists(readFileName)) {
     SD.remove(readFileName);
-  }
+  } */
   // Create the read file buffers
-  File temp = SD.open(readFileName, FILE_WRITE);
+  File temp = SD.open(writeFileName, FILE_WRITE);
   temp.close();
-  temp = SD.open(readFileName, FILE_WRITE);
+  temp = SD.open(writeFileName, FILE_WRITE);
   temp.close();
 }
 
@@ -40,7 +41,7 @@ void Track::closeBuffer(void) {
     recordQueue.freeBuffer();
   }
   fileBuffer.close();
-  swapBuffers();
+  // swapBuffers();
 }
 
 bool Track::openBuffer() {
@@ -48,7 +49,7 @@ bool Track::openBuffer() {
     return true;
   fileBuffer = SD.open(writeFileName, FILE_WRITE);
   if (fileBuffer) {
-    fileBuffer.seek(position);
+    fileBuffer.seek(playback.getOffset());
     recordQueue.begin();
     return true;
   } else {
@@ -58,25 +59,30 @@ bool Track::openBuffer() {
 }
 
 void Track::pause() {
-  playback.stop();
-  closeBuffer();
+  position = playback.getOffset();
+  stopPlayback();
 };
 
-bool Track::play() {
+bool Track::play(uint32_t offset) {
   if (fileBuffer)
     fileBuffer.close();
-  return playback.play(readFileName, position);
+  return playback.play(writeFileName, offset);
 };
 
 bool Track::record() {
-  // bus.gain(Channel::Source, SOLO);
+  bus.gain(Channel::Source, SOLO);
   return writeBuffer();
 };
 
 void Track::stop() {
   position = 0;
-  pause();
+  stopPlayback();
 };
+
+void Track::stopPlayback() {
+  playback.stop();
+  closeBuffer();
+}
 
 void Track::swapBuffers() {
   const char *temp = readFileName;

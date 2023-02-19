@@ -72,6 +72,14 @@ void test_recordQueue() {
   }
 }
 
+void test_removeFile() {
+  const char *filename = "FILE.RAW";
+  File test = SD.open(filename, FILE_WRITE);
+  TEST_ASSERT_TRUE(SD.exists(filename));
+  SD.remove(filename);
+  TEST_ASSERT_FALSE(SD.exists(filename));
+}
+
 void test_stop() {
   TrackTest track = trackBase;
   recordAndPlay(&track);
@@ -126,9 +134,10 @@ void setup() {
 
   UNITY_BEGIN();
   RUN_TEST(test_bufferWrite);
+  RUN_TEST(test_removeFile);
   RUN_TEST(test_play);
   RUN_TEST(test_record);
-  RUN_TEST(test_swapBuffers);
+  // RUN_TEST(test_swapBuffers);
 }
 
 void loop() {
