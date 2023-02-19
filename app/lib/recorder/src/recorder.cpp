@@ -1,19 +1,19 @@
-#include "mixer.hpp"
 #include <Arduino.h>
 #include <SD.h>
+#include <recorder.hpp>
 #include <track.hpp>
 
 const int SDCARD_MOSI_PIN = 11;
 const int SDCARD_SCK_PIN = 13;
 const int SDCARD_CS_PIN = BUILTIN_SDCARD;
 
-void Mixer::advance(Status status, Mode mode) {
+void Recorder::advance(Status status, Mode mode) {
   for (Track track : tracks) {
     track.advance(selectedTrack);
   }
 }
 
-bool Mixer::begin() {
+bool Recorder::begin() {
   // Initialize the SD card
   SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
@@ -30,9 +30,9 @@ bool Mixer::begin() {
   return true;
 }
 
-// Track Mixer::getTrack(int i) { return tracks[i - 1]; }
+// Track Recorder::getTrack(int i) { return tracks[i - 1]; }
 
-void Mixer::handlePlayPress(Status status) {
+void Recorder::handlePlayPress(Status status) {
   if (status == Status::Play) {
     status = Status::Pause;
   } else {
@@ -40,7 +40,7 @@ void Mixer::handlePlayPress(Status status) {
   }
 };
 
-void Mixer::handleRecordPress(Status status, Mode mode) {
+void Recorder::handleRecordPress(Status status, Mode mode) {
   if (status == Status::Record) {
     status = Status::Play;
   } else {
@@ -48,6 +48,6 @@ void Mixer::handleRecordPress(Status status, Mode mode) {
   }
 };
 
-void Mixer::handleStopPress(){};
+void Recorder::handleStopPress(){};
 
-void Mixer::setSelectedTrack(int i) { selectedTrack = i; }
+void Recorder::setSelectedTrack(int i) { selectedTrack = i; }

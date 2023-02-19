@@ -6,18 +6,19 @@ const float MIX = 0.4;
 const float MUTE = 0.0;
 const float SOLO = 0.8;
 
-void Track::advance(Status status) {
+bool Track::advance(Status status) {
   if (status == Status::Play) {
     if (playback.lengthMillis() == playback.positionMillis()) {
       // Playback reached end, restart from beginning
-      play();
+      return play();
     } else if (!playback.isPlaying()) {
       // Restart playing from current position
-      play(position);
+      return play(position);
     }
   } else if (status == Status::Record) {
-    record();
+    return record();
   }
+  return true;
 }
 
 void Track::begin() {

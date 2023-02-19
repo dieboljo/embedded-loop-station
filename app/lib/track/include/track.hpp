@@ -46,7 +46,7 @@ public:
 
   App::AudioPlaySdRaw playback;
 
-  void advance(Status status);
+  bool advance(Status status);
   void begin();
   void pause();
   float readPeak() { return monitor.available() ? monitor.read() : 0.0; };

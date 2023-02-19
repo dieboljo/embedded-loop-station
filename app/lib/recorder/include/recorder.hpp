@@ -1,10 +1,10 @@
-#ifndef MIXER_H
-#define MIXER_H
+#ifndef RECORDER_H
+#define RECORDER_H
 
 #include <Audio.h>
 #include <track.hpp>
 
-class Mixer {
+class Recorder {
   AudioInputI2S *source;
   Track tracks[4];
 
@@ -14,7 +14,7 @@ class Mixer {
   AudioConnection track4ToMix;
 
 public:
-  Mixer(AudioInputI2S *source)
+  Recorder(AudioInputI2S *source)
       : source(source), tracks{Track("0A.RAW", "0B.RAW", source, 1),
                                Track("1A.RAW", "1B.RAW", source, 2),
                                Track("2A.RAW", "2B.RAW", source, 3),

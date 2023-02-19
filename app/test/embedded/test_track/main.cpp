@@ -24,9 +24,6 @@ void recordAndPlay(Track *t) {
   } else if (i > 20 && i < 40) {
     t->advance(Status::Play);
     i++;
-  } else if (i < 50) {
-    t->play();
-    i++;
   }
 }
 
@@ -54,13 +51,13 @@ void test_pause() {
 
 void test_play() {
   TrackTest track = trackBase;
-  bool opened = track.play();
+  bool opened = track.advance(Status::Play);
   TEST_ASSERT_TRUE(opened);
 }
 
 void test_record() {
   TrackTest track = trackBase;
-  bool recording = track.record();
+  bool recording = track.advance(Status::Record);
   TEST_ASSERT_TRUE(recording);
 }
 
