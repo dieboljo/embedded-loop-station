@@ -31,8 +31,6 @@ class Track {
 
   uint32_t closeWriteBuffer();
   bool openWriteBuffer();
-  bool play(uint32_t offset = 0);
-  bool record();
   bool writeToBuffer();
 
 protected:
@@ -56,7 +54,6 @@ public:
   uint32_t getPosition() { return position; };
   uint32_t getLength() { return audio.lengthMillis(); };
 
-  void pause();
   float readPeak() { return monitor.available() ? monitor.read() : 0.0; };
   void resetPosition() { position = 0; };
   void startPlayback();
@@ -65,7 +62,6 @@ public:
   void stopRecording();
   void pausePlayback();
   void pauseRecording();
-  void stop();
 };
 
 #endif

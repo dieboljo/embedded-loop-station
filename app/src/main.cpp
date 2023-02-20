@@ -13,18 +13,16 @@ AudioInputI2S source;
 // The track where data is recorded
 Track track("FILE1.RAW", "FILE2.RAW", &source);
 
-/* USB output */
-AudioOutputAnalog dac;
-AudioOutputUSB sink;
-
 /* Audio shield output */
 // AudioOutputI2S sink;
 
+/* USB output */
+AudioOutputAnalog dac;
+AudioOutputUSB sink;
+AudioConnection patchCord3(source, 0, dac, 0);
+
 AudioConnection playbackToSinkLeft(track.audio, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.audio, 0, sink, 1);
-
-/* USB output */
-AudioConnection patchCord3(source, 0, dac, 0);
 
 // which input on the audio shield will be used?
 const int input = audioInput;
@@ -126,9 +124,6 @@ void loop() {
     if (status == Status::Play) {
       track.pausePlayback();
       status = Status::Pause;
-    } else if (status == Status::Record) {
-      track.startRecording();
-      status = Status::Record;
     } else {
       track.startPlayback();
       status = Status::Play;

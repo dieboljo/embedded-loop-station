@@ -15,11 +15,14 @@ bool stop = false;
 */
 
 void recordAndPlay(Track *t) {
-  if (i < 20) {
+  if (i == 0) {
+    t->startRecording();
+  } else if (i < 20) {
     t->advance(Status::Record);
     i++;
   } else if (i == 20) {
-    t->stop();
+    t->stopRecording();
+    t->startPlayback();
     i++;
   } else if (i > 20 && i < 40) {
     t->advance(Status::Play);
@@ -39,24 +42,26 @@ void test_pause() {
   TrackTest track = trackBase;
   recordAndPlay(&track);
   if (i == 50) {
-    track.pause();
+    track.pausePlayback();
 
     // Just testing copy constructor worked as expected
-    TEST_ASSERT_EQUAL_INT32(0, trackBase.playback.getOffset());
+    TEST_ASSERT_EQUAL_INT32(0, trackBase.audio.getOffset());
 
-    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.getOffset());
-    TEST_ASSERT_FALSE(track.playback.isPlaying());
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.audio.getOffset());
+    TEST_ASSERT_FALSE(track.audio.isPlaying());
   }
 }
 
 void test_play() {
   TrackTest track = trackBase;
+  track.startPlayback();
   bool opened = track.advance(Status::Play);
   TEST_ASSERT_TRUE(opened);
 }
 
 void test_record() {
   TrackTest track = trackBase;
+  track.startRecording();
   bool recording = track.advance(Status::Record);
   TEST_ASSERT_TRUE(recording);
 }
@@ -65,7 +70,7 @@ void test_recordQueue() {
   TrackTest track = trackBase;
   recordAndPlay(&track);
   if (i == 50) {
-    TEST_ASSERT_GREATER_THAN_INT32(0, track.playback.lengthMillis());
+    TEST_ASSERT_GREATER_THAN_INT32(0, track.audio.lengthMillis());
   }
 }
 
@@ -81,15 +86,15 @@ void test_stop() {
   TrackTest track = trackBase;
   recordAndPlay(&track);
   if (i == 50) {
-    track.stop();
-    TEST_ASSERT_EQUAL_INT32(track.playback.getOffset(), 0);
-    TEST_ASSERT_FALSE(track.playback.isPlaying());
+    track.stopPlayback();
+    TEST_ASSERT_EQUAL_INT32(track.audio.getOffset(), 0);
+    TEST_ASSERT_FALSE(track.audio.isPlaying());
   }
 }
 
 void test_swapBuffers() {
   TrackTest track = trackBase;
-  track.stop();
+  track.stopRecording();
   TEST_ASSERT_EQUAL_STRING("FILE2.RAW", track.getReadFileName());
   TEST_ASSERT_EQUAL_STRING("FILE1.RAW", track.getWriteFileName());
 }
@@ -100,7 +105,7 @@ void test_swapBuffers() {
 
 void setUp(void) {
   trackBase.begin();
-  trackBase.playback.begin();
+  trackBase.audio.begin();
 }
 
 void tearDown(void) { i = 0; }
@@ -131,10 +136,14 @@ void setup() {
 
   UNITY_BEGIN();
   RUN_TEST(test_bufferWrite);
+  delay(500);
   RUN_TEST(test_removeFile);
+  delay(500);
   RUN_TEST(test_play);
+  delay(500);
   RUN_TEST(test_record);
-  // RUN_TEST(test_swapBuffers);
+  delay(500);
+  RUN_TEST(test_swapBuffers);
 }
 
 void loop() {
