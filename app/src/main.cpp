@@ -15,18 +15,18 @@ Track track("FILE1.RAW", "FILE2.RAW", &source);
 
 /* USB output */
 // change this to AudioOutputI2S for boards without DAC output
-// AudioOutputAnalog dac;
+AudioOutputAnalog dac;
 // AudioOutputI2S dac;
-// AudioOutputUSB sink;
+AudioOutputUSB sink;
 
 /* Audio shield output */
-AudioOutputI2S sink;
+// AudioOutputI2S sink;
 
-AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
-AudioConnection playbackToSinkRight(track.playback, 0, sink, 1);
+AudioConnection playbackToSinkLeft(track.audio, 0, sink, 0);
+AudioConnection playbackToSinkRight(track.audio, 0, sink, 1);
 
 /* USB output */
-// AudioConnection patchCord3(source, 0, dac, 0);
+AudioConnection patchCord3(source, 0, dac, 0);
 
 // which input on the audio shield will be used?
 const int input = audioInput;
@@ -100,14 +100,21 @@ void loop() {
     if (status == Status::Record) {
       status = Status::Play;
     } else {
+      track.startRecording();
       status = Status::Record;
     }
   }
 
   if (buttons.stop.fallingEdge()) {
     Serial.println("Stop Button Press");
+    if (status == Status::Record) {
+      track.stopRecording();
+    } else if (status == Status::Play) {
+      track.stopPlayback();
+    } else {
+      track.resetPosition();
+    }
     status = Status::Stop;
-    track.stop();
   }
 
   if (buttons.play.fallingEdge()) {

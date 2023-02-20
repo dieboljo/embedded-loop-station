@@ -2,16 +2,14 @@
 #include <SD.h>
 #include <track.hpp>
 
-const float MIX = 0.4;
-const float MUTE = 0.0;
-const float SOLO = 0.8;
+Gain gain = {0.0, 0.5, 1.0};
 
 bool Track::advance(Status status) {
   if (status == Status::Play) {
-    if (playback.lengthMillis() == playback.positionMillis()) {
+    if (audio.lengthMillis() == audio.positionMillis()) {
       // Playback reached end, restart from beginning
       return play();
-    } else if (!playback.isPlaying()) {
+    } else if (!audio.isPlaying()) {
       // Restart playing from current position
       return play(position);
     }
@@ -25,32 +23,33 @@ void Track::begin() {
   if (SD.exists(writeFileName)) {
     SD.remove(writeFileName);
   }
-  /* if (SD.exists(readFileName)) {
+  if (SD.exists(readFileName)) {
     SD.remove(readFileName);
-  } */
+  }
   // Create the read file buffers
   File temp = SD.open(writeFileName, FILE_WRITE);
   temp.close();
-  temp = SD.open(writeFileName, FILE_WRITE);
+  temp = SD.open(readFileName, FILE_WRITE);
   temp.close();
+  // TODO: Move this into a mode toggle handler
+  bus.gain(Channel::Source, gain.solo);
+  bus.gain(Channel::Copy, gain.mute);
 }
 
-void Track::closeBuffer(void) {
+void Track::closeWriteBuffer(void) {
   recordQueue.end();
   while (recordQueue.available() > 0) {
-    fileBuffer.write((byte *)recordQueue.readBuffer(), 256);
+    writeFileBuffer.write((byte *)recordQueue.readBuffer(), 256);
     recordQueue.freeBuffer();
   }
-  fileBuffer.close();
-  // swapBuffers();
+  writeFileBuffer.close();
+  swapBuffers();
 }
 
-bool Track::openBuffer() {
-  if (fileBuffer)
-    return true;
-  fileBuffer = SD.open(writeFileName, FILE_WRITE);
-  if (fileBuffer) {
-    fileBuffer.seek(playback.getOffset());
+bool Track::openWriteBuffer() {
+  writeFileBuffer = SD.open(writeFileName, FILE_WRITE);
+  if (writeFileBuffer) {
+    writeFileBuffer.seek(position);
     recordQueue.begin();
     return true;
   } else {
@@ -60,30 +59,43 @@ bool Track::openBuffer() {
 }
 
 void Track::pause() {
-  position = playback.getOffset();
-  stopPlayback();
+  position = audio.getOffset();
+  resetPosition();
+  audio.stop();
 };
 
 bool Track::play(uint32_t offset) {
-  if (fileBuffer)
-    fileBuffer.close();
-  return playback.play(writeFileName, offset);
+  if (writeFileBuffer)
+    writeFileBuffer.close();
+  return audio.play(readFileName, offset);
 };
 
-bool Track::record() {
-  bus.gain(Channel::Source, SOLO);
-  return writeBuffer();
-};
+bool Track::record() { return writeToBuffer(); };
+
+void Track::startRecording() {
+  audio.stop();
+  openWriteBuffer();
+}
 
 void Track::stop() {
   position = 0;
-  stopPlayback();
+  resetPosition();
+  audio.stop();
 };
 
 void Track::stopPlayback() {
-  playback.stop();
-  closeBuffer();
+  resetPosition();
+  audio.stop();
 }
+
+void Track::stopRecording() {
+  resetPosition();
+  closeWriteBuffer();
+}
+/* void Track::stopPlayback() {
+  audio.stop();
+  closeWriteBuffer();
+} */
 
 void Track::swapBuffers() {
   const char *temp = readFileName;
@@ -91,18 +103,16 @@ void Track::swapBuffers() {
   writeFileName = temp;
 }
 
-bool Track::writeBuffer() {
-  bool opened = openBuffer();
-  if (!opened) {
+bool Track::writeToBuffer() {
+  if (!writeFileBuffer)
     return false;
-  }
   if (recordQueue.available() >= 2) {
     byte buffer[512];
     memcpy(buffer, recordQueue.readBuffer(), 256);
     recordQueue.freeBuffer();
     memcpy(buffer + 256, recordQueue.readBuffer(), 256);
     recordQueue.freeBuffer();
-    fileBuffer.write(buffer, 512);
+    writeFileBuffer.write(buffer, 512);
   }
   return true;
 }
