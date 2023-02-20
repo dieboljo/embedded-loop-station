@@ -148,6 +148,7 @@ void setup() {
 
 void loop() {
   if (!loopTestsStarted) {
+    // Only run these tests once, not in every loop
     loopTestsStarted = true;
     RUN_TEST(test_recordQueue);
     delay(500);
@@ -155,6 +156,7 @@ void loop() {
     delay(500);
     RUN_TEST(test_pause);
     delay(500);
+    // Toggle the stop flag so the program stops looping
     stop = true;
   }
   if (stop) {
