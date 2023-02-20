@@ -70,7 +70,22 @@ bool Track::play(uint32_t offset) {
   return audio.play(readFileName, offset);
 };
 
+void Track::pausePlayback() {
+  position = audio.getOffset();
+  audio.stop();
+}
+
+void Track::pauseRecording() {
+  // position = closeWriteBuffer();
+  closeWriteBuffer();
+}
+
 bool Track::record() { return writeToBuffer(); };
+
+void Track::startPlayback() {
+  if (writeFileBuffer)
+    closeWriteBuffer();
+}
 
 void Track::startRecording() {
   audio.stop();

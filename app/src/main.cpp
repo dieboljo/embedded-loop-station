@@ -14,9 +14,7 @@ AudioInputI2S source;
 Track track("FILE1.RAW", "FILE2.RAW", &source);
 
 /* USB output */
-// change this to AudioOutputI2S for boards without DAC output
 AudioOutputAnalog dac;
-// AudioOutputI2S dac;
 AudioOutputUSB sink;
 
 /* Audio shield output */
@@ -88,9 +86,14 @@ void loop() {
   if (msecs > 1000) {
     Serial.print("volume = ");
     Serial.println(vol);
-    msecs = 0;
-    Serial.print(track.readPeak());
+    Serial.print("position = ");
+    Serial.println(track.getPosition());
+    Serial.print("length = ");
+    Serial.println(track.getLength());
+    Serial.print("peak = ");
+    Serial.println(track.readPeak());
     Serial.println();
+    msecs = 0;
   }
 
   // Respond to button presses
@@ -98,7 +101,8 @@ void loop() {
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Press");
     if (status == Status::Record) {
-      status = Status::Play;
+      track.pauseRecording();
+      status = Status::Pause;
     } else {
       track.startRecording();
       status = Status::Record;
@@ -120,9 +124,13 @@ void loop() {
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Press");
     if (status == Status::Play) {
+      track.pausePlayback();
       status = Status::Pause;
-      track.pause();
+    } else if (status == Status::Record) {
+      track.startRecording();
+      status = Status::Record;
     } else {
+      track.startPlayback();
       status = Status::Play;
     }
   }

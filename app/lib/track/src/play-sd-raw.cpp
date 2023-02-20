@@ -1,7 +1,7 @@
 #include <play-sd-raw.hpp>
 
 namespace App {
-bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
+bool AudioPlaySdRaw::play(const char *filename, uint32_t offset) {
   stop();
 #if defined(HAS_KINETIS_SDHC)
   if (!(SIM_SCGC3 & SIM_SCGC3_SDHC))

@@ -51,6 +51,11 @@ public:
 
   bool advance(Status status);
   void begin();
+
+  // TODO: Remove
+  uint32_t getPosition() { return position; };
+  uint32_t getLength() { return audio.lengthMillis(); };
+
   void pause();
   float readPeak() { return monitor.available() ? monitor.read() : 0.0; };
   void resetPosition() { position = 0; };
