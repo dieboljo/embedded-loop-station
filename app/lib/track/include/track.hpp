@@ -29,7 +29,7 @@ class Track {
   AudioConnection busToMonitor;
   AudioConnection busToRecordQueue;
 
-  void closeWriteBuffer();
+  uint32_t closeWriteBuffer();
   bool openWriteBuffer();
   bool play(uint32_t offset = 0);
   bool record();

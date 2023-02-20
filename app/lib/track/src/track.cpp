@@ -6,15 +6,20 @@ Gain gain = {0.0, 0.5, 1.0};
 
 bool Track::advance(Status status) {
   if (status == Status::Play) {
+    bool isPlaying = true;
     if (audio.lengthMillis() == audio.positionMillis()) {
       // Playback reached end, restart from beginning
-      return play();
+      isPlaying = audio.play(readFileName);
     } else if (!audio.isPlaying()) {
       // Restart playing from current position
-      return play(position);
+      isPlaying = audio.play(readFileName, position);
     }
+    position = audio.getOffset();
+    return isPlaying;
   } else if (status == Status::Record) {
-    return record();
+    bool isRecording = writeToBuffer();
+    position = (uint32_t)writeFileBuffer.position();
+    return isRecording;
   }
   return true;
 }
@@ -36,14 +41,18 @@ void Track::begin() {
   bus.gain(Channel::Copy, gain.mute);
 }
 
-void Track::closeWriteBuffer(void) {
+uint32_t Track::closeWriteBuffer(void) {
+  AudioNoInterrupts();
   recordQueue.end();
   while (recordQueue.available() > 0) {
     writeFileBuffer.write((byte *)recordQueue.readBuffer(), 256);
     recordQueue.freeBuffer();
   }
+  uint32_t filePosition = (uint32_t)writeFileBuffer.position();
   writeFileBuffer.close();
   swapBuffers();
+  AudioInterrupts();
+  return filePosition;
 }
 
 bool Track::openWriteBuffer() {
@@ -64,32 +73,30 @@ void Track::pause() {
   audio.stop();
 };
 
-bool Track::play(uint32_t offset) {
-  if (writeFileBuffer)
-    writeFileBuffer.close();
-  return audio.play(readFileName, offset);
-};
+bool Track::play(uint32_t offset) { return audio.play(readFileName, offset); };
 
 void Track::pausePlayback() {
+  AudioNoInterrupts();
   position = audio.getOffset();
   audio.stop();
+  AudioInterrupts();
 }
 
-void Track::pauseRecording() {
-  // position = closeWriteBuffer();
-  closeWriteBuffer();
-}
+void Track::pauseRecording() { position = closeWriteBuffer(); }
 
 bool Track::record() { return writeToBuffer(); };
 
 void Track::startPlayback() {
-  if (writeFileBuffer)
+  if (writeFileBuffer) {
     closeWriteBuffer();
+  }
 }
 
 void Track::startRecording() {
+  AudioNoInterrupts();
   audio.stop();
   openWriteBuffer();
+  AudioInterrupts();
 }
 
 void Track::stop() {
@@ -99,8 +106,10 @@ void Track::stop() {
 };
 
 void Track::stopPlayback() {
+  AudioNoInterrupts();
   resetPosition();
   audio.stop();
+  AudioInterrupts();
 }
 
 void Track::stopRecording() {
