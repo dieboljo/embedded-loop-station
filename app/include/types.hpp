@@ -3,6 +3,7 @@
 
 #include <Bounce.h>
 
+// Bounce objects to easily and reliably read the buttons
 struct Buttons {
   /* Bounce left;
   Bounce nav;

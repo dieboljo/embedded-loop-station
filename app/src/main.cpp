@@ -3,35 +3,37 @@
 #include <track.hpp>
 #include <types.hpp>
 #include <usb_audio.h>
-
-void adjustMicLevel();
+#include <utils.hpp>
 
 AudioControlSGTL5000 interface;
 
 AudioInputI2S source;
 
-// The track where data is recorded
-Track track("FILE1.RAW", "FILE2.RAW", &source);
-
-/* Audio shield output */
-// AudioOutputI2S sink;
-
+#ifdef USB_MIDI_AUDIO_SERIAL
 /* USB output */
 AudioOutputAnalog dac;
 AudioOutputUSB sink;
-AudioConnection patchCord3(source, 0, dac, 0);
+#else
+/* Audio shield output */
+AudioOutputI2S sink;
+#endif
 
-AudioConnection playbackToSinkLeft(track.audio, 0, sink, 0);
-AudioConnection playbackToSinkRight(track.audio, 0, sink, 1);
+AudioAnalyzePeak peakLeft;
+AudioAnalyzePeak peakRight;
 
-// which input on the audio shield will be used?
-const int input = audioInput;
+// The track where data is recorded
+Track track("FILE1.WAV", "FILE2.WAV", &source);
 
-// Remember which mode we're doing
-Status status = Status::Stop; // 0=stopped, 1=recording, 2=playing
+AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
+AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
+AudioConnection playbackToPeakLeft(track.playback, 0, peakLeft, 0);
+AudioConnection playbackToPeakRight(track.playback, 1, peakRight, 0);
+#ifdef USB_MIDI_AUDIO_SERIAL
+AudioConnection sourceToDac(source, 0, dac, 0);
+#endif
 
-// Bounce objects to easily and reliably read the buttons
-// 8 = 8 ms debounce time
+Status status = Status::Stop;
+
 Buttons buttons = {
     Bounce(buttonStopPin, 8),
     Bounce(buttonRecordPin, 8),
@@ -41,33 +43,19 @@ Buttons buttons = {
 elapsedMillis msecs;
 
 void setup() {
-  Serial.begin(9600);
+  initializeSerialCommunication();
 
   // Configure the pushbutton pins
-  pinMode(buttonRecordPin, INPUT_PULLUP);
-  pinMode(buttonStopPin, INPUT_PULLUP);
-  pinMode(buttonPlayPin, INPUT_PULLUP);
+  configureButtons();
 
-  // Audio connections require memory, and the record queue
-  // uses this memory to buffer incoming audio.
-  AudioMemory(60);
+  // Audio connections require memory
+  AudioMemory(10);
 
   // Enable the audio shield, select input, and enable output
-  interface.enable();
-  interface.inputSelect(input);
-  interface.micGain(25);
-  interface.volume(0.5);
+  initializeInterface(interface);
 
-  // Initialize the SD card
-  SPI.setMOSI(sdCardMosiPin);
-  SPI.setSCK(sdCardSckPin);
-  if (!(SD.begin(sdCardCsPin))) {
-    // stop here if no SD card, but print a message
-    while (1) {
-      Serial.println("Unable to access the SD card");
-      delay(500);
-    }
-  }
+  initializeSdCard();
+
   track.begin();
 }
 
@@ -77,30 +65,15 @@ void loop() {
   buttons.stop.update();
   buttons.play.update();
 
-  // Read the knob position (analog input A1)
-  int knob = analogRead(A1);
-  float vol = (float)knob / 1280.0;
-  interface.volume(vol);
-  if (msecs > 1000) {
-    Serial.print("volume = ");
-    Serial.println(vol);
-    Serial.print("position = ");
-    Serial.println(track.getPosition());
-    Serial.print("length = ");
-    Serial.println(track.getLength());
-    Serial.print("peak = ");
-    Serial.println(track.readPeak());
-    Serial.println();
-    msecs = 0;
-  }
+  adjustVolume(interface);
 
   // Respond to button presses
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Press");
     if (status == Status::Record) {
-      track.pauseRecording();
-      status = Status::Pause;
+      track.stopRecording();
+      status = Status::Play;
     } else {
       track.startRecording();
       status = Status::Record;
@@ -109,13 +82,7 @@ void loop() {
 
   if (buttons.stop.fallingEdge()) {
     Serial.println("Stop Button Press");
-    if (status == Status::Record) {
-      track.stopRecording();
-    } else if (status == Status::Play) {
-      track.stopPlayback();
-    } else {
-      track.resetPosition();
-    }
+    track.stop();
     status = Status::Stop;
   }
 
@@ -132,12 +99,10 @@ void loop() {
 
   track.advance(status);
 
-  // when using a microphone, continuously adjust gain
-  if (input == AUDIO_INPUT_MIC)
-    adjustMicLevel();
-}
+  showLevels(&peakLeft, &peakRight);
 
-void adjustMicLevel() {
-  // TODO: read the peak1 object and adjust sgtl5000_1.micGain()
-  // if anyone gets this working, please submit a github pull request :-)
+  // when using a microphone, continuously adjust gain
+  if (input == AUDIO_INPUT_MIC) {
+    adjustMicLevel();
+  }
 }

@@ -5,7 +5,8 @@
 
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
-TrackTest trackBase("FILE1.RAW", "FILE2.RAW", &source);
+TrackTest trackBase("FILE1.WAV", "FILE2.WAV", &source);
+const char *testFile = "FILE.WAV";
 
 int i = 0;
 bool loopTestsStarted = false;
@@ -37,8 +38,8 @@ int recordAndPlay(Track *t, int i) {
 */
 
 void test_bufferWrite() {
-  File test = SD.open("FILE.RAW", FILE_WRITE);
-  TEST_ASSERT_TRUE(SD.exists("FILE.RAW"));
+  File test = SD.open(testFile, FILE_WRITE);
+  TEST_ASSERT_TRUE(SD.exists(testFile));
 }
 
 void test_pause() {
@@ -78,7 +79,7 @@ void test_recordQueue() {
 }
 
 void test_removeFile() {
-  const char *filename = "FILE.RAW";
+  const char *filename = testFile;
   File test = SD.open(filename, FILE_WRITE);
   TEST_ASSERT_TRUE(SD.exists(filename));
   SD.remove(filename);

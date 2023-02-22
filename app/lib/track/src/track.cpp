@@ -40,11 +40,15 @@ void Track::begin() {
   temp.close();
   temp = SD.open(readFileName, FILE_WRITE);
   temp.close();
+
+  // SD audio objects need buffers configuring:
+  const size_t sz = 65536;
+
   // TODO: Move this into a mode toggle handler
   /* bus.gain(Channel::Source, gain.mix);
   bus.gain(Channel::Copy, gain.mix); */
   bus.gain(Channel::Source, gain.solo);
-  bus.gain(Channel::Copy, gain.mute);
+  bus.gain(Channel::Feedback, gain.mute);
 }
 
 uint32_t Track::closeWriteBuffer(void) {

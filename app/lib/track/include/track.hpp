@@ -2,11 +2,10 @@
 #define TRACK_HPP
 
 #include <Audio.h>
-#include <play-sd-raw.hpp>
 
 enum class Mode { Replace, Overdub };
 enum class Status { Stop, Record, Play, Pause };
-enum Channel { Source, Copy };
+enum Channel { Source, Feedback };
 struct Gain {
   float mute;
   float mix;
@@ -15,19 +14,19 @@ struct Gain {
 
 class Track {
   uint32_t position;
-  File writeFileBuffer;
 
   // Order of signal flow
   AudioInputI2S *source;
-  AudioAnalyzePeak monitor;
+  AudioAnalyzePeak peak;
   AudioMixer4 bus;
-  AudioRecordQueue recordQueue;
-  App::AudioPlaySdRaw copy;
+  AudioRecordWAVstereo recording;
+  AudioPlayWAVstereo feedback;
 
   AudioConnection sourceToBus;
-  AudioConnection copyToBus;
-  AudioConnection busToMonitor;
-  AudioConnection busToRecordQueue;
+  AudioConnection feedbackToBus;
+  AudioConnection busToPeak;
+  AudioConnection busToRecordingLeft;
+  AudioConnection busToRecordingRight;
 
   uint32_t closeWriteBuffer();
   bool openWriteBuffer();
@@ -41,23 +40,26 @@ protected:
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
       : position(0), source(s), sourceToBus(*source, 0, bus, Channel::Source),
-        copyToBus(copy, 0, bus, Channel::Copy), busToMonitor(bus, monitor),
-        busToRecordQueue(*source, 0, recordQueue, 0), readFileName(f1),
+        feedbackToBus(feedback, 0, bus, Channel::Feedback),
+        busToPeak(bus, peak), busToRecordingLeft(bus, 0, recording, 0),
+        busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
         writeFileName(f2){};
 
-  App::AudioPlaySdRaw audio;
+  AudioPlayWAVstereo playback;
 
   bool advance(Status status);
   void begin();
 
   // TODO: Remove
-  uint32_t getPosition() { return position; };
-  uint32_t getLength() { return audio.lengthMillis(); };
+  uint32_t getPosition() { return playback.positionMillis(); };
+  uint32_t getLength() { return playback.lengthMillis(); };
 
-  float readPeak() { return monitor.available() ? monitor.read() : 0.0; };
+  void pause();
+  float readPeak() { return peak.available() ? peak.read() : 0.0; };
   void resetPosition() { position = 0; };
   void startPlayback();
   void startRecording();
+  void stop();
   void stopPlayback();
   void stopRecording();
   void pausePlayback();
