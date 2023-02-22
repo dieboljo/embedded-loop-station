@@ -1,5 +1,6 @@
+#include "Audio.h"
 #include <config.h>
-#include <include/track_test.hpp>
+#include <include/track-test.hpp>
 #include <unity.h>
 
 AudioInputI2S source;
@@ -14,25 +15,27 @@ bool stop = false;
 ## Test-specific Setup Utilities
 */
 
-void recordAndPlay(Track *t) {
+int recordAndPlay(Track *t, int i) {
+  AudioNoInterrupts();
   if (i == 0) {
     t->startRecording();
   } else if (i < 20) {
     t->advance(Status::Record);
-    i++;
   } else if (i == 20) {
     t->stopRecording();
     t->startPlayback();
-    i++;
   } else if (i > 20 && i < 40) {
     t->advance(Status::Play);
-    i++;
+  } else {
   }
+  AudioInterrupts();
+  return i + 1;
 }
 
 /*
 ## Tests
 */
+
 void test_bufferWrite() {
   File test = SD.open("FILE.RAW", FILE_WRITE);
   TEST_ASSERT_TRUE(SD.exists("FILE.RAW"));
@@ -40,7 +43,7 @@ void test_bufferWrite() {
 
 void test_pause() {
   TrackTest track = trackBase;
-  recordAndPlay(&track);
+  i = recordAndPlay(&track, i);
   if (i == 50) {
     track.pausePlayback();
 
@@ -68,7 +71,7 @@ void test_record() {
 
 void test_recordQueue() {
   TrackTest track = trackBase;
-  recordAndPlay(&track);
+  i = recordAndPlay(&track, i);
   if (i == 50) {
     TEST_ASSERT_GREATER_THAN_INT32(0, track.audio.lengthMillis());
   }
@@ -84,7 +87,7 @@ void test_removeFile() {
 
 void test_stop() {
   TrackTest track = trackBase;
-  recordAndPlay(&track);
+  i = recordAndPlay(&track, i);
   if (i == 50) {
     track.stopPlayback();
     TEST_ASSERT_EQUAL_INT32(track.audio.getOffset(), 0);

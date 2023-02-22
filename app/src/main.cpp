@@ -14,12 +14,12 @@ AudioInputI2S source;
 Track track("FILE1.RAW", "FILE2.RAW", &source);
 
 /* Audio shield output */
-AudioOutputI2S sink;
+// AudioOutputI2S sink;
 
 /* USB output */
-/* AudioOutputAnalog dac;
+AudioOutputAnalog dac;
 AudioOutputUSB sink;
-AudioConnection patchCord3(source, 0, dac, 0); */
+AudioConnection patchCord3(source, 0, dac, 0);
 
 AudioConnection playbackToSinkLeft(track.audio, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.audio, 0, sink, 1);
