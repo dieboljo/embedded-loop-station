@@ -6,11 +6,20 @@
 enum class Mode { Replace, Overdub };
 enum class Status { Stop, Record, Play, Pause };
 enum Channel { Source, Feedback };
+
+// Gains for overdub and replace modes
 struct Gain {
   float mute;
   float mix;
   float solo;
-};
+} gain = {0.0, 0.4, 0.8};
+
+// Audio buffer sizes
+const size_t playBufferSize = 65536;
+const size_t recordBufferSize = 131072;
+
+// Location of audio buffers
+const AudioBuffer::bufType bufferLocation = AudioBuffer::inExt;
 
 class Track {
   uint32_t position;
@@ -29,6 +38,8 @@ class Track {
   AudioConnection busToRecordingRight;
 
   uint32_t closeWriteBuffer();
+  bool configureBuffers();
+  void initializeFiles();
   bool openWriteBuffer();
   bool writeToBuffer();
 

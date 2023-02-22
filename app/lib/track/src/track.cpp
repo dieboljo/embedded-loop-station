@@ -2,15 +2,13 @@
 #include <SD.h>
 #include <track.hpp>
 
-Gain gain = {0.0, 0.4, 0.8};
-
 bool Track::advance(Status status) {
   if (status == Status::Play) {
     bool isPlaying = true;
     AudioNoInterrupts();
-    if (audio.lengthMillis() == audio.positionMillis()) {
+    if (playback.lengthMillis() == playback.positionMillis()) {
       // Playback reached end, restart from beginning
-      isPlaying = audio.play(readFileName);
+      isPlaying = playback.play(readFileName);
     } else if (!audio.isPlaying()) {
       // Restart playing from current position
       isPlaying = audio.play(readFileName, position);
@@ -29,20 +27,9 @@ bool Track::advance(Status status) {
 }
 
 void Track::begin() {
-  if (SD.exists(writeFileName)) {
-    SD.remove(writeFileName);
-  }
-  if (SD.exists(readFileName)) {
-    SD.remove(readFileName);
-  }
-  // Create the read file buffers
-  File temp = SD.open(writeFileName, FILE_WRITE);
-  temp.close();
-  temp = SD.open(readFileName, FILE_WRITE);
-  temp.close();
+  initializeFiles();
 
-  // SD audio objects need buffers configuring:
-  const size_t sz = 65536;
+  configureBuffers();
 
   // TODO: Move this into a mode toggle handler
   /* bus.gain(Channel::Source, gain.mix);
@@ -62,6 +49,29 @@ uint32_t Track::closeWriteBuffer(void) {
   writeFileBuffer.close();
   swapBuffers();
   return filePosition;
+}
+
+// SD audio objects need buffers configuring
+bool Track::configureBuffers() {
+  AudioBuffer::result ok = AudioBuffer::ok;
+  return (playback.createBuffer(playBufferSize, bufferLocation) == ok &&
+          feedback.createBuffer(playBufferSize, bufferLocation) == ok &&
+          recording.createBuffer(recordBufferSize, bufferLocation) == ok);
+}
+
+// Delete and recreate the read and write files
+void Track::initializeFiles() {
+  if (SD.exists(writeFileName)) {
+    SD.remove(writeFileName);
+  }
+  if (SD.exists(readFileName)) {
+    SD.remove(readFileName);
+  }
+  // Create the read file buffers
+  File temp = SD.open(writeFileName, FILE_WRITE);
+  temp.close();
+  temp = SD.open(readFileName, FILE_WRITE);
+  temp.close();
 }
 
 bool Track::openWriteBuffer() {
