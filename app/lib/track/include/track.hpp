@@ -8,7 +8,7 @@ enum class Status { Stop, Record, Play, Pause };
 enum Channel { Source, Feedback };
 
 // Gains for overdub and replace modes
-struct Gain {
+const struct Gain {
   float mute;
   float mix;
   float solo;
@@ -22,8 +22,6 @@ const size_t recordBufferSize = 131072;
 const AudioBuffer::bufType bufferLocation = AudioBuffer::inExt;
 
 class Track {
-  uint32_t position;
-
   // Order of signal flow
   AudioInputI2S *source;
   AudioAnalyzePeak peak;
@@ -37,11 +35,11 @@ class Track {
   AudioConnection busToRecordingLeft;
   AudioConnection busToRecordingRight;
 
-  uint32_t closeWriteBuffer();
+  // uint32_t closeWriteBuffer();
   bool configureBuffers();
-  void initializeFiles();
-  bool openWriteBuffer();
-  bool writeToBuffer();
+  bool initializeFiles();
+  bool resume();
+  bool start();
 
 protected:
   const char *readFileName;
@@ -50,7 +48,7 @@ protected:
 
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
-      : position(0), source(s), sourceToBus(*source, 0, bus, Channel::Source),
+      : source(s), sourceToBus(*source, 0, bus, Channel::Source),
         feedbackToBus(feedback, 0, bus, Channel::Feedback),
         busToPeak(bus, peak), busToRecordingLeft(bus, 0, recording, 0),
         busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
@@ -58,23 +56,22 @@ public:
 
   AudioPlayWAVstereo playback;
 
-  bool advance(Status status);
-  void begin();
+  // bool advance(Status status);
+  bool begin();
 
   // TODO: Remove
   uint32_t getPosition() { return playback.positionMillis(); };
   uint32_t getLength() { return playback.lengthMillis(); };
 
-  void pause();
+  bool play();
+  bool pause();
+  void punchIn();
+  void punchOut();
   float readPeak() { return peak.available() ? peak.read() : 0.0; };
-  void resetPosition() { position = 0; };
-  void startPlayback();
-  void startRecording();
-  void stop();
-  void stopPlayback();
-  void stopRecording();
-  void pausePlayback();
-  void pauseRecording();
+  bool record();
+  bool startPlaying();
+  bool startRecording();
+  // void stop();
 };
 
 #endif

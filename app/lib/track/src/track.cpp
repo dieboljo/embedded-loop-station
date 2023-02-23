@@ -2,18 +2,18 @@
 #include <SD.h>
 #include <track.hpp>
 
-bool Track::advance(Status status) {
+/* bool Track::advance(Status status) {
   if (status == Status::Play) {
     bool isPlaying = true;
     AudioNoInterrupts();
     if (playback.lengthMillis() == playback.positionMillis()) {
       // Playback reached end, restart from beginning
       isPlaying = playback.play(readFileName);
-    } else if (!audio.isPlaying()) {
+    } else if (!playback.isPlaying()) {
       // Restart playing from current position
-      isPlaying = audio.play(readFileName, position);
+      isPlaying = playback.play(readFileName, position);
     }
-    position = audio.getOffset();
+    position = playback.positionMillis();
     AudioInterrupts();
     return isPlaying;
   } else if (status == Status::Record) {
@@ -24,111 +24,93 @@ bool Track::advance(Status status) {
     return isRecording;
   }
   return true;
-}
+} */
 
-void Track::begin() {
-  initializeFiles();
+bool Track::begin() {
+  bool initialized = initializeFiles();
 
-  configureBuffers();
+  bool configured = configureBuffers();
 
-  // TODO: Move this into a mode toggle handler
-  /* bus.gain(Channel::Source, gain.mix);
-  bus.gain(Channel::Copy, gain.mix); */
-  bus.gain(Channel::Source, gain.solo);
-  bus.gain(Channel::Feedback, gain.mute);
-}
-
-uint32_t Track::closeWriteBuffer(void) {
-  recordQueue.end();
-  // copy.stop();
-  while (recordQueue.available() > 0) {
-    writeFileBuffer.write((byte *)recordQueue.readBuffer(), 256);
-    recordQueue.freeBuffer();
-  }
-  uint32_t filePosition = (uint32_t)writeFileBuffer.position();
-  writeFileBuffer.close();
-  swapBuffers();
-  return filePosition;
+  return initialized && configured;
 }
 
 // SD audio objects need buffers configuring
 bool Track::configureBuffers() {
   AudioBuffer::result ok = AudioBuffer::ok;
-  return (playback.createBuffer(playBufferSize, bufferLocation) == ok &&
-          feedback.createBuffer(playBufferSize, bufferLocation) == ok &&
-          recording.createBuffer(recordBufferSize, bufferLocation) == ok);
+  bool configured =
+      playback.createBuffer(playBufferSize, bufferLocation) == ok &&
+      feedback.createBuffer(playBufferSize, bufferLocation) == ok &&
+      recording.createBuffer(recordBufferSize, bufferLocation) == ok;
+  if (!configured) {
+    Serial.println("Failed to configure audio buffers");
+  }
+  return configured;
 }
 
 // Delete and recreate the read and write files
-void Track::initializeFiles() {
+bool Track::initializeFiles() {
+  bool removed = true;
   if (SD.exists(writeFileName)) {
-    SD.remove(writeFileName);
+    removed = SD.remove(writeFileName);
   }
   if (SD.exists(readFileName)) {
-    SD.remove(readFileName);
+    removed = SD.remove(readFileName);
+  }
+  if (!removed) {
+    Serial.println("Failed to remove existing track files");
   }
   // Create the read file buffers
   File temp = SD.open(writeFileName, FILE_WRITE);
   temp.close();
   temp = SD.open(readFileName, FILE_WRITE);
   temp.close();
+  return removed;
 }
 
-bool Track::openWriteBuffer() {
-  // TODO: Does having this here defeat the purpose?
-  swapBuffers();
-  writeFileBuffer = SD.open(writeFileName, FILE_WRITE);
-  if (writeFileBuffer) {
-    writeFileBuffer.seek(position);
-    recordQueue.begin();
-    return true;
-  } else {
-    Serial.println("Failed to open buffer for writing!");
-    return false;
-  }
+bool Track::pause() {
+  punchOut();
+  return playback.pause() && feedback.pause() && recording.pause();
 }
 
-void Track::pausePlayback() {
-  AudioNoInterrupts();
-  position = audio.getOffset();
-  audio.stop();
-  AudioInterrupts();
+bool Track::play() {
+  punchOut();
+  return resume();
 }
 
-void Track::pauseRecording() {
-  AudioNoInterrupts();
-  position = closeWriteBuffer();
-  AudioInterrupts();
+void Track::punchIn() {
+  bus.gain(Channel::Source, gain.solo);
+  bus.gain(Channel::Feedback, gain.mute);
 }
 
-void Track::startPlayback() {
-  if (writeFileBuffer) {
-    AudioNoInterrupts();
-    closeWriteBuffer();
-    AudioInterrupts();
-  }
+void Track::punchOut() {
+  bus.gain(Channel::Source, gain.mute);
+  bus.gain(Channel::Feedback, gain.solo);
 }
 
-void Track::startRecording() {
-  AudioNoInterrupts();
-  audio.stop();
-  openWriteBuffer();
-  // copy.play(readFileName, position);
-  AudioInterrupts();
+bool Track::record() {
+  punchIn();
+  return resume();
 }
 
-void Track::stopPlayback() {
-  AudioNoInterrupts();
-  resetPosition();
-  audio.stop();
-  AudioInterrupts();
+bool Track::resume() {
+  return playback.play() && feedback.play() && recording.record();
 }
 
-void Track::stopRecording() {
-  AudioNoInterrupts();
-  resetPosition();
-  closeWriteBuffer();
-  AudioInterrupts();
+bool Track::start() {
+  playback.playSD(readFileName, true);
+  feedback.playSD(readFileName, true);
+  recording.recordSD(writeFileName, true);
+  return resume();
+}
+
+bool Track::startPlaying() {
+  punchOut();
+  return start();
+}
+
+bool Track::startRecording() {
+  punchIn();
+  return start();
 }
 
 void Track::swapBuffers() {
@@ -137,7 +119,7 @@ void Track::swapBuffers() {
   writeFileName = temp;
 }
 
-bool Track::writeToBuffer() {
+/* bool Track::writeToBuffer() {
   if (!writeFileBuffer)
     return false;
   // copy.play(readFileName, position);
@@ -150,4 +132,4 @@ bool Track::writeToBuffer() {
     writeFileBuffer.write(buffer, 512);
   }
   return true;
-}
+} */

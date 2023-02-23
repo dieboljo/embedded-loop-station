@@ -1,3 +1,4 @@
 .pio
 .ccls
 .cache
+*.log

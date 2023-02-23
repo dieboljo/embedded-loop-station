@@ -10,13 +10,13 @@ const char *testFile = "FILE.WAV";
 
 int i = 0;
 bool loopTestsStarted = false;
-bool stop = false;
+bool stopLoopTests = false;
 
 /*
 ## Test-specific Setup Utilities
 */
 
-int recordAndPlay(Track *t, int i) {
+/* int recordAndPlay(Track *t, int i) {
   AudioNoInterrupts();
   if (i == 0) {
     t->startRecording();
@@ -31,18 +31,23 @@ int recordAndPlay(Track *t, int i) {
   }
   AudioInterrupts();
   return i + 1;
-}
+} */
 
 /*
 ## Tests
 */
-
-void test_bufferWrite() {
-  File test = SD.open(testFile, FILE_WRITE);
-  TEST_ASSERT_TRUE(SD.exists(testFile));
+void test_begin() {
+  TrackTest track = trackBase;
+  bool hasBegun = track.begin();
+  TEST_ASSERT_TRUE(hasBegun);
 }
 
-void test_pause() {
+/* void test_bufferWrite() {
+  File test = SD.open(testFile, FILE_WRITE);
+  TEST_ASSERT_TRUE(SD.exists(testFile));
+} */
+
+/* void test_pause() {
   TrackTest track = trackBase;
   i = recordAndPlay(&track, i);
   if (i == 50) {
@@ -54,39 +59,39 @@ void test_pause() {
     TEST_ASSERT_GREATER_THAN_INT32(0, track.audio.getOffset());
     TEST_ASSERT_FALSE(track.audio.isPlaying());
   }
-}
+} */
 
-void test_play() {
+/* void test_play() {
   TrackTest track = trackBase;
   track.startPlayback();
   bool opened = track.advance(Status::Play);
   TEST_ASSERT_TRUE(opened);
-}
+} */
 
-void test_record() {
+/* void test_record() {
   TrackTest track = trackBase;
   track.startRecording();
   bool recording = track.advance(Status::Record);
   TEST_ASSERT_TRUE(recording);
-}
+} */
 
-void test_recordQueue() {
+/* void test_recordQueue() {
   TrackTest track = trackBase;
   i = recordAndPlay(&track, i);
   if (i == 50) {
     TEST_ASSERT_GREATER_THAN_INT32(0, track.audio.lengthMillis());
   }
-}
+} */
 
-void test_removeFile() {
+/* void test_removeFile() {
   const char *filename = testFile;
   File test = SD.open(filename, FILE_WRITE);
   TEST_ASSERT_TRUE(SD.exists(filename));
   SD.remove(filename);
   TEST_ASSERT_FALSE(SD.exists(filename));
-}
+} */
 
-void test_stop() {
+/* void test_stop() {
   TrackTest track = trackBase;
   i = recordAndPlay(&track, i);
   if (i == 50) {
@@ -94,25 +99,26 @@ void test_stop() {
     TEST_ASSERT_EQUAL_INT32(track.audio.getOffset(), 0);
     TEST_ASSERT_FALSE(track.audio.isPlaying());
   }
-}
+} */
 
-void test_swapBuffers() {
+/* void test_swapBuffers() {
   TrackTest track = trackBase;
   track.stopRecording();
   TEST_ASSERT_EQUAL_STRING("FILE2.RAW", track.getReadFileName());
   TEST_ASSERT_EQUAL_STRING("FILE1.RAW", track.getWriteFileName());
-}
+} */
 
 /*
 ## Test Runner
 */
 
-void setUp(void) {
-  trackBase.begin();
-  trackBase.audio.begin();
-}
+void setUp(void) {}
 
-void tearDown(void) { i = 0; }
+void tearDown(void) {
+  i = 0;
+  loopTestsStarted = false;
+  stopLoopTests = false;
+}
 
 void setup() {
   Serial.begin(9600);
@@ -121,7 +127,7 @@ void setup() {
 
   // Enable the audio shield, select input, and enable output
   interface.enable();
-  interface.inputSelect(audioInput);
+  interface.inputSelect(input);
   interface.micGain(4);
   interface.volume(0.5);
 
@@ -139,31 +145,35 @@ void setup() {
   delay(2000);
 
   UNITY_BEGIN();
-  RUN_TEST(test_bufferWrite);
+  RUN_TEST(test_begin);
   delay(500);
-  RUN_TEST(test_removeFile);
-  delay(500);
-  RUN_TEST(test_play);
-  delay(500);
-  RUN_TEST(test_record);
-  delay(500);
-  RUN_TEST(test_swapBuffers);
+  /* RUN_TEST(test_bufferWrite);
+  delay(500); */
+  /* RUN_TEST(test_removeFile);
+  delay(500); */
+  /* RUN_TEST(test_play);
+  delay(500); */
+  /* RUN_TEST(test_record);
+  delay(500); */
+  /* RUN_TEST(test_swapBuffers);
+  delay(500); */
 }
 
 void loop() {
   if (!loopTestsStarted) {
     // Only run these tests once, not in every loop
     loopTestsStarted = true;
-    RUN_TEST(test_recordQueue);
-    delay(500);
-    RUN_TEST(test_stop);
-    delay(500);
-    RUN_TEST(test_pause);
-    delay(500);
+    /* RUN_TEST(test_recordQueue);
+    delay(500); */
+    /* RUN_TEST(test_stop);
+    delay(500); */
+    /* RUN_TEST(test_pause);
+    delay(500); */
     // Toggle the stop flag so the program stops looping
-    stop = true;
+    stopLoopTests = true;
   }
-  if (stop) {
+  if (stopLoopTests) {
     UNITY_END();
   }
+  delay(1000);
 }

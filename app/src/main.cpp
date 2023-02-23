@@ -71,12 +71,23 @@ void loop() {
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Press");
-    if (status == Status::Record) {
-      track.stopRecording();
+    switch (status) {
+    case Status::Record:
+      track.punchOut();
       status = Status::Play;
-    } else {
+      break;
+    case Status::Play:
+      track.punchIn();
+      status = Status::Record;
+      break;
+    case Status::Pause:
+      track.record();
+      status = Status::Record;
+      break;
+    case Status::Stop:
       track.startRecording();
       status = Status::Record;
+      break;
     }
   }
 
@@ -88,11 +99,18 @@ void loop() {
 
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Press");
-    if (status == Status::Play) {
-      track.pausePlayback();
+    switch (status) {
+    case Status::Play:
+    case Status::Record:
+      track.pause();
       status = Status::Pause;
-    } else {
-      track.startPlayback();
+      break;
+    case Status::Pause:
+      track.play();
+      status = Status::Play;
+      break;
+    case Status::Stop:
+      track.startPlaying();
       status = Status::Play;
     }
   }
