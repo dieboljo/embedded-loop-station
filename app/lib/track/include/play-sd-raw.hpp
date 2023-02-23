@@ -7,7 +7,7 @@ namespace App {
 class AudioPlaySdRaw : public AudioStream {
 public:
   AudioPlaySdRaw(void) : AudioStream(0, NULL) { begin(); }
-  bool play(const char *filename, uint32_t offset);
+  bool play(const char *filename, uint32_t offset = 0);
   void begin(void);
   void stop(void);
   bool isPlaying(void) { return playing; }

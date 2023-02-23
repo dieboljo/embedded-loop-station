@@ -1,7 +1,7 @@
 #include <play-sd-raw.hpp>
 
 namespace App {
-bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
+bool AudioPlaySdRaw::play(const char *filename, uint32_t offset) {
   stop();
 #if defined(HAS_KINETIS_SDHC)
   if (!(SIM_SCGC3 & SIM_SCGC3_SDHC))
@@ -11,7 +11,6 @@ bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
 #endif
   __disable_irq();
   rawfile = SD.open(filename);
-  rawfile.seek(offset);
   __enable_irq();
   if (!rawfile) {
     Serial.println("Unable to open file");
@@ -23,8 +22,9 @@ bool AudioPlaySdRaw::play(const char *filename, uint32_t offset = 0) {
 #endif
     return false;
   }
+  rawfile.seek(offset >= rawfile.size() ? 0 : offset);
   file_size = rawfile.size();
-  file_offset = offset;
+  file_offset = rawfile.position();
   // Serial.println(offset);
   // Serial.println("able to open file");
   playing = true;

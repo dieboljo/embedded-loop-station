@@ -6,32 +6,28 @@
 
 enum class Mode { Replace, Overdub };
 enum class Status { Stop, Record, Play, Pause };
-enum Channel { Source, Copy };
-struct Gain {
-  float mute;
-  float mix;
-  float solo;
-};
+enum Channel { Source, Feedback };
 
 class Track {
-  uint32_t position;
-  File writeFileBuffer;
+  uint64_t position;
+  File fileBuffer;
 
   // Order of signal flow
   AudioInputI2S *source;
+
   AudioAnalyzePeak monitor;
+
   AudioMixer4 bus;
-  AudioRecordQueue recordQueue;
-  App::AudioPlaySdRaw copy;
 
   AudioConnection sourceToBus;
-  AudioConnection copyToBus;
+  // AudioConnection playbackToBus;
   AudioConnection busToMonitor;
   AudioConnection busToRecordQueue;
+  AudioRecordQueue recordQueue;
 
-  uint32_t closeWriteBuffer();
-  bool openWriteBuffer();
-  bool writeToBuffer();
+  void closeBuffer();
+  bool openBuffer();
+  bool writeBuffer();
 
 protected:
   const char *readFileName;
@@ -41,27 +37,20 @@ protected:
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
       : position(0), source(s), sourceToBus(*source, 0, bus, Channel::Source),
-        copyToBus(copy, 0, bus, Channel::Copy), busToMonitor(bus, monitor),
+        busToMonitor(bus, monitor),
+        // playbackToBus(playback, 0, bus, Channel::Feedback),
         busToRecordQueue(*source, 0, recordQueue, 0), readFileName(f1),
         writeFileName(f2){};
 
-  App::AudioPlaySdRaw audio;
+  App::AudioPlaySdRaw playback;
 
-  bool advance(Status status);
+  void advance(Status status);
   void begin();
-
-  // TODO: Remove
-  uint32_t getPosition() { return position; };
-  uint32_t getLength() { return audio.lengthMillis(); };
-
+  void pause();
+  bool play();
   float readPeak() { return monitor.available() ? monitor.read() : 0.0; };
-  void resetPosition() { position = 0; };
-  void startPlayback();
-  void startRecording();
-  void stopPlayback();
-  void stopRecording();
-  void pausePlayback();
-  void pauseRecording();
+  bool record();
+  void stop();
 };
 
 #endif
