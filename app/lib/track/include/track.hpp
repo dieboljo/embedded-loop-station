@@ -35,16 +35,15 @@ class Track {
   AudioConnection busToRecordingLeft;
   AudioConnection busToRecordingRight;
 
-  // uint32_t closeWriteBuffer();
   bool configureBuffers();
   bool initializeFiles();
   bool resume();
   bool start();
+  void swapBuffers();
 
 protected:
   const char *readFileName;
   const char *writeFileName;
-  void swapBuffers();
 
 public:
   Track(const char *f1, const char *f2, AudioInputI2S *s)
@@ -56,13 +55,8 @@ public:
 
   AudioPlayWAVstereo playback;
 
-  // bool advance(Status status);
+  bool advance(Status status);
   bool begin();
-
-  // TODO: Remove
-  uint32_t getPosition() { return playback.positionMillis(); };
-  uint32_t getLength() { return playback.lengthMillis(); };
-
   bool play();
   bool pause();
   void punchIn();
@@ -71,7 +65,7 @@ public:
   bool record();
   bool startPlaying();
   bool startRecording();
-  // void stop();
+  bool stop();
 };
 
 #endif

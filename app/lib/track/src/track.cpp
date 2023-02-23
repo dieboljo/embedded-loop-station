@@ -2,29 +2,19 @@
 #include <SD.h>
 #include <track.hpp>
 
-/* bool Track::advance(Status status) {
-  if (status == Status::Play) {
-    bool isPlaying = true;
-    AudioNoInterrupts();
-    if (playback.lengthMillis() == playback.positionMillis()) {
-      // Playback reached end, restart from beginning
-      isPlaying = playback.play(readFileName);
-    } else if (!playback.isPlaying()) {
-      // Restart playing from current position
-      isPlaying = playback.play(readFileName, position);
+bool Track::advance(Status status) {
+  if (status == Status::Stop) {
+    return true;
+  }
+  if (playback.lengthMillis() == playback.positionMillis()) {
+    if (stop()) {
+      swapBuffers();
+      return startPlaying();
     }
-    position = playback.positionMillis();
-    AudioInterrupts();
-    return isPlaying;
-  } else if (status == Status::Record) {
-    AudioNoInterrupts();
-    bool isRecording = writeToBuffer();
-    position = (uint32_t)writeFileBuffer.position();
-    AudioInterrupts();
-    return isRecording;
+    return false;
   }
   return true;
-} */
+}
 
 bool Track::begin() {
   bool initialized = initializeFiles();
@@ -113,23 +103,19 @@ bool Track::startRecording() {
   return start();
 }
 
+bool Track::stop() {
+  punchOut();
+  recording.pause();
+  playback.pause();
+  feedback.pause();
+  recording.stop();
+  playback.stop();
+  feedback.stop();
+  return recording.isStopped() && playback.isStopped() && feedback.isStopped();
+}
+
 void Track::swapBuffers() {
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
 }
-
-/* bool Track::writeToBuffer() {
-  if (!writeFileBuffer)
-    return false;
-  // copy.play(readFileName, position);
-  if (recordQueue.available() >= 2) {
-    byte buffer[512];
-    memcpy(buffer, recordQueue.readBuffer(), 256);
-    recordQueue.freeBuffer();
-    memcpy(buffer + 256, recordQueue.readBuffer(), 256);
-    recordQueue.freeBuffer();
-    writeFileBuffer.write(buffer, 512);
-  }
-  return true;
-} */
