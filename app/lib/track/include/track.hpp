@@ -28,11 +28,12 @@ class Track {
   AudioRecordWAVstereo recording;
   AudioPlayWAVstereo feedback;
 
-  AudioConnection sourceToBus;
+  /* AudioConnection sourceToBus;
   AudioConnection feedbackToBus;
   AudioConnection busToPeak;
   AudioConnection busToRecordingLeft;
-  AudioConnection busToRecordingRight;
+  AudioConnection busToRecordingRight; */
+  AudioConnection sourceToRecording;
 
   bool configureBuffers();
   bool initializeFiles();
@@ -45,12 +46,12 @@ protected:
   const char *writeFileName;
 
 public:
-  Track(const char *f1, const char *f2, AudioInputI2S *s)
-      : source(s), sourceToBus(*source, 0, bus, Channel::Source),
-        feedbackToBus(feedback, 0, bus, Channel::Feedback),
-        busToPeak(bus, peak), busToRecordingLeft(bus, 0, recording, 0),
-        busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
-        writeFileName(f2){};
+  Track(const char *f1, const char *f2, AudioInputI2S *s);
+  /* : source(s), sourceToBus(*source, 0, bus, Channel::Source),
+    feedbackToBus(feedback, 0, bus, Channel::Feedback),
+    busToPeak(bus, peak), busToRecordingLeft(bus, 0, recording, 0),
+    busToRecordingRight(bus, 0, recording, 1), sourceToRecording(*source, 0,
+    recording, 0), readFileName(f1), writeFileName(f2){}; */
 
   AudioPlayWAVstereo playback;
 

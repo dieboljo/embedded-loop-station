@@ -85,10 +85,12 @@ void loop() {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      track.punchOut();
-      status = Status::Play;
+      /* track.punchOut();
+      status = Status::Play; */
+      track.stop();
+      status = Status::Stop;
       break;
-    case Status::Play:
+    /* case Status::Play:
       track.punchIn();
       status = Status::Record;
       break;
@@ -97,12 +99,14 @@ void loop() {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
-      break;
+      break; */
     case Status::Stop:
       if (track.startRecording()) {
         Serial.println("Recording started");
       }
       status = Status::Record;
+      break;
+    default:
       break;
     }
   }
@@ -118,7 +122,7 @@ void loop() {
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Pressed");
     switch (status) {
-    case Status::Play:
+    /* case Status::Play:
     case Status::Record:
       if (track.pause()) {
         Serial.println("Paused");
@@ -130,18 +134,21 @@ void loop() {
         Serial.println("Resumed playback");
       }
       status = Status::Play;
-      break;
+      break; */
     case Status::Stop:
       if (track.startPlaying()) {
         Serial.println("Playback started");
       }
       status = Status::Play;
+      break;
+    default:
+      break;
     }
   }
 
-  if (track.checkLoopEnded(status)) {
+  /* if (track.checkLoopEnded(status)) {
     Serial.println("Loop ended, restarted from beginning");
-  }
+  } */
 
   showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
 
