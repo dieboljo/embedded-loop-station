@@ -39,7 +39,7 @@ class Track {
   bool initializeFiles();
   bool resume();
   bool start();
-  void swapBuffers();
+  Status swapBuffers();
 
 protected:
   const char *readFileName;
@@ -56,7 +56,7 @@ public:
   AudioPlayWAVstereo playback;
 
   bool begin();
-  bool checkLoopEnded(Status status);
+  Status checkLoopEnded(Status status);
   bool play();
   bool pause();
   void punchIn();

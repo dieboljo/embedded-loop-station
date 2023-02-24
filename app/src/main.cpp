@@ -25,6 +25,7 @@ AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
 Track track("file1.wav", "file2.wav", &source);
+// Track track("file2.wav", "file1.wav", &source);
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
@@ -146,6 +147,7 @@ void loop() {
     }
   }
 
+  status = track.checkLoopEnded(status);
   /* if (track.checkLoopEnded(status)) {
     Serial.println("Loop ended, restarted from beginning");
   } */

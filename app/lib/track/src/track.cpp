@@ -26,15 +26,31 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-bool Track::checkLoopEnded(Status status) {
-  if (status == Status::Stop) {
-    return false;
+Status Track::checkLoopEnded(Status status) {
+  switch (status) {
+  case Status::Stop:
+  case Status::Pause:
+    return status;
+  case Status::Play:
+    Serial.println("TEST");
+    if (playback.isPlaying()) {
+      return status;
+    } else if (!playback.isPlaying() && recording.positionMillis()) {
+      // End of loop, switch to recorded audio
+      return swapBuffers();
+    }
+    // Nothing recorded yet, wait for initial recording
+    return Status::Stop;
+  case Status::Record:
+    if (!playback.lengthMillis()) {
+      return status;
+    } else if (!playback.isPlaying()) {
+      return swapBuffers();
+    }
+  default:
+    Serial.println("This shouldn't be reached");
+    return status;
   }
-  if (!playback.isPlaying()) {
-    swapBuffers();
-    return startPlaying();
-  }
-  return false;
 }
 
 // SD audio objects need buffers configuring
@@ -155,11 +171,20 @@ bool Track::stop() {
 
 // Rotate read and write files pointers
 // whenever a loop reaches its end
-void Track::swapBuffers() {
+Status Track::swapBuffers() {
+  if (!stop()) {
+    return Status::Stop;
+  }
+  AudioNoInterrupts();
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
+  AudioInterrupts();
+  Serial.println("Loop ended, restarted from beginning");
+  startPlaying();
+  return Status::Play;
 }
+
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
     : source(s), sourceToRecording(*source, 0, recording, 0), readFileName(f1),
       writeFileName(f2){};
