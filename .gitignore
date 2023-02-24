@@ -4,3 +4,6 @@ compile_commands.json
 
 # VSCode preferences
 .vscode
+
+# Log files
+*.log

@@ -2,6 +2,10 @@
 #include <config.h>
 #include <utils.hpp>
 
+// Adjust the mic gain in response to the peak level
+// TODO Implement or delete this
+void adjustMicLevel() {}
+
 // Read the volume knob position (analog input A1)
 float adjustVolume(AudioControlSGTL5000 &interface) {
   int knob = analogRead(volumePin);

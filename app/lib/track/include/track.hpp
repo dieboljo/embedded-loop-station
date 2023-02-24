@@ -8,20 +8,19 @@ enum class Status { Stop, Record, Play, Pause };
 enum Channel { Source, Feedback };
 
 // Gains for overdub and replace modes
-const struct Gain {
+struct RecordGain {
   float mute;
   float mix;
   float solo;
-} gain = {0.0, 0.4, 0.8};
-
-// Audio buffer sizes
-const size_t playBufferSize = 65536;
-const size_t recordBufferSize = 131072;
-
-// Location of audio buffers
-const AudioBuffer::bufType bufferLocation = AudioBuffer::inExt;
+};
 
 class Track {
+
+  static const AudioBuffer::bufType bufferLocation;
+  static const size_t playBufferSize;
+  static const size_t recordBufferSize;
+  static const RecordGain recordGain;
+
   // Order of signal flow
   AudioInputI2S *source;
   AudioAnalyzePeak peak;
