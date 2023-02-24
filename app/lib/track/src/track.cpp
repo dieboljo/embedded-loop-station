@@ -13,21 +13,6 @@ const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
 // Input gains for recording (overdub or replace) vs playback
 const RecordGain Track::recordGain = {0.0, 0.4, 0.8};
 
-// Check if the loop has ended, and restart it true
-bool Track::advance(Status status) {
-  if (status == Status::Stop) {
-    return true;
-  }
-  if (playback.lengthMillis() == playback.positionMillis()) {
-    if (stop()) {
-      swapBuffers();
-      return startPlaying();
-    }
-    return false;
-  }
-  return true;
-}
-
 // Create the read/write files, and configure the audio buffers
 bool Track::begin() {
   bool initialized = initializeFiles();
@@ -35,6 +20,18 @@ bool Track::begin() {
   bool configured = configureBuffers();
 
   return initialized && configured;
+}
+
+// Check if the loop has ended, and restart if true
+bool Track::checkLoopEnded(Status status) {
+  if (status == Status::Stop) {
+    return false;
+  }
+  if (!playback.isPlaying()) {
+    swapBuffers();
+    return startPlaying();
+  }
+  return false;
 }
 
 // SD audio objects need buffers configuring
@@ -85,18 +82,14 @@ bool Track::play() {
 // in either replace or overdub mode
 // TODO: Impement overdub mode
 void Track::punchIn() {
-  AudioNoInterrupts();
   bus.gain(Channel::Source, recordGain.solo);
   bus.gain(Channel::Feedback, recordGain.mute);
-  AudioInterrupts();
 }
 
 // Disable recording immediately
 void Track::punchOut() {
-  AudioNoInterrupts();
   bus.gain(Channel::Source, recordGain.mute);
   bus.gain(Channel::Feedback, recordGain.solo);
-  AudioInterrupts();
 }
 
 // Resume recording from a paused state

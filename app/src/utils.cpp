@@ -70,16 +70,30 @@ void initializeSerialCommunication() {
   }
 }
 
-// Read and display stereo input or output channels
-void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR) {
-  static uint32_t nextOutput;
+void monitorAudioEngine(elapsedMillis *ms) {
+  if (*ms > 10000) {
+    Serial.print("Proc = ");
+    Serial.print(AudioProcessorUsage());
+    Serial.print(" (");
+    Serial.print(AudioProcessorUsageMax());
+    Serial.print("),  Mem = ");
+    Serial.print(AudioMemoryUsage());
+    Serial.print(" (");
+    Serial.print(AudioMemoryUsageMax());
+    Serial.println(")");
+    *ms = 0;
+  }
+}
 
-  if (millis() > nextOutput) {
+// Read and display stereo input or output channels
+void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
+                elapsedMillis *ms) {
+  if (*ms > 1000) {
     int lp = 0, rp = 0, scale = 20;
     char cl = '?', cr = '?';
     char buf[scale * 2 + 10];
 
-    nextOutput = millis() + 1000;
+    *ms = 0;
 
     if (peakL->available()) {
       lp = peakL->read() * scale;

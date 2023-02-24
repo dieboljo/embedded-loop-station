@@ -18,16 +18,21 @@ AudioOutputUSB sink;
 AudioOutputI2S sink;
 #endif
 
-AudioAnalyzePeak peakLeft;
-AudioAnalyzePeak peakRight;
+AudioAnalyzePeak sourcePeakLeft;
+AudioAnalyzePeak sourcePeakRight;
+AudioAnalyzePeak sinkPeakLeft;
+AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
-Track track("FILE1.WAV", "FILE2.WAV", &source);
+Track track("file1.wav", "file2.wav", &source);
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
-AudioConnection playbackToPeakLeft(track.playback, 0, peakLeft, 0);
-AudioConnection playbackToPeakRight(track.playback, 1, peakRight, 0);
+AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
+AudioConnection sourceToPeakRight(source, 0, sourcePeakRight, 0);
+AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
+AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
+
 #ifdef USB_MIDI_AUDIO_SERIAL
 AudioConnection sourceToDac(source, 0, dac, 0);
 #endif
@@ -40,7 +45,8 @@ Buttons buttons = {
     Bounce(buttonPlayPin, 8),
 };
 
-elapsedMillis msecs;
+elapsedMillis audioMonitorDelay;
+elapsedMillis levelDisplayDelay;
 
 void setup() {
   initializeSerialCommunication();
@@ -49,7 +55,11 @@ void setup() {
   configureButtons();
 
   // Audio connections require memory
-  AudioMemory(10);
+  AudioMemory(60);
+
+  // Initialize processor and memory measurements
+  AudioProcessorUsageMaxReset();
+  AudioMemoryUsageMaxReset();
 
   // Enable the audio shield, select input, and enable output
   initializeInterface(interface);
@@ -67,10 +77,12 @@ void loop() {
 
   adjustVolume(interface);
 
+  monitorAudioEngine(&audioMonitorDelay);
+
   // Respond to button presses
 
   if (buttons.record.fallingEdge()) {
-    Serial.println("Record Button Press");
+    Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
       track.punchOut();
@@ -81,43 +93,57 @@ void loop() {
       status = Status::Record;
       break;
     case Status::Pause:
-      track.record();
+      if (track.record()) {
+        Serial.println("Resumed recording");
+      }
       status = Status::Record;
       break;
     case Status::Stop:
-      track.startRecording();
+      if (track.startRecording()) {
+        Serial.println("Recording started");
+      }
       status = Status::Record;
       break;
     }
   }
 
   if (buttons.stop.fallingEdge()) {
-    Serial.println("Stop Button Press");
-    track.stop();
+    Serial.println("Stop Button Pressed");
+    if (track.stop()) {
+      Serial.println("Loop stopped");
+    }
     status = Status::Stop;
   }
 
   if (buttons.play.fallingEdge()) {
-    Serial.println("Play Button Press");
+    Serial.println("Play Button Pressed");
     switch (status) {
     case Status::Play:
     case Status::Record:
-      track.pause();
+      if (track.pause()) {
+        Serial.println("Paused");
+      }
       status = Status::Pause;
       break;
     case Status::Pause:
-      track.play();
+      if (track.play()) {
+        Serial.println("Resumed playback");
+      }
       status = Status::Play;
       break;
     case Status::Stop:
-      track.startPlaying();
+      if (track.startPlaying()) {
+        Serial.println("Playback started");
+      }
       status = Status::Play;
     }
   }
 
-  track.advance(status);
+  if (track.checkLoopEnded(status)) {
+    Serial.println("Loop ended, restarted from beginning");
+  }
 
-  showLevels(&peakLeft, &peakRight);
+  showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
 
   // when using a microphone, continuously adjust gain
   if (input == AUDIO_INPUT_MIC) {

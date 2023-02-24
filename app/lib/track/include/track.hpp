@@ -54,8 +54,8 @@ public:
 
   AudioPlayWAVstereo playback;
 
-  bool advance(Status status);
   bool begin();
+  bool checkLoopEnded(Status status);
   bool play();
   bool pause();
   void punchIn();
