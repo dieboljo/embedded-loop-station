@@ -1,5 +1,6 @@
 #include "Audio.h"
 #include "FS.h"
+#include "core_pins.h"
 #include <Arduino.h>
 #include <SD.h>
 #include <track.hpp>
@@ -33,7 +34,17 @@ Status Track::checkLoopEnded(Status status) {
   case Status::Pause:
     return status;
   case Status::Play:
-    if (!readFile) {
+    if (playback.isPlaying()) {
+      // Continue
+      if (millis() % 1000 == 0) {
+        Serial.println(">");
+      }
+      return status;
+    } else if (!playback.isPlaying() && recording.positionMillis()) {
+      Serial.println("Looping back from play");
+      // End of loop, switch to recorded audio
+      return swapBuffers();
+    } else if (!readFile) {
       if (!loopEstablished && recording.positionMillis()) {
         Serial.println("Setting the base loop");
         return swapBuffers();
@@ -41,22 +52,13 @@ Status Track::checkLoopEnded(Status status) {
       // Nothing recorded yet, wait for initial recording
       Serial.println("Nothing to play yet, record something already!");
       return Status::Stop;
-    } else if (playback.isPlaying()) {
-      // Continue
-      if (millis() % 1000 == 0) {
-        Serial.print(">");
-      }
-      return status;
-    } else if (!playback.isPlaying() && recording.positionMillis()) {
-      // End of loop, switch to recorded audio
-      return swapBuffers();
     }
   case Status::Record:
+    if (millis() % 1000 == 0) {
+      Serial.println("o");
+    }
     if (!readFile) {
       // First recording, keep it moving
-      if (millis() % 1000 == 0) {
-        Serial.print("o");
-      }
       return status;
     } else if (!playback.isPlaying()) {
       return swapBuffers();
@@ -156,7 +158,7 @@ bool Track::resume() {
 // This allows play streams to queue their buffers.
 bool Track::start() {
   readFile = SD.open(readFileName);
-  Serial.printf("File size: %d", readFile.size());
+  Serial.printf("File size: %d\n", readFile.size());
   if (readFile.size()) {
     playback.play(readFile, true);
   } else {
@@ -209,21 +211,20 @@ Status Track::swapBuffers() {
     return Status::Stop;
   }
   AudioNoInterrupts();
-  if (loopEstablished) {
+  if (!loopEstablished) {
+    loopEstablished = true;
+  } else {
     writeFile = SD.open(writeFileName);
     readFile = SD.open(readFileName);
     writeFile.truncate(readFile.size());
     writeFile.close();
     readFile.close();
-  } else {
-    loopEstablished = true;
   }
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
   Serial.printf("Read file: %s, Write file %s\n", readFileName, writeFileName);
   AudioInterrupts();
-  Serial.println("Loop ended, restarted from beginning");
   startPlaying();
   return Status::Play;
 }
