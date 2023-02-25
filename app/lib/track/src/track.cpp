@@ -47,6 +47,7 @@ Status Track::checkLoopEnded(Status status) {
     } else if (!playback.isPlaying()) {
       return swapBuffers();
     }
+    return status;
   default:
     Serial.println("This shouldn't be reached");
     return status;
@@ -175,11 +176,11 @@ Status Track::swapBuffers() {
   if (!stop()) {
     return Status::Stop;
   }
-  AudioNoInterrupts();
+  /* AudioNoInterrupts();
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
-  AudioInterrupts();
+  AudioInterrupts(); */
   Serial.println("Loop ended, restarted from beginning");
   startPlaying();
   return Status::Play;

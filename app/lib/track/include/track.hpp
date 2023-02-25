@@ -21,6 +21,9 @@ class Track {
   static const size_t recordBufferSize;
   static const RecordGain recordGain;
 
+  File readFile;
+  File writeFile;
+
   // Order of signal flow
   AudioInputI2S *source;
   AudioAnalyzePeak peak;
