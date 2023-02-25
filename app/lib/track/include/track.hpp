@@ -21,6 +21,8 @@ class Track {
   static const size_t recordBufferSize;
   static const RecordGain recordGain;
 
+  bool loopEstablished;
+
   File readFile;
   File writeFile;
 

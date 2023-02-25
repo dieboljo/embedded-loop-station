@@ -86,10 +86,10 @@ void loop() {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      /* track.punchOut();
-      status = Status::Play; */
-      track.stop();
-      status = Status::Stop;
+      // track.punchOut();
+      status = Status::Play;
+      /* track.stop();
+      status = Status::Stop; */
       break;
     /* case Status::Play:
       track.punchIn();
@@ -152,7 +152,7 @@ void loop() {
     Serial.println("Loop ended, restarted from beginning");
   } */
 
-  showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
+  // showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
 
   // when using a microphone, continuously adjust gain
   if (input == AUDIO_INPUT_MIC) {
