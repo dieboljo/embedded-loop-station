@@ -111,7 +111,6 @@ bool Track::initializeFiles() {
 // Pause recording and playback, and disable recording
 bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();
-  // return recording.pause() && playback.pause();
 }
 
 // Resume playing from a paused state
@@ -122,10 +121,14 @@ bool Track::play() {
 
 // Enable recording at the current track position,
 // in either replace or overdub mode
-// TODO: Implement overdub mode
-void Track::punchIn() {
-  bus.gain(Channel::Source, recordGain.solo);
-  bus.gain(Channel::Feedback, recordGain.mute);
+void Track::punchIn(Mode mode) {
+  if (mode == Mode::Replace) {
+    bus.gain(Channel::Source, recordGain.solo);
+    bus.gain(Channel::Feedback, recordGain.mute);
+  } else {
+    bus.gain(Channel::Source, recordGain.mix);
+    bus.gain(Channel::Feedback, recordGain.mix);
+  }
 }
 
 // Disable recording immediately
@@ -135,8 +138,8 @@ void Track::punchOut() {
 }
 
 // Resume recording from a paused state
-bool Track::record() {
-  punchIn();
+bool Track::record(Mode mode) {
+  punchIn(mode);
   return resume();
 }
 
@@ -175,8 +178,8 @@ bool Track::startPlaying() {
 }
 
 // Start recording from a stopped state
-bool Track::startRecording() {
-  punchIn();
+bool Track::startRecording(Mode mode) {
+  punchIn(mode);
   return start();
 }
 
@@ -192,7 +195,6 @@ bool Track::stop() {
   playback.stop();
   feedback.stop();
   return recording.isStopped() && playback.isStopped() && feedback.isStopped();
-  // return recording.isStopped() && playback.isStopped();
 }
 
 // Rotate read and write files pointers

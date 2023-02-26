@@ -39,6 +39,10 @@ AudioConnection sourceToDac(source, 0, dac, 0);
 
 Status status = Status::Stop;
 
+// TODO: Control this through user input
+// Mode mode = Mode::Overdub;
+Mode mode = Mode::Replace;
+
 Buttons buttons = {
     Bounce(buttonStopPin, 8),
     Bounce(buttonRecordPin, 8),
@@ -46,7 +50,8 @@ Buttons buttons = {
 };
 
 elapsedMillis audioMonitorDelay;
-elapsedMillis levelDisplayDelay;
+elapsedMillis inputLevelDisplayDelay;
+elapsedMillis outputLevelDisplayDelay;
 
 void setup() {
   initializeSerialCommunication();
@@ -89,17 +94,17 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Play:
-      track.punchIn();
+      track.punchIn(mode);
       status = Status::Record;
       break;
     case Status::Pause:
-      if (track.record()) {
+      if (track.record(mode)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      if (track.startRecording()) {
+      if (track.startRecording(mode)) {
         Serial.println("Recording started");
       }
       status = Status::Record;
@@ -146,7 +151,15 @@ void loop() {
 
   status = track.checkLoopEnded(status);
 
-  // showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
+  // Print input or output levels to the serial monitor.
+  if (monitorInput) {
+    showLevels(&sourcePeakLeft, &sourcePeakRight, &inputLevelDisplayDelay,
+               "Input level:  ");
+  }
+  if (monitorOutput) {
+    showLevels(&sinkPeakLeft, &sinkPeakRight, &outputLevelDisplayDelay,
+               "Output level: ");
+  }
 
   // when using a microphone, continuously adjust gain
   if (input == AUDIO_INPUT_MIC) {

@@ -87,7 +87,7 @@ void monitorAudioEngine(elapsedMillis *ms) {
 
 // Read and display stereo input or output channels
 void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
-                elapsedMillis *ms) {
+                elapsedMillis *ms, const char *label) {
   if (*ms > 1000) {
     int lp = 0, rp = 0, scale = 20;
     char cl = '?', cr = '?';
@@ -110,6 +110,7 @@ void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
       buf[scale] = '|';
       buf[scale * 2 + 2] = 0;
     }
+    Serial.print(label);
     Serial.println(buf);
   }
 }

@@ -4,7 +4,7 @@
 #include <AudioControl.h>
 #include <SD.h>
 
-#define USE_USB_OUTPUT
+// #define USE_USB_OUTPUT
 // #define USE_USB_INPUT
 
 // SD pins for Teensy 4.1
@@ -25,5 +25,8 @@ const int volumePin = A1;
 
 // 8 = 8 ms debounce time
 const int debounceTime = 8;
+
+const bool monitorInput = false;
+const bool monitorOutput = false;
 
 #endif

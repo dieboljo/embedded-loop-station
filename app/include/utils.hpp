@@ -13,6 +13,6 @@ void initializeSdCard();
 void initializeSerialCommunication();
 void monitorAudioEngine(elapsedMillis *ms);
 void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
-                elapsedMillis *ms);
+                elapsedMillis *ms, const char *label);
 
 #endif

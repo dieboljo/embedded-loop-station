@@ -39,7 +39,6 @@ class Track {
   AudioConnection busToPeak;
   AudioConnection busToRecordingLeft;
   AudioConnection busToRecordingRight;
-  // AudioConnection sourceToRecording;
 
   bool configureBuffers();
   bool initializeFiles();
@@ -60,12 +59,12 @@ public:
   Status checkLoopEnded(Status status);
   bool play();
   bool pause();
-  void punchIn();
+  void punchIn(Mode mode);
   void punchOut();
   float readPeak() { return peak.available() ? peak.read() : 0.0; };
-  bool record();
+  bool record(Mode mode);
   bool startPlaying();
-  bool startRecording();
+  bool startRecording(Mode mode);
   bool stop();
 };
 
