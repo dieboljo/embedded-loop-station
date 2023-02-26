@@ -9,7 +9,7 @@ AudioControlSGTL5000 interface;
 
 AudioInputI2S source;
 
-#ifdef USB_MIDI_AUDIO_SERIAL
+#ifdef USE_USB_OUTPUT
 /* USB output */
 AudioOutputAnalog dac;
 AudioOutputUSB sink;
@@ -33,7 +33,7 @@ AudioConnection sourceToPeakRight(source, 0, sourcePeakRight, 0);
 AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
 
-#ifdef USB_MIDI_AUDIO_SERIAL
+#ifdef USE_USB_OUTPUT
 AudioConnection sourceToDac(source, 0, dac, 0);
 #endif
 

@@ -6,10 +6,8 @@
 #include <track.hpp>
 
 // Audio buffer sizes
-// const size_t Track::playBufferSize = 65536;
-const size_t Track::playBufferSize = 32768;
-// const size_t Track::recordBufferSize = 131072;
-const size_t Track::recordBufferSize = 32768;
+const size_t Track::playBufferSize = 65536;    // 64k
+const size_t Track::recordBufferSize = 131072; // 128k
 
 // Location of audio buffers
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
@@ -144,10 +142,8 @@ bool Track::record() {
 
 // Utility to start all audio streams
 bool Track::resume() {
-  // return playback.play() && feedback.play() && recording.record();
   if (playbackFile && feedbackFile) {
     return playback.play() && feedback.play() && recording.record();
-    // return recording.record() && playback.play();
   } else {
     return recording.record();
   }
