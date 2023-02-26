@@ -25,7 +25,6 @@ AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
 Track track("file1.wav", "file2.wav", &source);
-// Track track("file2.wav", "file1.wav", &source);
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
@@ -56,7 +55,7 @@ void setup() {
   configureButtons();
 
   // Audio connections require memory
-  AudioMemory(60);
+  AudioMemory(20);
 
   // Initialize processor and memory measurements
   AudioProcessorUsageMaxReset();
@@ -86,12 +85,10 @@ void loop() {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      // track.punchOut();
+      track.punchOut();
       status = Status::Play;
-      /* track.stop();
-      status = Status::Stop; */
       break;
-    /* case Status::Play:
+    case Status::Play:
       track.punchIn();
       status = Status::Record;
       break;
@@ -100,7 +97,7 @@ void loop() {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
-      break; */
+      break;
     case Status::Stop:
       if (track.startRecording()) {
         Serial.println("Recording started");
@@ -123,7 +120,7 @@ void loop() {
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Pressed");
     switch (status) {
-    /* case Status::Play:
+    case Status::Play:
     case Status::Record:
       if (track.pause()) {
         Serial.println("Paused");
@@ -135,7 +132,7 @@ void loop() {
         Serial.println("Resumed playback");
       }
       status = Status::Play;
-      break; */
+      break;
     case Status::Stop:
       if (track.startPlaying()) {
         Serial.println("Playback started");
@@ -148,9 +145,6 @@ void loop() {
   }
 
   status = track.checkLoopEnded(status);
-  /* if (track.checkLoopEnded(status)) {
-    Serial.println("Loop ended, restarted from beginning");
-  } */
 
   // showLevels(&sourcePeakLeft, &sourcePeakRight, &levelDisplayDelay);
 

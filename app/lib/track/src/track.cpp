@@ -23,7 +23,6 @@ bool Track::begin() {
 
   bool configured = configureBuffers();
 
-  // return initialized && configured;
   return initialized && configured;
 }
 
@@ -44,7 +43,7 @@ Status Track::checkLoopEnded(Status status) {
       Serial.println("Looping back from play");
       // End of loop, switch to recorded audio
       return swapBuffers();
-    } else if (!readFile) {
+    } else if (!playbackFile) {
       if (!loopEstablished && recording.positionMillis()) {
         Serial.println("Setting the base loop");
         return swapBuffers();
@@ -57,7 +56,7 @@ Status Track::checkLoopEnded(Status status) {
     if (millis() % 1000 == 0) {
       Serial.println("o");
     }
-    if (!readFile) {
+    if (!playbackFile) {
       // First recording, keep it moving
       return status;
     } else if (!playback.isPlaying()) {
@@ -75,7 +74,7 @@ bool Track::configureBuffers() {
   AudioBuffer::result ok = AudioBuffer::ok;
   bool configured =
       playback.createBuffer(playBufferSize, bufferLocation) == ok &&
-      // feedback.createBuffer(playBufferSize, bufferLocation) == ok &&
+      feedback.createBuffer(playBufferSize, bufferLocation) == ok &&
       recording.createBuffer(recordBufferSize, bufferLocation) == ok;
   if (!configured) {
     Serial.println("Failed to configure audio buffers");
@@ -96,30 +95,30 @@ bool Track::initializeFiles() {
     Serial.println("Failed to remove existing track files");
   }
   // Create the file buffers
-  writeFile = SD.open(writeFileName, FILE_WRITE);
-  if (!writeFile) {
+  recordingFile = SD.open(writeFileName, FILE_WRITE);
+  if (!recordingFile) {
     Serial.println("Failed to create write file");
     success = false;
   }
-  writeFile.close();
-  readFile = SD.open(readFileName, FILE_WRITE);
-  if (!readFile) {
+  recordingFile.close();
+  playbackFile = SD.open(readFileName, FILE_WRITE);
+  if (!playbackFile) {
     Serial.println("Failed to create read file");
     success = false;
   }
-  readFile.close();
+  playbackFile.close();
   return success;
 }
 
 // Pause recording and playback, and disable recording
 bool Track::pause() {
-  // return playback.pause() && feedback.pause() && recording.pause();
-  return recording.pause() && playback.pause();
+  return playback.pause() && feedback.pause() && recording.pause();
+  // return recording.pause() && playback.pause();
 }
 
 // Resume playing from a paused state
 bool Track::play() {
-  // punchOut();
+  punchOut();
   return resume();
 }
 
@@ -128,26 +127,27 @@ bool Track::play() {
 // TODO: Implement overdub mode
 void Track::punchIn() {
   bus.gain(Channel::Source, recordGain.solo);
-  // bus.gain(Channel::Feedback, recordGain.mute);
+  bus.gain(Channel::Feedback, recordGain.mute);
 }
 
 // Disable recording immediately
 void Track::punchOut() {
   bus.gain(Channel::Source, recordGain.mute);
-  // bus.gain(Channel::Feedback, recordGain.solo);
+  bus.gain(Channel::Feedback, recordGain.solo);
 }
 
 // Resume recording from a paused state
 bool Track::record() {
-  // punchIn();
+  punchIn();
   return resume();
 }
 
 // Utility to start all audio streams
 bool Track::resume() {
   // return playback.play() && feedback.play() && recording.record();
-  if (readFile) {
-    return recording.record() && playback.play();
+  if (playbackFile && feedbackFile) {
+    return playback.play() && feedback.play() && recording.record();
+    // return recording.record() && playback.play();
   } else {
     return recording.record();
   }
@@ -157,32 +157,30 @@ bool Track::resume() {
 // then starts playing them at once.
 // This allows play streams to queue their buffers.
 bool Track::start() {
-  readFile = SD.open(readFileName);
-  Serial.printf("File size: %d\n", readFile.size());
-  if (readFile.size()) {
-    playback.play(readFile, true);
+  playbackFile = SD.open(readFileName);
+  feedbackFile = SD.open(readFileName);
+  Serial.printf("File size: %d\n", playbackFile.size());
+  if (playbackFile.size() && feedbackFile.size()) {
+    playback.play(playbackFile, true);
+    feedback.play(feedbackFile, true);
   } else {
-    readFile.close();
+    playbackFile.close();
+    feedbackFile.close();
   }
-  // feedback.playSD(readFileName, true);
-  writeFile = SD.open(writeFileName, FILE_WRITE_BEGIN);
-  recording.record(writeFile, true);
+  recordingFile = SD.open(writeFileName, FILE_WRITE_BEGIN);
+  recording.record(recordingFile, true);
   return resume();
 }
 
 // Start playing from a stopped state
 bool Track::startPlaying() {
-  // punchOut();
-  /* playback.playSD(readFileName, true);
-  return playback.play(); */
+  punchOut();
   return start();
 }
 
 // Start recording from a stopped state
 bool Track::startRecording() {
-  // punchIn();
-  /* recording.recordSD(writeFileName, true);
-  return recording.record(); */
+  punchIn();
   return start();
 }
 
@@ -190,17 +188,15 @@ bool Track::startRecording() {
 // This allows the record buffer to flush to
 // its WAV file and update header information.
 bool Track::stop() {
-  // punchOut();
+  punchOut();
   recording.pause();
   playback.pause();
-  // feedback.pause();
+  feedback.pause();
   recording.stop();
   playback.stop();
-  // feedback.stop();
-  // return recording.isStopped() && playback.isStopped() &&
-  // feedback.isStopped();
-  // return recording.isStopped();
-  return recording.isStopped() && playback.isStopped();
+  feedback.stop();
+  return recording.isStopped() && playback.isStopped() && feedback.isStopped();
+  // return recording.isStopped() && playback.isStopped();
 }
 
 // Rotate read and write files pointers
@@ -214,11 +210,13 @@ Status Track::swapBuffers() {
   if (!loopEstablished) {
     loopEstablished = true;
   } else {
-    writeFile = SD.open(writeFileName);
-    readFile = SD.open(readFileName);
-    writeFile.truncate(readFile.size());
-    writeFile.close();
-    readFile.close();
+    // Done to make sure the loop remains at the
+    // initial size, not sure if it's necessary
+    recordingFile = SD.open(writeFileName);
+    playbackFile = SD.open(readFileName);
+    recordingFile.truncate(playbackFile.size());
+    recordingFile.close();
+    playbackFile.close();
   }
   const char *temp = readFileName;
   readFileName = writeFileName;
@@ -231,5 +229,8 @@ Status Track::swapBuffers() {
 
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
     : loopEstablished(false), source(s),
-      sourceToRecording(*source, 0, recording, 0), readFileName(f1),
+      sourceToBus(*source, 0, bus, Channel::Source),
+      feedbackToBus(feedback, 0, bus, Channel::Feedback),
+      busToPeak(bus, 0, peak, 0), busToRecordingLeft(bus, 0, recording, 0),
+      busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
