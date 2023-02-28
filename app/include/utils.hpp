@@ -11,8 +11,10 @@ void findSGTL5000(AudioControlSGTL5000 &interface);
 void initializeInterface(AudioControlSGTL5000 &interface);
 void initializeSdCard();
 void initializeSerialCommunication();
-void monitorAudioEngine(elapsedMillis *ms);
+void monitorAudioEngine();
 void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
                 elapsedMillis *ms, const char *label);
+void showInputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);
+void showOutputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);
 
 #endif

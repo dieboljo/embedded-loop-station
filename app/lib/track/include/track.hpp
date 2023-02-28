@@ -1,20 +1,19 @@
 #ifndef TRACK_HPP
 #define TRACK_HPP
 
+#include "types.hpp"
 #include <Audio.h>
 
-enum class Mode { Replace, Overdub };
-enum class Status { Stop, Record, Play, Pause };
-enum Channel { Source, Feedback };
-
-// Gains for overdub and replace modes
-struct RecordGain {
-  float mute;
-  float mix;
-  float solo;
-};
-
 class Track {
+
+  enum Channel { Source, Feedback };
+
+  // Gains for overdub and replace modes
+  struct RecordGain {
+    float mute;
+    float mix;
+    float solo;
+  };
 
   static const AudioBuffer::bufType bufferLocation;
   static const size_t playBufferSize;
@@ -65,7 +64,7 @@ public:
   bool record(Mode mode);
   bool startPlaying();
   bool startRecording(Mode mode);
-  bool stop();
+  bool stop(bool cancel = false);
 };
 
 #endif

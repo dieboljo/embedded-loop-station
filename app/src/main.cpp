@@ -49,10 +49,6 @@ Buttons buttons = {
     Bounce(buttonPlayPin, 8),
 };
 
-elapsedMillis audioMonitorDelay;
-elapsedMillis inputLevelDisplayDelay;
-elapsedMillis outputLevelDisplayDelay;
-
 void setup() {
   initializeSerialCommunication();
 
@@ -82,7 +78,7 @@ void loop() {
 
   adjustVolume(interface);
 
-  monitorAudioEngine(&audioMonitorDelay);
+  monitorAudioEngine();
 
   // Respond to button presses
 
@@ -116,7 +112,7 @@ void loop() {
 
   if (buttons.stop.fallingEdge()) {
     Serial.println("Stop Button Pressed");
-    if (track.stop()) {
+    if (track.stop(true)) {
       Serial.println("Loop stopped");
     }
     status = Status::Stop;
@@ -153,12 +149,10 @@ void loop() {
 
   // Print input or output levels to the serial monitor.
   if (monitorInput) {
-    showLevels(&sourcePeakLeft, &sourcePeakRight, &inputLevelDisplayDelay,
-               "Input level:  ");
+    showInputLevels(&sourcePeakLeft, &sourcePeakRight);
   }
   if (monitorOutput) {
-    showLevels(&sinkPeakLeft, &sinkPeakRight, &outputLevelDisplayDelay,
-               "Output level: ");
+    showOutputLevels(&sinkPeakLeft, &sinkPeakRight);
   }
 
   // when using a microphone, continuously adjust gain

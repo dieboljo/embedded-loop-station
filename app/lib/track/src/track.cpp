@@ -13,7 +13,7 @@ const size_t Track::recordBufferSize = 131072; // 128k
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
 
 // Input gains for recording (overdub or replace) vs playback
-const RecordGain Track::recordGain = {0.0, 0.5, 1.0};
+const Track::RecordGain Track::recordGain = {0.0, 0.5, 1.0};
 
 // Create the read/write files, and configure the audio buffers
 bool Track::begin() {
@@ -186,7 +186,7 @@ bool Track::startRecording(Mode mode) {
 // Pause all audio streams, then close them.
 // This allows the record buffer to flush to
 // its WAV file and update header information.
-bool Track::stop() {
+bool Track::stop(bool cancel) {
   punchOut();
   recording.pause();
   playback.pause();
@@ -194,10 +194,13 @@ bool Track::stop() {
   recording.stop();
   playback.stop();
   feedback.stop();
+  if (cancel) {
+    SD.remove(writeFileName);
+  }
   return recording.isStopped() && playback.isStopped() && feedback.isStopped();
 }
 
-// Rotate read and write files pointers
+// Rotate read and write file pointers
 // whenever a loop reaches its end
 Status Track::swapBuffers() {
   if (!stop()) {
@@ -210,11 +213,11 @@ Status Track::swapBuffers() {
   } else {
     // Done to make sure the loop remains at the
     // initial size, not sure if it's necessary
-    recordingFile = SD.open(writeFileName);
+    /* recordingFile = SD.open(writeFileName);
     playbackFile = SD.open(readFileName);
     recordingFile.truncate(playbackFile.size());
     recordingFile.close();
-    playbackFile.close();
+    playbackFile.close(); */
   }
   const char *temp = readFileName;
   readFileName = writeFileName;

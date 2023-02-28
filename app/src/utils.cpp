@@ -70,8 +70,9 @@ void initializeSerialCommunication() {
   }
 }
 
-void monitorAudioEngine(elapsedMillis *ms) {
-  if (*ms > 10000) {
+void monitorAudioEngine() {
+  static elapsedMillis ms;
+  if (ms > 10000) {
     Serial.print("Proc = ");
     Serial.print(AudioProcessorUsage());
     Serial.print(" (");
@@ -81,7 +82,7 @@ void monitorAudioEngine(elapsedMillis *ms) {
     Serial.print(" (");
     Serial.print(AudioMemoryUsageMax());
     Serial.println(")");
-    *ms = 0;
+    ms = 0;
   }
 }
 
@@ -113,4 +114,14 @@ void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
     Serial.print(label);
     Serial.println(buf);
   }
+}
+
+void showInputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR) {
+  static elapsedMillis ms;
+  showLevels(peakL, peakR, &ms, "Input level:  ");
+}
+
+void showOutputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR) {
+  static elapsedMillis ms;
+  showLevels(peakL, peakR, &ms, "Output level: ");
 }
