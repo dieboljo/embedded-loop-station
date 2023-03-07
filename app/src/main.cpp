@@ -1,6 +1,6 @@
 #include <Bounce.h>
 #include <config.h>
-#include <track.hpp>
+#include <track-controller.hpp>
 #include <types.hpp>
 #include <usb_audio.h>
 #include <utils.hpp>

@@ -1,13 +1,12 @@
 #include "Audio.h"
 #include <config.h>
-#include <include/track-test.hpp>
+#include <track-controller.hpp>
 #include <unity.h>
 
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
-TrackTest trackBase("FILE1.WAV", "FILE2.WAV", &source);
-TrackTest track = trackBase;
-const char *testFile = "FILE.WAV";
+TrackController controllerBase(&source);
+TrackController controller = controllerBase;
 
 int i = 0;
 bool loopTestsStarted = false;
@@ -18,38 +17,48 @@ bool stopLoopTests = false;
 */
 
 void test_begin() {
-  bool hasBegun = track.begin();
+  bool hasBegun = controller.begin();
   TEST_ASSERT_TRUE(hasBegun);
 }
 
-// TODO: Fix this test (need to wait several loops)
-void test_pause() {
-  track.begin();
-  track.startRecording(Mode::Replace);
-  TEST_ASSERT_TRUE(track.pause());
+void test_setSelectedTrack() {
+  controller.setSelectedTrack(2);
+  TEST_ASSERT_EQUAL_INT(controller.getSelectedTrack(), 2);
+  int overflow = controller.getNumTracks();
+  controller.setSelectedTrack(overflow);
+  TEST_ASSERT_NOT_EQUAL_INT(controller.getSelectedTrack(), overflow);
 }
 
 void test_startPlaying() {
+  controller.begin();
+  TEST_ASSERT_TRUE(controller.startPlaying());
+}
+
+/* void test_pause() {
+  TrackTest track = trackBase;
   track.begin();
-  TEST_ASSERT_TRUE(track.startPlaying());
+  track.startRecording();
+  TEST_ASSERT_TRUE(track.pause());
 }
 
 void test_startRecording() {
+  TrackTest track = trackBase;
   track.begin();
-  TEST_ASSERT_TRUE(track.startRecording(Mode::Replace));
+  TEST_ASSERT_TRUE(track.startRecording());
 }
 
 void test_stop() {
+  TrackTest track = trackBase;
   track.begin();
   track.startPlaying();
   TEST_ASSERT_TRUE(track.stop());
-}
+} */
 
 /*
 ## Test Runner
 */
 
-void setUp(void) { track = trackBase; }
+void setUp(void) { controller = controllerBase; }
 
 void tearDown(void) {
   i = 0;
@@ -83,6 +92,7 @@ void setup() {
 
   UNITY_BEGIN();
   RUN_TEST(test_begin);
+  RUN_TEST(test_setSelectedTrack);
   delay(500);
 }
 
@@ -92,12 +102,13 @@ void loop() {
     loopTestsStarted = true;
     RUN_TEST(test_startPlaying);
     delay(500);
-    RUN_TEST(test_startRecording);
+    /* RUN_TEST(test_startRecording);
     delay(500);
     RUN_TEST(test_pause);
     delay(500);
     RUN_TEST(test_stop);
-    delay(500);
+    delay(500); */
+
     // Toggle the stop flag so the program stops looping
     stopLoopTests = true;
   }

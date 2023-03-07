@@ -1,6 +1,0 @@
-{
-  "description": "Manages the recording of various tracks",
-  "keywords": ["audio"],
-  "name": "Recorder",
-  "version": "1.0.0"
-}
