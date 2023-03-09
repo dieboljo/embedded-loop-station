@@ -34,25 +34,16 @@ void test_startPlaying() {
   TEST_ASSERT_TRUE(controller.startPlaying());
 }
 
-/* void test_pause() {
-  TrackTest track = trackBase;
-  track.begin();
-  track.startRecording();
-  TEST_ASSERT_TRUE(track.pause());
-}
-
 void test_startRecording() {
-  TrackTest track = trackBase;
-  track.begin();
-  TEST_ASSERT_TRUE(track.startRecording());
+  controller.begin();
+  TEST_ASSERT_TRUE(controller.startRecording(Mode::Replace));
 }
 
 void test_stop() {
-  TrackTest track = trackBase;
-  track.begin();
-  track.startPlaying();
-  TEST_ASSERT_TRUE(track.stop());
-} */
+  controller.begin();
+  controller.startPlaying();
+  TEST_ASSERT_TRUE(controller.stop());
+}
 
 /*
 ## Test Runner
@@ -102,12 +93,10 @@ void loop() {
     loopTestsStarted = true;
     RUN_TEST(test_startPlaying);
     delay(500);
-    /* RUN_TEST(test_startRecording);
-    delay(500);
-    RUN_TEST(test_pause);
+    RUN_TEST(test_startRecording);
     delay(500);
     RUN_TEST(test_stop);
-    delay(500); */
+    delay(500);
 
     // Toggle the stop flag so the program stops looping
     stopLoopTests = true;

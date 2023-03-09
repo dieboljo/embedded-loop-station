@@ -6,11 +6,13 @@
 class TrackController {
   static const int numTracks = 3;
   int selectedTrack = 0;
+  int baseTrack = -1;
 
   Track tracks[numTracks];
 
   AudioConnection trackToMixLeft[numTracks];
   AudioConnection trackToMixRight[numTracks];
+  void swapBuffers();
 
 public:
   TrackController(AudioInputI2S *s);

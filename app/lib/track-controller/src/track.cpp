@@ -22,45 +22,46 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-Status Track::checkLoopEnded(Status status) {
+bool Track::checkLoopEnded(Status status) {
   switch (status) {
   case Status::Stop:
   case Status::Pause:
-    return status;
+    return false;
   case Status::Play:
     if (playback.isPlaying()) {
       // Continue
       if (millis() % 1000 == 0) {
         Serial.println(">");
       }
-      return status;
+      return false;
     } else if (!playback.isPlaying() && recording.positionMillis()) {
       Serial.println("Looping back from play");
       // End of loop, switch to recorded audio
-      return swapBuffers();
+      swapBuffers();
     } else if (!playbackFile) {
       if (!loopEstablished && recording.positionMillis()) {
         Serial.println("Setting the base loop");
-        return swapBuffers();
+        swapBuffers();
       }
       // Nothing recorded yet, wait for initial recording
       Serial.println("Nothing to play yet, record something already!");
-      return Status::Stop;
     }
+    return true;
   case Status::Record:
     if (millis() % 1000 == 0) {
       Serial.println("o");
     }
     if (!playbackFile) {
       // First recording, keep it moving
-      return status;
+      return false;
     } else if (!playback.isPlaying()) {
-      return swapBuffers();
+      swapBuffers();
+      return true;
     }
-    return status;
+    return false;
   default:
     Serial.println("This shouldn't be reached");
-    return Status::Stop;
+    return false;
   }
 }
 
@@ -199,22 +200,13 @@ bool Track::stop(bool cancel) {
 
 // Rotate read and write file pointers
 // whenever a loop reaches its end
-Status Track::swapBuffers() {
+void Track::swapBuffers() {
   if (!stop()) {
     Serial.println("Failed to stop audio streams");
-    return Status::Stop;
   }
   AudioNoInterrupts();
   if (!loopEstablished) {
     loopEstablished = true;
-  } else {
-    // Done to make sure the loop remains at the
-    // initial size, not sure if it's necessary
-    /* recordingFile = SD.open(writeFileName);
-    playbackFile = SD.open(readFileName);
-    recordingFile.truncate(playbackFile.size());
-    recordingFile.close();
-    playbackFile.close(); */
   }
   const char *temp = readFileName;
   readFileName = writeFileName;
@@ -222,7 +214,6 @@ Status Track::swapBuffers() {
   Serial.printf("Read file: %s, Write file %s\n", readFileName, writeFileName);
   AudioInterrupts();
   startPlaying();
-  return Status::Play;
 }
 
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
