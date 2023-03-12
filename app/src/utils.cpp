@@ -2,6 +2,8 @@
 #include <config.h>
 #include <utils.hpp>
 
+const float knobMax = 1023.0;
+
 // Adjust the mic gain in response to the peak level
 // TODO Implement or delete this
 void adjustMicLevel() {}
@@ -9,9 +11,22 @@ void adjustMicLevel() {}
 // Read the volume knob position (analog input A1)
 float adjustVolume(AudioControlSGTL5000 &interface) {
   int knob = analogRead(volumePin);
-  float vol = (float)knob / 1280.0;
+  float vol = (float)knob / knobMax;
   interface.volume(vol);
   return vol;
+}
+
+void adjustPan(float *currentPan, Track &track, Mode mode) {
+  int knob = analogRead(panPin);
+  float panPos = (float)knob / knobMax;
+  // Check that knob change exceeds threshold before changing state
+  if (panPos < *currentPan + 0.05 && panPos > *currentPan - 0.05) {
+    return;
+  }
+  track.pan(panPos, mode);
+  *currentPan = panPos;
+  Serial.print("Pan = ");
+  Serial.println(panPos - 0.5);
 }
 
 // Configure the pushbutton pins

@@ -1,8 +1,6 @@
-#include "Audio.h"
-#include "FS.h"
-#include "core_pins.h"
 #include <Arduino.h>
 #include <SD.h>
+#include <math.h>
 #include <track.hpp>
 
 // Audio buffer sizes
@@ -13,7 +11,7 @@ const size_t Track::recordBufferSize = 131072; // 128k
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
 
 // Input gains for recording (overdub or replace) vs playback
-const Track::RecordGain Track::recordGain = {0.0, 0.5, 1.0};
+const Track::Gain Track::gain = {0.0, 0.8, 1.0};
 
 // Create the read/write files, and configure the audio buffers
 bool Track::begin() {
@@ -108,6 +106,27 @@ bool Track::initializeFiles() {
   return success;
 }
 
+void Track::pan(float panPos, Mode mode) {
+  if (!isRecording) {
+    return;
+  }
+  if (mode == Mode::Replace) {
+    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
+    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
+  } else {
+    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
+    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
+  }
+}
+
+float Track::panLeft(float gain, float panPos) {
+  return gain * cosf(panPos * (M_PI / 2));
+}
+
+float Track::panRight(float gain, float panPos) {
+  return gain * sinf(panPos * (M_PI / 2));
+}
+
 // Pause recording and playback, and disable recording
 bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();
@@ -121,25 +140,33 @@ bool Track::play() {
 
 // Enable recording at the current track position,
 // in either replace or overdub mode
-void Track::punchIn(Mode mode) {
+void Track::punchIn(Mode mode, float panPos) {
   if (mode == Mode::Replace) {
-    bus.gain(Channel::Source, recordGain.solo);
-    bus.gain(Channel::Feedback, recordGain.mute);
+    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
+    busLeft.gain(Channel::Feedback, gain.mute);
+    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
+    busRight.gain(Channel::Feedback, gain.mute);
   } else {
-    bus.gain(Channel::Source, recordGain.mix);
-    bus.gain(Channel::Feedback, recordGain.mix);
+    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
+    busLeft.gain(Channel::Feedback, gain.mix);
+    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
+    busRight.gain(Channel::Feedback, gain.mix);
   }
+  isRecording = true;
 }
 
 // Disable recording immediately
 void Track::punchOut() {
-  bus.gain(Channel::Source, recordGain.mute);
-  bus.gain(Channel::Feedback, recordGain.solo);
+  busLeft.gain(Channel::Source, gain.mute);
+  busLeft.gain(Channel::Feedback, gain.solo);
+  busRight.gain(Channel::Source, gain.mute);
+  busRight.gain(Channel::Feedback, gain.solo);
+  isRecording = false;
 }
 
 // Resume recording from a paused state
-bool Track::record(Mode mode) {
-  punchIn(mode);
+bool Track::record(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   return resume();
 }
 
@@ -178,8 +205,8 @@ bool Track::startPlaying() {
 }
 
 // Start recording from a stopped state
-bool Track::startRecording(Mode mode) {
-  punchIn(mode);
+bool Track::startRecording(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   return start();
 }
 
@@ -229,9 +256,10 @@ Status Track::swapBuffers() {
 }
 
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
-    : loopEstablished(false), source(s),
-      sourceToBus(*source, 0, bus, Channel::Source),
-      feedbackToBus(feedback, 0, bus, Channel::Feedback),
-      busToPeak(bus, 0, peak, 0), busToRecordingLeft(bus, 0, recording, 0),
-      busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
+    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
+      sourceToBusRight(*source, 0, busRight, Channel::Source),
+      feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
+      feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
+      busLeftToRecording(busLeft, 0, recording, 0),
+      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};

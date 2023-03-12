@@ -3,8 +3,10 @@
 
 #include <analyze_peak.h>
 #include <control_sgtl5000.h>
+#include <track.hpp>
 
 void adjustMicLevel();
+void adjustPan(float *currentPan, Track &track, Mode mode);
 float adjustVolume(AudioControlSGTL5000 &interface);
 void configureButtons();
 void findSGTL5000(AudioControlSGTL5000 &interface);

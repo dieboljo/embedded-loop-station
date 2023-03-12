@@ -22,6 +22,7 @@ const int input = AUDIO_INPUT_MIC;
 
 // volume knob analog input
 const int volumePin = A1;
+const int panPin = A2;
 
 // 8 = 8 ms debounce time
 const int debounceTime = 8;

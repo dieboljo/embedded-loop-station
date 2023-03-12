@@ -40,8 +40,10 @@ AudioConnection sourceToDac(source, 0, dac, 0);
 Status status = Status::Stop;
 
 // TODO: Control this through user input
-// Mode mode = Mode::Overdub;
-Mode mode = Mode::Replace;
+Mode mode = Mode::Overdub;
+// Mode mode = Mode::Replace;
+
+float pan = 0.0;
 
 Buttons buttons = {
     Bounce(buttonStopPin, 8),
@@ -78,6 +80,8 @@ void loop() {
 
   adjustVolume(interface);
 
+  adjustPan(&pan, track, mode);
+
   monitorAudioEngine();
 
   // Respond to button presses
@@ -90,17 +94,17 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Play:
-      track.punchIn(mode);
+      track.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      if (track.record(mode)) {
+      if (track.record(mode, pan)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      if (track.startRecording(mode)) {
+      if (track.startRecording(mode, pan)) {
         Serial.println("Recording started");
       }
       status = Status::Record;
