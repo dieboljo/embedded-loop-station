@@ -2,6 +2,8 @@
 #include <config.h>
 #include <utils.hpp>
 
+const float knobMax = 1023.0;
+
 // Adjust the mic gain in response to the peak level
 // TODO Implement or delete this
 void adjustMicLevel() {}
@@ -9,9 +11,22 @@ void adjustMicLevel() {}
 // Read the volume knob position (analog input A1)
 float adjustVolume(AudioControlSGTL5000 &interface) {
   int knob = analogRead(volumePin);
-  float vol = (float)knob / 1280.0;
+  float vol = (float)knob / knobMax;
   interface.volume(vol);
   return vol;
+}
+
+void adjustPan(float *currentPan, Track &track, Mode mode) {
+  int knob = analogRead(panPin);
+  float panPos = (float)knob / knobMax;
+  // Check that knob change exceeds threshold before changing state
+  if (panPos < *currentPan + 0.05 && panPos > *currentPan - 0.05) {
+    return;
+  }
+  track.pan(panPos, mode);
+  *currentPan = panPos;
+  Serial.print("Pan: ");
+  Serial.println(panPos - 0.5);
 }
 
 // Configure the pushbutton pins
@@ -19,6 +34,7 @@ void configureButtons() {
   pinMode(buttonRecordPin, INPUT_PULLUP);
   pinMode(buttonStopPin, INPUT_PULLUP);
   pinMode(buttonPlayPin, INPUT_PULLUP);
+  pinMode(buttonModePin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -39,13 +55,22 @@ void findSGTL5000(AudioControlSGTL5000 &interface) {
 // Enable the audio shield, select input, and enable output
 void initializeInterface(AudioControlSGTL5000 &interface) {
   findSGTL5000(interface);
+#ifdef USE_USB_INPUT
+  Serial.println("Using USB input");
+#else
   interface.inputSelect(input);
   if (input == AUDIO_INPUT_MIC) {
     interface.micGain(25);
   } else {
     interface.lineInLevel(2);
   }
+#endif
+
+#ifdef USE_USB_OUTPUT
+  Serial.println("Using USB output");
+#else
   interface.volume(0.5);
+#endif
 }
 
 // Initialize the SD card
@@ -73,11 +98,11 @@ void initializeSerialCommunication() {
 void monitorAudioEngine() {
   static elapsedMillis ms;
   if (ms > 10000) {
-    Serial.print("Proc = ");
+    Serial.print("Proc: ");
     Serial.print(AudioProcessorUsage());
     Serial.print(" (");
     Serial.print(AudioProcessorUsageMax());
-    Serial.print("),  Mem = ");
+    Serial.print("),  Mem: ");
     Serial.print(AudioMemoryUsage());
     Serial.print(" (");
     Serial.print(AudioMemoryUsageMax());
