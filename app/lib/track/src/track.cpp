@@ -52,10 +52,11 @@ Status Track::checkLoopEnded(Status status) {
     if (millis() % 1000 == 0) {
       Serial.println("o");
     }
-    if (!playbackFile) {
+    if (!loopEstablished) {
       // First recording, keep it moving
       return status;
     } else if (!playback.isPlaying()) {
+      Serial.println("Looping back from record");
       return swapBuffers();
     }
     return status;
@@ -257,7 +258,7 @@ Status Track::swapBuffers() {
 
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
     : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
-      sourceToBusRight(*source, 0, busRight, Channel::Source),
+      sourceToBusRight(*source, 1, busRight, Channel::Source),
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),
