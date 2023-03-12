@@ -1,20 +1,21 @@
-#include <Bounce.h>
 #include <config.h>
 #include <track.hpp>
 #include <types.hpp>
-#include <usb_audio.h>
 #include <utils.hpp>
 
 AudioControlSGTL5000 interface;
 
+#ifdef USE_USB_INPUT
+AudioInputUSB source;
+// Audio library needs at least one non-USB input to update properly
+AudioInputI2S dummy;
+#else
 AudioInputI2S source;
+#endif
 
 #ifdef USE_USB_OUTPUT
-/* USB output */
-AudioOutputAnalog dac;
 AudioOutputUSB sink;
 #else
-/* Audio shield output */
 AudioOutputI2S sink;
 #endif
 
@@ -29,13 +30,9 @@ Track track("file1.wav", "file2.wav", &source);
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
-AudioConnection sourceToPeakRight(source, 0, sourcePeakRight, 0);
+AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
 AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
-
-#ifdef USE_USB_OUTPUT
-AudioConnection sourceToDac(source, 0, dac, 0);
-#endif
 
 Status status = Status::Stop;
 
@@ -78,7 +75,9 @@ void loop() {
   buttons.play.update();
   buttons.mode.update();
 
+#ifndef USE_USB_OUTPUT
   adjustVolume(interface);
+#endif
 
   adjustPan(&pan, track, mode);
 

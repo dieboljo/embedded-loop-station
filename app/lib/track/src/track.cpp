@@ -31,8 +31,9 @@ Status Track::checkLoopEnded(Status status) {
   case Status::Play:
     if (playback.isPlaying()) {
       // Continue
-      if (millis() % 1000 == 0) {
+      if (ms > 1000) {
         Serial.println(">");
+        ms = 0;
       }
       return status;
     } else if (!playback.isPlaying() && recording.positionMillis()) {
@@ -49,8 +50,9 @@ Status Track::checkLoopEnded(Status status) {
       return Status::Stop;
     }
   case Status::Record:
-    if (millis() % 1000 == 0) {
+    if (ms > 1000) {
       Serial.println("o");
+      ms = 0;
     }
     if (!loopEstablished) {
       // First recording, keep it moving
@@ -248,6 +250,16 @@ Status Track::swapBuffers() {
   return Status::Play;
 }
 
+#ifdef USE_USB_INPUT
+Track::Track(const char *f1, const char *f2, AudioInputUSB *s)
+    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
+      sourceToBusRight(*source, 1, busRight, Channel::Source),
+      feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
+      feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
+      busLeftToRecording(busLeft, 0, recording, 0),
+      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
+      writeFileName(f2){};
+#else
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
     : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
       sourceToBusRight(*source, 1, busRight, Channel::Source),
@@ -256,3 +268,4 @@ Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
       busLeftToRecording(busLeft, 0, recording, 0),
       busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
+#endif

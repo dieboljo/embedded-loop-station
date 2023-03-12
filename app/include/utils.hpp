@@ -1,8 +1,6 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include <analyze_peak.h>
-#include <control_sgtl5000.h>
 #include <track.hpp>
 
 void adjustMicLevel();
