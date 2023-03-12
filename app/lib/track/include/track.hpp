@@ -1,67 +1,70 @@
 #ifndef TRACK_HPP
 #define TRACK_HPP
 
+#include "types.hpp"
 #include <Audio.h>
-#include <play-sd-raw.hpp>
-
-enum class Mode { Replace, Overdub };
-enum class Status { Stop, Record, Play, Pause };
-enum Channel { Source, Copy };
-struct Gain {
-  float mute;
-  float mix;
-  float solo;
-};
 
 class Track {
-  uint32_t position;
-  File writeFileBuffer;
+
+  enum Channel { Source, Feedback };
+
+  // Gains for overdub and replace modes
+  struct RecordGain {
+    float mute;
+    float mix;
+    float solo;
+  };
+
+  static const AudioBuffer::bufType bufferLocation;
+  static const size_t playBufferSize;
+  static const size_t recordBufferSize;
+  static const RecordGain recordGain;
+
+  bool loopEstablished;
+
+  File playbackFile;
+  File recordingFile;
+  File feedbackFile;
 
   // Order of signal flow
   AudioInputI2S *source;
-  AudioAnalyzePeak monitor;
+  AudioAnalyzePeak peak;
   AudioMixer4 bus;
-  AudioRecordQueue recordQueue;
-  App::AudioPlaySdRaw copy;
+  AudioRecordWAVstereo recording;
+  AudioPlayWAVstereo feedback;
 
   AudioConnection sourceToBus;
-  AudioConnection copyToBus;
-  AudioConnection busToMonitor;
-  AudioConnection busToRecordQueue;
+  AudioConnection feedbackToBus;
+  AudioConnection busToPeak;
+  AudioConnection busToRecordingLeft;
+  AudioConnection busToRecordingRight;
 
-  uint32_t closeWriteBuffer();
-  bool openWriteBuffer();
-  bool writeToBuffer();
+  bool configureBuffers();
+  bool initializeFiles();
+  bool resume();
+  bool start();
+  Status swapBuffers();
 
 protected:
   const char *readFileName;
   const char *writeFileName;
-  void swapBuffers();
 
 public:
-  Track(const char *f1, const char *f2, AudioInputI2S *s)
-      : position(0), source(s), sourceToBus(*source, 0, bus, Channel::Source),
-        copyToBus(copy, 0, bus, Channel::Copy), busToMonitor(bus, monitor),
-        busToRecordQueue(*source, 0, recordQueue, 0), readFileName(f1),
-        writeFileName(f2){};
+  Track(const char *f1, const char *f2, AudioInputI2S *s);
 
-  App::AudioPlaySdRaw audio;
+  AudioPlayWAVstereo playback;
 
-  bool advance(Status status);
-  void begin();
-
-  // TODO: Remove
-  uint32_t getPosition() { return position; };
-  uint32_t getLength() { return audio.lengthMillis(); };
-
-  float readPeak() { return monitor.available() ? monitor.read() : 0.0; };
-  void resetPosition() { position = 0; };
-  void startPlayback();
-  void startRecording();
-  void stopPlayback();
-  void stopRecording();
-  void pausePlayback();
-  void pauseRecording();
+  bool begin();
+  Status checkLoopEnded(Status status);
+  bool play();
+  bool pause();
+  void punchIn(Mode mode);
+  void punchOut();
+  float readPeak() { return peak.available() ? peak.read() : 0.0; };
+  bool record(Mode mode);
+  bool startPlaying();
+  bool startRecording(Mode mode);
+  bool stop(bool cancel = false);
 };
 
 #endif
