@@ -238,19 +238,11 @@ Status Track::swapBuffers() {
   AudioNoInterrupts();
   if (!loopEstablished) {
     loopEstablished = true;
-  } else {
-    // Done to make sure the loop remains at the
-    // initial size, not sure if it's necessary
-    /* recordingFile = SD.open(writeFileName);
-    playbackFile = SD.open(readFileName);
-    recordingFile.truncate(playbackFile.size());
-    recordingFile.close();
-    playbackFile.close(); */
   }
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
-  Serial.printf("Read file: %s, Write file %s\n", readFileName, writeFileName);
+  Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
   AudioInterrupts();
   startPlaying();
   return Status::Play;

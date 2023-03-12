@@ -39,9 +39,7 @@ AudioConnection sourceToDac(source, 0, dac, 0);
 
 Status status = Status::Stop;
 
-// TODO: Control this through user input
 Mode mode = Mode::Overdub;
-// Mode mode = Mode::Replace;
 
 float pan = 0.0;
 
@@ -49,6 +47,7 @@ Buttons buttons = {
     Bounce(buttonStopPin, 8),
     Bounce(buttonRecordPin, 8),
     Bounce(buttonPlayPin, 8),
+    Bounce(buttonModePin, 8),
 };
 
 void setup() {
@@ -77,6 +76,7 @@ void loop() {
   buttons.record.update();
   buttons.stop.update();
   buttons.play.update();
+  buttons.mode.update();
 
   adjustVolume(interface);
 
@@ -85,6 +85,15 @@ void loop() {
   monitorAudioEngine();
 
   // Respond to button presses
+  if (buttons.mode.fallingEdge()) {
+    if (mode == Mode::Overdub) {
+      mode = Mode::Replace;
+      Serial.println("Mode: REPLACE");
+    } else {
+      mode = Mode::Overdub;
+      Serial.println("Mode: OVERDUB");
+    }
+  }
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");

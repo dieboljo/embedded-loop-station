@@ -16,6 +16,7 @@ const int sdCardSckPin = 13;
 const int buttonRecordPin = 3;
 const int buttonStopPin = 4;
 const int buttonPlayPin = 5;
+const int buttonModePin = 41;
 
 // which input on the audio shield will be used?
 const int input = AUDIO_INPUT_MIC;

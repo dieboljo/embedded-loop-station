@@ -25,7 +25,7 @@ void adjustPan(float *currentPan, Track &track, Mode mode) {
   }
   track.pan(panPos, mode);
   *currentPan = panPos;
-  Serial.print("Pan = ");
+  Serial.print("Pan: ");
   Serial.println(panPos - 0.5);
 }
 
@@ -34,6 +34,7 @@ void configureButtons() {
   pinMode(buttonRecordPin, INPUT_PULLUP);
   pinMode(buttonStopPin, INPUT_PULLUP);
   pinMode(buttonPlayPin, INPUT_PULLUP);
+  pinMode(buttonModePin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -88,11 +89,11 @@ void initializeSerialCommunication() {
 void monitorAudioEngine() {
   static elapsedMillis ms;
   if (ms > 10000) {
-    Serial.print("Proc = ");
+    Serial.print("Proc: ");
     Serial.print(AudioProcessorUsage());
     Serial.print(" (");
     Serial.print(AudioProcessorUsageMax());
-    Serial.print("),  Mem = ");
+    Serial.print("),  Mem: ");
     Serial.print(AudioMemoryUsage());
     Serial.print(" (");
     Serial.print(AudioMemoryUsageMax());

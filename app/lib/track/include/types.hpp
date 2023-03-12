@@ -12,6 +12,7 @@ struct Buttons {
   Bounce stop;
   Bounce record;
   Bounce play;
+  Bounce mode;
 };
 
 enum class Mode { Replace, Overdub };
