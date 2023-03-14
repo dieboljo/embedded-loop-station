@@ -1,10 +1,8 @@
 #ifndef TRACK_HPP
 #define TRACK_HPP
 
+#include "types.hpp"
 #include <Audio.h>
-
-enum class Mode { Replace, Overdub };
-enum class Status { Stop, Record, Play, Pause };
 
 class Track {
 
@@ -22,8 +20,6 @@ class Track {
   static const size_t recordBufferSize;
   static const Gain gain;
 
-  elapsedMillis ms;
-
   bool isRecording = false;
   bool loopEstablished = false;
 
@@ -32,11 +28,7 @@ class Track {
   File feedbackFile;
 
   // Order of signal flow
-#ifdef USE_USB_INPUT
-  AudioInputUSB *source;
-#else
   AudioInputI2S *source;
-#endif
   AudioMixer4 busLeft;
   AudioMixer4 busRight;
   AudioRecordWAVstereo recording;
@@ -62,14 +54,11 @@ protected:
   const char *writeFileName;
 
 public:
-#ifdef USE_USB_INPUT
-  Track(const char *f1, const char *f2, AudioInputUSB *s);
-#else
   Track(const char *f1, const char *f2, AudioInputI2S *s);
-#endif
+
 
   AudioPlayWAVstereo playback;
-
+  
   bool begin();
   Status checkLoopEnded(Status status);
   void pan(float panPos, Mode mode);
@@ -81,6 +70,13 @@ public:
   bool startPlaying();
   bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);
+
+
+
+  
+  //sets new file name from SD card
+  void setWriteFileName(String name);
+  void reverse();
 };
 
 #endif

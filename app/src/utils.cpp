@@ -55,22 +55,13 @@ void findSGTL5000(AudioControlSGTL5000 &interface) {
 // Enable the audio shield, select input, and enable output
 void initializeInterface(AudioControlSGTL5000 &interface) {
   findSGTL5000(interface);
-#ifdef USE_USB_INPUT
-  Serial.println("Using USB input");
-#else
   interface.inputSelect(input);
   if (input == AUDIO_INPUT_MIC) {
     interface.micGain(25);
   } else {
     interface.lineInLevel(2);
   }
-#endif
-
-#ifdef USE_USB_OUTPUT
-  Serial.println("Using USB output");
-#else
   interface.volume(0.5);
-#endif
 }
 
 // Initialize the SD card

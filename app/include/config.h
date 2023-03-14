@@ -4,6 +4,9 @@
 #include <AudioControl.h>
 #include <SD.h>
 
+// #define USE_USB_OUTPUT
+// #define USE_USB_INPUT
+
 // SD pins for Teensy 4.1
 const int sdCardCsPin = BUILTIN_SDCARD;
 const int sdCardMosiPin = 11;

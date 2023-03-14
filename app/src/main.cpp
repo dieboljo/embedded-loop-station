@@ -1,21 +1,22 @@
+#include <Bounce.h>
 #include <config.h>
 #include <track.hpp>
 #include <types.hpp>
+#include <usb_audio.h>
 #include <utils.hpp>
+#include <display.hpp>
+#include <library.hpp>
 
 AudioControlSGTL5000 interface;
 
-#ifdef USE_USB_INPUT
-AudioInputUSB source;
-// Audio library needs at least one non-USB input to update properly
-AudioInputI2S dummy;
-#else
 AudioInputI2S source;
-#endif
 
 #ifdef USE_USB_OUTPUT
+/* USB output */
+AudioOutputAnalog dac;
 AudioOutputUSB sink;
 #else
+/* Audio shield output */
 AudioOutputI2S sink;
 #endif
 
@@ -30,9 +31,26 @@ Track track("file1.wav", "file2.wav", &source);
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
-AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
+AudioConnection sourceToPeakRight(source, 0, sourcePeakRight, 0);
 AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
+
+Display disp;
+Library lib;
+
+// define touchscreen
+//#define T_CS    41
+//#define T_IRQ   2
+
+// touchscreen offset for four corners
+//#define TS_MINX 400
+//#define TS_MINY 400
+//#define TS_MAXX 3879
+//#define TS_MAXY 3843
+
+#ifdef USE_USB_OUTPUT
+AudioConnection sourceToDac(source, 0, dac, 0);
+#endif
 
 Status status = Status::Stop;
 
@@ -65,6 +83,19 @@ void setup() {
 
   initializeSdCard();
 
+  // create lib and disp objects
+  lib.array();
+  // create fileArray containing names of SD card files
+  String * fileArray = lib.returnValue();
+  //copy fileArray to display array
+  disp.setArray(fileArray);
+
+  // boot display up
+  disp.Setup();
+  disp.Boot();
+  delay(4000);
+  disp.mainScreen();
+  
   track.begin();
 }
 
@@ -75,14 +106,47 @@ void loop() {
   buttons.play.update();
   buttons.mode.update();
 
-#ifndef USE_USB_OUTPUT
   adjustVolume(interface);
-#endif
+
+  disp.displayVol();
+  disp.displayPan();
+  disp.showLib();
+
+  if(disp.getNameChange()){
+    String name = disp.getFileName();
+    Serial.println(name);
+    track.setWriteFileName(name);
+    disp.setNameChange(false);
+  }
+  
+  track.reverse();
 
   adjustPan(&pan, track, mode);
 
   monitorAudioEngine();
 
+  if(disp.getModeChange() == 1){
+    if(disp.getMode() == 1){
+      mode = Mode::Replace;
+      disp.setModeChange(0);
+      Serial.println("Mode: REPLACE");
+    }
+    else{
+      mode = Mode::Overdub;
+      disp.setModeChange(0);
+      Serial.println("Mode: OVERDUB");
+    }
+  }
+
+  if(disp.getRevBool()){
+    //track.reverse();
+    Serial.print(disp.getRevBool());
+    disp.setRevBool(false);
+    Serial.print(disp.getRevBool());
+  }
+  
+
+  /*
   // Respond to button presses
   if (buttons.mode.fallingEdge()) {
     if (mode == Mode::Overdub) {
@@ -93,6 +157,7 @@ void loop() {
       Serial.println("Mode: OVERDUB");
     }
   }
+  */
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");

@@ -2,10 +2,12 @@
 #include <SD.h>
 #include <math.h>
 #include <track.hpp>
+#include <Audio.h>
 
 // Audio buffer sizes
 const size_t Track::playBufferSize = 65536;    // 64k
 const size_t Track::recordBufferSize = 131072; // 128k
+#define BUFFER_SIZE 1024
 
 // Location of audio buffers
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
@@ -31,9 +33,8 @@ Status Track::checkLoopEnded(Status status) {
   case Status::Play:
     if (playback.isPlaying()) {
       // Continue
-      if (ms > 1000) {
+      if (millis() % 1000 == 0) {
         Serial.println(">");
-        ms = 0;
       }
       return status;
     } else if (!playback.isPlaying() && recording.positionMillis()) {
@@ -50,9 +51,8 @@ Status Track::checkLoopEnded(Status status) {
       return Status::Stop;
     }
   case Status::Record:
-    if (ms > 1000) {
+    if (millis() % 1000 == 0) {
       Serial.println("o");
-      ms = 0;
     }
     if (!loopEstablished) {
       // First recording, keep it moving
@@ -250,16 +250,6 @@ Status Track::swapBuffers() {
   return Status::Play;
 }
 
-#ifdef USE_USB_INPUT
-Track::Track(const char *f1, const char *f2, AudioInputUSB *s)
-    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
-      sourceToBusRight(*source, 1, busRight, Channel::Source),
-      feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
-      feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
-      busLeftToRecording(busLeft, 0, recording, 0),
-      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
-      writeFileName(f2){};
-#else
 Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
     : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
       sourceToBusRight(*source, 1, busRight, Channel::Source),
@@ -268,4 +258,57 @@ Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
       busLeftToRecording(busLeft, 0, recording, 0),
       busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
-#endif
+
+
+// changes read file from library selection
+void Track::setWriteFileName(String name){
+  int Length = name.length() + 1;
+
+  Serial.print(Length);
+  char newReadFile[Length];
+  
+  name.toCharArray(newReadFile, Length);
+  this->readFileName = newReadFile;
+  Serial.println(writeFileName);
+  Serial.println(readFileName);
+}
+
+
+// Reverse readFile for playback
+void Track::reverse(){
+
+  byte buffer[BUFFER_SIZE];
+  int fileSize;
+  int bytesToRead;
+  int bytesRead;
+
+  File reversed = SD.open(readFileName, FILE_WRITE);
+  File file = SD.open(writeFileName, FILE_READ);
+
+  //File reversed = SD.open("reveredTest.wav", FILE_WRITE);
+  //File file = SD.open("SD_TEST1.WAV", FILE_READ);
+
+  // go to the end of the file
+  file.seek(0, SeekEnd);
+  //get current position
+  fileSize = file.position();
+
+  // go to the beginning of the data chunk
+  file.seek(44, SeekSet);
+
+  while(fileSize > 44){
+    bytesToRead = min(BUFFER_SIZE, fileSize - 44);
+    file.seek(fileSize = bytesToRead, SeekSet);
+    bytesRead = file.read(buffer, bytesToRead);
+    for (int i = bytesRead - 1; i >= 0; i--) {
+      reversed.write(buffer[i]);
+    }
+    fileSize -= bytesToRead;
+  }
+
+  Serial.print("done reveresing");
+  // close files
+  file.close();
+  reversed.close();
+
+}
