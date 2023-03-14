@@ -50,7 +50,7 @@ Buttons buttons = {
     Bounce(buttonStopPin, 8),
     Bounce(buttonRecordPin, 8),
     Bounce(buttonPlayPin, 8),
-    //Bounce(buttonModePin, 8), Using Touch Screen for mode change
+    Bounce(buttonModePin, 8),
 };
 
 void setup() {
