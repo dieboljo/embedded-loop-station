@@ -81,6 +81,10 @@ public:
   bool startPlaying();
   bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);
+
+  //sets new file name from SD card
+  void setWriteFileName(String name);
+  void reverse();
 };
 
 #endif

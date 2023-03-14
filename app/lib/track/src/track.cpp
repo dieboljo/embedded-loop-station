@@ -7,6 +7,9 @@
 const size_t Track::playBufferSize = 65536;    // 64k
 const size_t Track::recordBufferSize = 131072; // 128k
 
+// For reverse track ---- NEEDED?
+#define BUFFER_SIZE 1024
+
 // Location of audio buffers
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
 
@@ -269,3 +272,58 @@ Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
       busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
 #endif
+
+// changes read file from library selection
+void Track::setWriteFileName(String name){
+  int Length = name.length() + 1;
+
+  Serial.print(Length);
+  char newReadFile[Length];
+  
+  name.toCharArray(newReadFile, Length);
+  Serial.printf("Read file name was: %s\n", readFileName);
+  this->readFileName = newReadFile;
+  Serial.printf("Read file name now: %s\n", readFileName);
+  Serial.printf("Write file name: %s\n", writeFileName);
+ 
+}
+
+
+// Reverse readFile for playback
+void Track::reverse(){
+
+  byte buffer[BUFFER_SIZE];
+  int fileSize;
+  int bytesToRead;
+  int bytesRead;
+
+  File reversed = SD.open(readFileName, FILE_WRITE);
+  File file = SD.open(writeFileName, FILE_READ);
+
+  //File reversed = SD.open("reveredTest.wav", FILE_WRITE);
+  //File file = SD.open("SD_TEST1.WAV", FILE_READ);
+
+  // go to the end of the file
+  file.seek(0, SeekEnd);
+  //get current position
+  fileSize = file.position();
+
+  // go to the beginning of the data chunk
+  file.seek(44, SeekSet);
+
+  while(fileSize > 44){
+    bytesToRead = min(BUFFER_SIZE, fileSize - 44);
+    file.seek(fileSize = bytesToRead, SeekSet);
+    bytesRead = file.read(buffer, bytesToRead);
+    for (int i = bytesRead - 1; i >= 0; i--) {
+      reversed.write(buffer[i]);
+    }
+    fileSize -= bytesToRead;
+  }
+
+  Serial.print("done reveresing");
+  // close files
+  file.close();
+  reversed.close();
+
+}
