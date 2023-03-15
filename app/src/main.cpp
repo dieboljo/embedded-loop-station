@@ -41,10 +41,9 @@ Mode mode = Mode::Overdub;
 float pan = 0.0;
 
 Buttons buttons = {
-    Bounce(buttonStopPin, 8),
-    Bounce(buttonRecordPin, 8),
-    Bounce(buttonPlayPin, 8),
-    Bounce(buttonModePin, 8),
+    Bounce(buttonStopPin, 8), Bounce(buttonRecordPin, 8),
+    Bounce(buttonPlayPin, 8), Bounce(buttonModePin, 8),
+    Bounce(buttonSavePin, 8),
 };
 
 void setup() {
@@ -70,10 +69,7 @@ void setup() {
 
 void loop() {
   // First, read the buttons
-  buttons.record.update();
-  buttons.stop.update();
-  buttons.play.update();
-  buttons.mode.update();
+  readButtons(buttons);
 
 #ifndef USE_USB_OUTPUT
   adjustVolume(interface);
@@ -84,6 +80,11 @@ void loop() {
   monitorAudioEngine();
 
   // Respond to button presses
+  if (buttons.save.fallingEdge()) {
+    status = Status::Stop;
+    track.save();
+  }
+
   if (buttons.mode.fallingEdge()) {
     if (mode == Mode::Overdub) {
       mode = Mode::Replace;
