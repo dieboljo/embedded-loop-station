@@ -30,13 +30,13 @@
 #define TRACK_H 50
 
 // Define Stop button location and size
-#define STOP_X 10
+#define STOP_X 110
 #define STOP_Y 70
 #define STOP_W 70
 #define STOP_H 32
 
 // Define Record button location and size
-#define RECORD_X 90
+#define RECORD_X 10
 #define RECORD_Y 70
 #define RECORD_W 90
 #define RECORD_H 32

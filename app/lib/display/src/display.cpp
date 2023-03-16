@@ -51,7 +51,9 @@ void Display::setReverseButton(){
   tft.setTextColor(ILI9341_WHITE);
   tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
   tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_DARKGREY);
-  tft.print("Rev Off");
+  tft.print("Rev");
+  tft.setCursor(REVERSE_X + 8, REVERSE_Y + 30);
+  tft.print("OFF");
 }
 
 // set the pan bar
@@ -464,7 +466,7 @@ void Display::reverseButton(){
             tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
             tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_RED);
             tft.print("Rev");
-            tft.setCursor(REVERSE_X + 12, REVERSE_Y + 25);
+            tft.setCursor(REVERSE_X + 13, REVERSE_Y + 30);
             tft.print("ON");
             setRevBool(true);
             return;
@@ -475,7 +477,7 @@ void Display::reverseButton(){
             tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
             tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_LIGHTGREY);
             tft.print("Rev");
-            tft.setCursor(REVERSE_X + 1, REVERSE_Y + 25);
+            tft.setCursor(REVERSE_X + 8, REVERSE_Y + 30);
             tft.print("OFF");
             setRevBool(false);
           } 
