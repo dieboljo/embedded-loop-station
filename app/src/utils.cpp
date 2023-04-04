@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <config.h>
 #include <utils.hpp>
 
@@ -35,6 +34,7 @@ void configureButtons() {
   pinMode(buttonStopPin, INPUT_PULLUP);
   pinMode(buttonPlayPin, INPUT_PULLUP);
   pinMode(buttonModePin, INPUT_PULLUP);
+  pinMode(buttonSavePin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -88,7 +88,10 @@ void initializeSdCard() {
 void initializeSerialCommunication() {
   Serial.begin(9600);
 
-  delay(1000);
+  // Wait for Serial Monitor to open
+  while (!Serial)
+    ;
+  delay(100);
   if (CrashReport) {
     Serial.println(CrashReport);
     CrashReport.clear();
@@ -109,6 +112,14 @@ void monitorAudioEngine() {
     Serial.println(")");
     ms = 0;
   }
+}
+
+void readButtons(Buttons &buttons) {
+  buttons.record.update();
+  buttons.stop.update();
+  buttons.play.update();
+  buttons.mode.update();
+  buttons.save.update();
 }
 
 // Read and display stereo input or output channels
