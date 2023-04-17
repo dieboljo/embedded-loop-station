@@ -75,13 +75,10 @@ void setup() {
   // create fileArray containing names of SD card files
   String * fileArray = lib.returnValue();
   //copy fileArray to display array
-  disp.setArray(fileArray);
+  //disp.setArray(fileArray);
 
   // boot display up
-  disp.Setup();
-  disp.Boot();
-  delay(4000);
-  disp.mainScreen();
+  disp.setup();
 
   track.begin();
 }
@@ -104,13 +101,13 @@ void loop() {
   // Run display controls
   disp.displayVol();
   disp.displayPan();
-  disp.showLib();
+  disp.showLib(lib);
 
   // Get name change from library selection
   if(disp.getNameChange()){
     String name = disp.getFileName();
     Serial.println(name);
-    track.setWriteFileName(name);
+    //track.setWriteFileName(name);
     disp.setNameChange(false);
   }
 
@@ -136,44 +133,29 @@ void loop() {
     status = Status::Play;
   }
 
-  // Commented out - Current implemenation is using touchscreen interaction
-  // to change mode
-  /*
-  // Respond to button presses
-  if (buttons.mode.fallingEdge()) {
-    if (mode == Mode::Overdub) {
-      mode = Mode::Replace;
-      Serial.println("Mode: REPLACE");
-    } else {
-      mode = Mode::Overdub;
-      Serial.println("Mode: OVERDUB");
-    }
-  }
-  */
-
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      disp.SetRecordButton(false);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(true);
+      disp.setRecordButton(false);
+      disp.setStopButton(false);
+      disp.setPlayButton(true);
       disp.displayTrack("Playing");
       track.punchOut();
       status = Status::Play;
       break;
     case Status::Play:
-      disp.SetRecordButton(true);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(false);
+      disp.setRecordButton(true);
+      disp.setStopButton(false);
+      disp.setPlayButton(false);
       disp.displayTrack("Recording");
       track.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      disp.SetRecordButton(true);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(false);
+      disp.setRecordButton(true);
+      disp.setStopButton(false);
+      disp.setPlayButton(false);
       disp.displayTrack("Recording");
       if (track.record(mode, pan)) {
         Serial.println("Resumed recording");
@@ -181,9 +163,9 @@ void loop() {
       status = Status::Record;
       break;
     case Status::Stop:
-      disp.SetRecordButton(true);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(false);
+      disp.setRecordButton(true);
+      disp.setStopButton(false);
+      disp.setPlayButton(false);
       disp.displayTrack("Recording");
       if (track.startRecording(mode, pan)) {
         Serial.println("Recording started");
@@ -197,9 +179,9 @@ void loop() {
 
   if (buttons.stop.fallingEdge()) {
 
-    disp.SetRecordButton(false);
-    disp.SetStopButton(true);
-    disp.SetPlayButton(false);
+    disp.setRecordButton(false);
+    disp.setStopButton(true);
+    disp.setPlayButton(false);
     disp.displayTrack("Stopped");
 
     Serial.println("Stop Button Pressed");
@@ -213,23 +195,23 @@ void loop() {
     Serial.println("Play Button Pressed");
     switch (status) {
     case Status::Play:
-      disp.SetRecordButton(false);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(true);
+      disp.setRecordButton(false);
+      disp.setStopButton(false);
+      disp.setPlayButton(true);
       disp.displayTrack("Playing");
     case Status::Record:
-      disp.SetRecordButton(false);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(false);
+      disp.setRecordButton(false);
+      disp.setStopButton(false);
+      disp.setPlayButton(false);
       if (track.pause()) {
         Serial.println("Paused");
       }
       status = Status::Pause;
       break;
     case Status::Pause:
-      disp.SetRecordButton(false);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(true);
+      disp.setRecordButton(false);
+      disp.setStopButton(false);
+      disp.setPlayButton(true);
       disp.displayTrack("Playing");
       if (track.play()) {
         Serial.println("Resumed playback");
@@ -237,9 +219,9 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Stop:
-      disp.SetRecordButton(false);
-      disp.SetStopButton(false);
-      disp.SetPlayButton(true);
+      disp.setRecordButton(false);
+      disp.setStopButton(false);
+      disp.setPlayButton(true);
       disp.displayTrack("Playing");
       if (track.startPlaying()) {
         Serial.println("Playback started");

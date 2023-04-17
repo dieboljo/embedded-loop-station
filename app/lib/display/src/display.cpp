@@ -2,41 +2,59 @@
 #include <Arduino.h>
 #include <SD.h>
 
-ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
-XPT2046_Touchscreen ts(TS_CS);
-TS_Point p;
+// touchscreen offset for four corners
+const Display::Layout Display::touchScreen = {400, 400, 3879, 3843};
 
+// Display item location values - Screen is 240x320
+const Display::Layout Display::boot = {40, 120, 240, 360};
+const Display::Layout Display::play = {190, 70, 105, 32};
+const Display::Layout Display::stop = {110, 70, 70, 32};
+const Display::Layout Display::record = {10, 70, 90, 32};
+const Display::Layout Display::volume = {260, 180, 50, 50};
+const Display::Layout Display::mode = {10, 190, 90, 40};
+const Display::Layout Display::library = {10, 10, 300, 30};
+const Display::Layout Display::trackInfo = {10, 10, 300, 50};
+const Display::Layout Display::track1 = {70, 60, 180, 32};
+const Display::Layout Display::track2 = {70, 100, 180, 32};
+const Display::Layout Display::track3 = {70, 140, 180, 32};
+const Display::Layout Display::track4 = {70, 180, 180, 32};
+const Display::Layout Display::next = {260, 100, 50, 50};
+const Display::Layout Display::prev = {10, 100, 50, 50};
+const Display::Layout Display::reverse = {160, 160, 60, 60};
+const Display::Layout Display::panBar = {10, 110, 120, 30};
+const Display::Layout Display::panDot = {16, 125, 5, 0};
 
 // Display setup - call during setup
-void Display::Setup(){
+void Display::setup(){
   //Setup LCD screen
   tft.begin();
   // touch screen
   ts.begin();
   tft.setRotation(3);
   tft.fillScreen(ILI9341_LIGHTGREY);
+  bootup();
 }
 
 // Intro bootup screen
-void Display::Boot(){
+void Display::bootup(){
   tft.fillScreen(ILI9341_BLACK);
-  tft.setCursor(BOOT_X, BOOT_Y);
+  //tft.setCursor(BOOT_X, BOOT_Y);
+  tft.setCursor(boot.x, boot.y);
   tft.setFont(Arial_10);
   tft.setTextColor(ILI9341_WHITE);
   //load screen
   tft.print ("Embedded Digital Audio Loop Station");
-  //ts.begin();
-  //ts.setRotation(1);
-
+  delay(3000);
+  mainScreen();
 }
 
 // setup the main screen
 void Display::mainScreen(){
   tft.fillScreen(ILI9341_WHITE);
   //Draw buttons
-  SetPlayButton (false);
-  SetStopButton (false);
-  SetRecordButton (false);
+  setPlayButton (false);
+  setStopButton (false);
+  setRecordButton (false);
   setPanBar();
   setModeButton();
   setReverseButton();
@@ -49,72 +67,72 @@ void Display::mainScreen(){
 void Display::setReverseButton(){
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
-  tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_DARKGREY);
+  tft.setCursor(reverse.x + 10, reverse.y + 10);
+  tft.fillRoundRect(reverse.x, reverse.y, reverse.w, reverse.h, 8, ILI9341_DARKGREY);
   tft.print("Rev");
-  tft.setCursor(REVERSE_X + 8, REVERSE_Y + 30);
+  tft.setCursor(reverse.x + 8, reverse.y + 30);
   tft.print("OFF");
 }
 
 // set the pan bar
 void Display::setPanBar(){
-  tft.fillRoundRect(PAN_X, PAN_Y, PAN_W , PAN_H, 8, ILI9341_DARKGREY);
-  tft.fillCircle(DOT_X, DOT_Y, DOT_R, ILI9341_NAVY);
+  tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
+  tft.fillCircle(panDot.x, panDot.y, panDot.w, ILI9341_NAVY);
 }
 
 // set mode button
 void Display::setModeButton(){
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.setCursor(MODE_X + 5, MODE_Y + 5);
-  tft.fillRoundRect(MODE_X, MODE_Y, MODE_W, MODE_H, 8, ILI9341_BLACK);
+  tft.setCursor(mode.x + 5, mode.y + 10);
+  tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
   tft.print("Overdub");
 }
 
 // Set / Display play button
-void Display::SetPlayButton (boolean play){
-  tft.setCursor(PLAY_X + 8, PLAY_Y + 8);
+void Display::setPlayButton (boolean playStatus){
+  tft.setCursor(play.x + 8, play.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
   
-  if (!play) {  // button is set inactive, redraw button inactive
-    tft.fillRoundRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H, 4, ILI9341_BLACK);
+  if (!playStatus) {  // button is set inactive, redraw button inactive
+    tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_BLACK);
     tft.print ("Play Audio");
   }
   else {          // button is active, redraw button active
-    tft.fillRoundRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H, 4, ILI9341_GREEN);
+    tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_GREEN);
     tft.print ("Playing");
   }
 }
 
 // Set / Display record button
-void Display::SetRecordButton (boolean record){
-  tft.setCursor(RECORD_X + 8, RECORD_Y + 8);
+void Display::setRecordButton (boolean recordStatus){
+  tft.setCursor(record.x + 8, record.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
   
-  if (!record) {  // button is set inactive, redraw button inactive
-    tft.fillRoundRect(RECORD_X, RECORD_Y, RECORD_W, RECORD_H, 4, ILI9341_BLACK);
+  if (!recordStatus) {  // button is set inactive, redraw button inactive
+    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_BLACK);
     tft.print ("Record");
   }
   else {          // button is active, redraw button active
-    tft.fillRoundRect(RECORD_X, RECORD_Y, RECORD_W, RECORD_H, 4, ILI9341_GREEN);
+    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_GREEN);
     tft.print ("Recording");
   }
 }
 
 // Set / Display stop button
-void Display::SetStopButton (boolean stop){
-  tft.setCursor(STOP_X + 8, STOP_Y + 8);
+void Display::setStopButton (boolean stopStatus){
+  tft.setCursor(stop.x + 8, stop.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
   
-  if (!stop) {  // button is set inactive, redraw button inactive
-    tft.fillRoundRect(STOP_X, STOP_Y, STOP_W, STOP_H, 4, ILI9341_RED);
+  if (!stopStatus) {  // button is set inactive, redraw button inactive
+    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_RED);
     tft.print ("Stop");
   }
   else {          // button is active, redraw button active
-    tft.fillRoundRect(STOP_X, STOP_Y, STOP_W, STOP_H, 4, ILI9341_BLACK);
+    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_BLACK);
     tft.print ("Stop");
   }
 }
@@ -122,10 +140,10 @@ void Display::SetStopButton (boolean stop){
 
 // Display Track name
 void Display::displayTrack(String name){
-  tft.setCursor(TRACK_X + 50, TRACK_Y + 16);
+  tft.setCursor(trackInfo.x + 50, trackInfo.y + 16);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.fillRoundRect(TRACK_X, TRACK_Y, TRACK_W, TRACK_H, 8, ILI9341_BLACK);
+  tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK);
   tft.print(name);
 }
 
@@ -135,12 +153,12 @@ void Display::displayVol(){
   int vol = map(analogRead(A1), 0, 1000, 0, 100);
   // Volume pot is very sensitive - need to set a change range
   if (volumeChange <= (vol * .95) || volumeChange >= (vol * 1.05)){
-    tft.setCursor(VOLUME_X + 12, VOLUME_Y + 8);
+    tft.setCursor(volume.x + 12, volume.y + 8);
     tft.setFont(Arial_10);
     tft.setTextColor(ILI9341_WHITE);
-    tft.fillRoundRect(VOLUME_X, VOLUME_Y, VOLUME_W , VOLUME_H, 8, ILI9341_BLACK);
+    tft.fillRoundRect(volume.x, volume.y, volume.w , volume.h, 8, ILI9341_BLACK);
     tft.println("Vol");
-    tft.setCursor(VOLUME_X + 15, VOLUME_Y + 28);
+    tft.setCursor(volume.x + 15, volume.y + 28);
     tft.print(vol);
     // update volume if changed
     volumeChange = vol;
@@ -157,26 +175,26 @@ void Display::displayMode(int modeValue, int &actualMode){
   if (modeValue < 60 && actualMode != 1){
     actualMode = 1;
     Serial.println(actualMode);
-    tft.setCursor(MODE_X + 8, MODE_Y + 8);
-    tft.fillRoundRect(MODE_X, MODE_Y, MODE_W, MODE_H, 8, ILI9341_BLACK);
+    tft.setCursor(mode.x + 8, mode.y + 8);
+    tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
     tft.println("Record Mode");
   }
   if (modeValue > 65 && actualMode != 2){
     actualMode = 2;
-    tft.setCursor(MODE_X + 8, MODE_Y + 8);
-    tft.fillRoundRect(MODE_X, MODE_Y, MODE_W, MODE_H, 8, ILI9341_BLACK);
+    tft.setCursor(mode.x + 8, mode.y + 8);
+    tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
     tft.println("Library Mode");
   }
 }
 
 // copies array from library class
 void Display::setArray(String array[]){
-  fileArray = array;
+  //fileArray = array;
 }
 
 // Display Library
 // select from library
-void Display::displayLibrary(){
+void Display::displayLibrary(const Library& obj){
 
   String name;
   int index = 0;
@@ -186,33 +204,33 @@ void Display::displayLibrary(){
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
-  tft.setCursor(NEXT_X + 5, NEXT_Y + 5);
-  tft.fillRoundRect(NEXT_X, NEXT_Y, NEXT_W, NEXT_H, 8, ILI9341_BLACK);
+  tft.setCursor(next.x + 5, next.y + 5);
+  tft.fillRoundRect(next.x , next.y, next.w, next.h, 8, ILI9341_BLACK);
   tft.print("Next");
 
-  tft.setCursor(PREV_X + 5, PREV_Y + 5);
-  tft.fillRoundRect(PREV_X, PREV_Y, PREV_W, PREV_H, 8, ILI9341_BLACK);
+  tft.setCursor(prev.x + 5, prev.y + 5);
+  tft.fillRoundRect(prev.x, prev.y, prev.w, prev.h, 8, ILI9341_BLACK);
   tft.print("Prev");
 
-  tft.setCursor(LIB_X + 50, LIB_Y + 5);
-  tft.fillRoundRect(LIB_X, LIB_Y, LIB_W, LIB_H, 8, ILI9341_BLACK);
+  tft.setCursor(library.x + 50, library.y + 5);
+  tft.fillRoundRect(library.x, library.y, library.w, library.h, 8, ILI9341_BLACK);
   tft.print("Select Track - tap to exit");
 
-  tft.fillRoundRect(T1_X, T1_Y, T1_W, T1_H, 8, ILI9341_BLACK);
-  tft.setCursor(T1_X + 25, T1_Y + 8);
-  tft.print(fileArray[0]);
+  tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
+  tft.setCursor(track1.x + 25, track1.y + 8);
+  tft.print(obj.fileArray[0]);
 
-  tft.fillRoundRect(T2_X, T2_Y, T2_W, T2_H, 8, ILI9341_BLACK);
-  tft.setCursor(T2_X + 25, T2_Y + 8);
-  tft.print(fileArray[1]);
+  tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
+  tft.setCursor(track2.x + 25, track2.y + 8);
+  tft.print(obj.fileArray[1]);
 
-  tft.fillRoundRect(T3_X, T3_Y, T3_W, T3_H, 8, ILI9341_BLACK);
-  tft.setCursor(T3_X + 25, T3_Y + 8);
-  tft.print(fileArray[2]);
+  tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
+  tft.setCursor(track3.x + 25, track3.y + 8);
+  tft.print(obj.fileArray[2]);
 
-  tft.fillRoundRect(T4_X, T4_Y, T4_W, T4_H, 8, ILI9341_BLACK);
-  tft.setCursor(T4_X + 25, T4_Y + 8);
-  tft.print(fileArray[3]);
+  tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
+  tft.setCursor(track4.x + 25, track4.y + 8);
+  tft.print(obj.fileArray[3]);
 
   isTouched = false;
 
@@ -221,13 +239,13 @@ void Display::displayLibrary(){
       // get touch location
       p = ts.getPoint();
       delay(100);
-      p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.width());
-      p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.height());
+      p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
+      p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
 
       isTouched = true;
 
-      if ((p.x > TRACK_X) && (p.x < (TRACK_X + TRACK_W))) {
-        if ((p.y > TRACK_Y) && (p.y <= (TRACK_Y + TRACK_H))) {
+      if ((p.x > trackInfo.x) && (p.x < (trackInfo.x + trackInfo.w))) {
+        if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
           isTouched = false;
           // reset to main screen
           mainScreen();
@@ -236,32 +254,38 @@ void Display::displayLibrary(){
         }
       }
 
-      if ((p.x > NEXT_X) && (p.x < (NEXT_X + NEXT_W))) {
-          if ((p.y > NEXT_Y) && (p.y <= (NEXT_Y + NEXT_H))) {
+      if ((p.x > next.x) && (p.x < (next.x + next.w))) {
+          if ((p.y > next.y) && (p.y <= (next.y + next.h))) {
               Serial.println("Next pressed");
-
-              index = index + 4;
+              Serial.println(obj.size);
+    
+              if(index +4 > obj.size - 1){
+                true;
+              }else{
+                index = index + 4;
+              }
+              Serial.println(index);
         
-              tft.fillRoundRect(T1_X, T1_Y, T1_W, T1_H, 8, ILI9341_BLACK);
-              tft.setCursor(T1_X + 25, T1_Y + 8);
-              tft.print(fileArray[index]);
+              tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
+              tft.setCursor(track1.x + 25, track1.y + 8);
+              tft.print(obj.fileArray[index]);
 
-              tft.fillRoundRect(T2_X, T2_Y, T2_W, T2_H, 8, ILI9341_BLACK);
-              tft.setCursor(T2_X + 25, T2_Y + 8);
-              tft.print(fileArray[index + 1]);
+              tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
+              tft.setCursor(track2.x + 25, track2.y + 8);
+              tft.print(obj.fileArray[index + 1]);
 
-              tft.fillRoundRect(T3_X, T3_Y, T3_W, T3_H, 8, ILI9341_BLACK);
-              tft.setCursor(T3_X + 25, T3_Y + 8);
-              tft.print(fileArray[index + 2]);
+              tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
+              tft.setCursor(track3.x + 25, track3.y + 8);
+              tft.print(obj.fileArray[index + 2]);
 
-              tft.fillRoundRect(T4_X, T4_Y, T4_W, T4_H, 8, ILI9341_BLACK);
-              tft.setCursor(T4_X + 25, T4_Y + 8);
-              tft.print(fileArray[index + 3]);              
+              tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
+              tft.setCursor(track4.x + 25, track4.y + 8);
+              tft.print(obj.fileArray[index + 3]);              
           }
       }
 
-      if ((p.x > PREV_X) && (p.x < (PREV_X + PREV_W))) {
-          if ((p.y > PREV_Y) && (p.y <= (PREV_Y + PREV_H))) {
+      if ((p.x > prev.x) && (p.x < (prev.x + prev.w))) {
+          if ((p.y > prev.y) && (p.y <= (prev.y + prev.h))) {
             Serial.println("Prev pressed");
 
             index = index - 4;
@@ -270,21 +294,21 @@ void Display::displayLibrary(){
               index = 0;
             }
 
-            tft.fillRoundRect(T1_X, T1_Y, T1_W, T1_H, 8, ILI9341_BLACK);
-            tft.setCursor(T1_X + 25, T1_Y + 8);
-            tft.print(fileArray[index]);
+            tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
+            tft.setCursor(track1.x + 25, track1.y + 8);
+            tft.print(obj.fileArray[index]);
 
-            tft.fillRoundRect(T2_X, T2_Y, T2_W, T2_H, 8, ILI9341_BLACK);
-            tft.setCursor(T2_X + 25, T2_Y + 8);
-            tft.print(fileArray[index + 1]);
+            tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
+            tft.setCursor(track2.x + 25, track2.y + 8);
+            tft.print(obj.fileArray[index + 1]);
 
-            tft.fillRoundRect(T3_X, T3_Y, T3_W, T3_H, 8, ILI9341_BLACK);
-            tft.setCursor(T3_X + 25, T3_Y + 8);
-            tft.print(fileArray[index + 2]);
+            tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
+            tft.setCursor(track3.x + 25, track3.y + 8);
+            tft.print(obj.fileArray[index + 2]);
 
-            tft.fillRoundRect(T4_X, T4_Y, T4_W, T4_H, 8, ILI9341_BLACK);
-            tft.setCursor(T4_X + 25, T4_Y + 8);
-            tft.print(fileArray[index + 3]);
+            tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
+            tft.setCursor(track4.x + 25, track4.y + 8);
+            tft.print(obj.fileArray[index + 3]);  
           }
       }
     }
@@ -297,43 +321,40 @@ void Display::displayLibrary(){
 
       p = ts.getPoint();
       delay(100);
-      p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.width());
-      p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.height());
-
-      if ((p.x > T1_X) && (p.x < (T1_X + T1_W))) {
-          if ((p.y > T1_Y) && (p.y <= (T1_Y + T1_H))) {
+      p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
+      p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
+      
+      if ((p.x > track1.x) && (p.x < (track1.x + track1.w))) {
+          if ((p.y > track1.y) && (p.y <= (track1.y + track1.h))) {
             Serial.println("track one selected");
-            name = fileArray[index];
+            name = obj.fileArray[index];
             break;
           }
       }
-      if ((p.x > T2_X) && (p.x < (T2_X + T2_W))) {
-        if ((p.y > T2_Y) && (p.y <= (T2_Y + T2_H))) {
+      if ((p.x > track2.x) && (p.x < (track2.x + track2.w))) {
+        if ((p.y > track2.y) && (p.y <= (track2.y + track2.h))) {
           Serial.println("track two selected");
-          name = fileArray[index + 1];
+          name = obj.fileArray[index + 1];
           break;
         }
       }
-      if ((p.x > T3_X) && (p.x < (T3_X + T3_W))) {
-        if ((p.y > T3_Y) && (p.y <= (T3_Y + T3_H))) {
+      if ((p.x > track3.x) && (p.x < (track3.x + track3.w))) {
+        if ((p.y > track3.y) && (p.y <= (track3.y + track3.h))) {
           Serial.println("track three selected");
-          name = fileArray[index + 2];
+          name = obj.fileArray[index + 2];
           break;
         }
       }
-      if ((p.x > T4_X) && (p.x < (T4_X + T4_W))) {
-        if ((p.y > T4_Y) && (p.y <= (T4_Y + T4_H))) {
+      if ((p.x > track4.x) && (p.x < (track4.x + track4.w))) {
+        if ((p.y > track4.y) && (p.y <= (track4.y + track4.h))) {
           Serial.println("track four selected");
-          name = fileArray[index + 3];
+          name = obj.fileArray[index + 3];
           break;
         }
       }
     }
-
   // reset to main screen
   mainScreen();
-
-  
   // sets new file name to be used
   setFileName(name);
   // sets name change flag
@@ -342,32 +363,32 @@ void Display::displayLibrary(){
 
 
 // Reacts to touch
-void Display::showLib(){
+void Display::showLib(const Library& obj){
   if(ts.touched() && isTouched == false){
     delay(100);
 
     p = ts.getPoint();
-    p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.width());
-    p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.height());
+    p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
+    p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
     isTouched = true;
 
     // select mode
-    if ((p.x > MODE_X) && (p.x < (MODE_X + MODE_W))) {
-        if ((p.y > MODE_Y) && (p.y <= (MODE_Y + MODE_H))) {
+    if ((p.x > mode.x) && (p.x < (mode.x + mode.w))) {
+        if ((p.y > mode.y) && (p.y <= (mode.y + mode.h))) {
           selectMode(); 
         }
     }
 
     // display library
-    if ((p.x > TRACK_X) && (p.x < (TRACK_X + TRACK_W))) {
-        if ((p.y > TRACK_Y) && (p.y <= (TRACK_Y + TRACK_H))) {
-          displayLibrary(); 
+    if ((p.x > trackInfo.x) && (p.x < (trackInfo.x + trackInfo.w))) {
+        if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
+          displayLibrary(obj); 
         }
     }
 
     // Reverse on / off
-    if ((p.x > REVERSE_X) && (p.x < (REVERSE_X + REVERSE_W))) {
-        if ((p.y > REVERSE_Y) && (p.y <= (REVERSE_Y + REVERSE_H))) {
+    if ((p.x > reverse.x) && (p.x < (reverse.x + reverse.w))) {
+        if ((p.y > reverse.y) && (p.y <= (reverse.y + reverse.h))) {
           reverseButton(); 
         }
     }
@@ -392,29 +413,29 @@ void Display::selectMode(){
 
   if(ts.touched() && isTouched == false){
     Serial.println("mode pressed");
-    Serial.println(mode);
+    Serial.println(modeStatus);
 
     p = ts.getPoint();
     delay(100);
-    p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.width());
-    p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.height());
+    p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
+    p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
 
-    if ((p.x > MODE_X) && (p.x < (MODE_X + MODE_W))) {
-      if ((p.y > MODE_Y) && (p.y <= (MODE_Y + MODE_H))) {
+    if ((p.x > mode.x) && (p.x < (mode.x + mode.w))) {
+      if ((p.y > mode.y) && (p.y <= (mode.y + mode.h))) {
         if(getMode() == 2 && !isTouched){
-          tft.setCursor(MODE_X + 5, MODE_Y + 10);
-          tft.fillRoundRect(MODE_X, MODE_Y, MODE_W, MODE_H, 8, ILI9341_BLACK);
+          tft.setCursor(mode.x + 5, mode.y + 10);
+          tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
           tft.print("Replace");
-          this->mode = 1;
+          this->modeStatus = 1;
           this->modeChange = 1;
           isTouched = true;
         }
 
         if(getMode() == 1 && !isTouched){
-          tft.setCursor(MODE_X + 5, MODE_Y + 10);
-          tft.fillRoundRect(MODE_X, MODE_Y, MODE_W, MODE_H, 8, ILI9341_BLACK);
+          tft.setCursor(mode.x + 5, mode.y + 10);
+          tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
           tft.print("Overdub");
-          this->mode = 2;
+          this->modeStatus = 2;
           this->modeChange = 1;
           isTouched = true;
         }
@@ -433,12 +454,12 @@ void Display::displayPan(){
 
   if (panChange < (pan - 5) || panChange > (pan + 1)){
     
-    tft.setCursor(PAN_X + 40, PAN_Y +10);
+    tft.setCursor(panBar.x + 40, panBar.y +10);
     tft.setFont(Arial_14);
     tft.setTextColor(ILI9341_BLACK);
-    tft.fillRoundRect(PAN_X, PAN_Y, PAN_W , PAN_H, 8, ILI9341_DARKGREY);
+    tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
     tft.print("PAN");
-    tft.fillCircle(DOT_X + pan, DOT_Y, DOT_R, ILI9341_NAVY);
+    tft.fillCircle(panDot.x + pan, panDot.y, panDot.w, ILI9341_NAVY);
     panChange = pan;
   }
 }
@@ -454,19 +475,19 @@ void Display::reverseButton(){
     delay(100);
 
     p = ts.getPoint();
-    p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.width());
-    p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.height());
+    p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
+    p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
   
-   if ((p.x > REVERSE_X) && (p.x < (REVERSE_X + REVERSE_W))) {
-        if ((p.y > REVERSE_Y) && (p.y <= (REVERSE_Y + REVERSE_H))) {
+   if ((p.x > reverse.x) && (p.x < (reverse.x + reverse.w))) {
+        if ((p.y > reverse.y) && (p.y <= (reverse.y + reverse.h))) {
           isTouched = true;
           if(!reverseBool){
             tft.setFont(BUTTON_FONT);
             tft.setTextColor(ILI9341_BLACK);
-            tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
-            tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_RED);
+            tft.setCursor(reverse.x + 10, reverse.y + 10);
+            tft.fillRoundRect(reverse.x, reverse.y, reverse.w , reverse.h, 8, ILI9341_RED);
             tft.print("Rev");
-            tft.setCursor(REVERSE_X + 13, REVERSE_Y + 30);
+            tft.setCursor(reverse.x + 13, reverse.y + 30);
             tft.print("ON");
             setRevBool(true);
             return;
@@ -474,10 +495,10 @@ void Display::reverseButton(){
           if(reverseBool){
             tft.setFont(BUTTON_FONT);
             tft.setTextColor(ILI9341_BLACK);
-            tft.setCursor(REVERSE_X + 10, REVERSE_Y + 10);
-            tft.fillRoundRect(REVERSE_X, REVERSE_Y, REVERSE_W , REVERSE_H, 8, ILI9341_LIGHTGREY);
+            tft.setCursor(reverse.x + 10, reverse.y + 10);
+            tft.fillRoundRect(reverse.x, reverse.y, reverse.w , reverse.h, 8, ILI9341_LIGHTGREY);
             tft.print("Rev");
-            tft.setCursor(REVERSE_X + 8, REVERSE_Y + 30);
+            tft.setCursor(reverse.x + 8, reverse.y + 30);
             tft.print("OFF");
             setRevBool(false);
           } 

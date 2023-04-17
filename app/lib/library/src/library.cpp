@@ -1,18 +1,13 @@
 #include <library.hpp>
 #include <Arduino.h>
 #include <SD.h>
-
-
-const int SDCARD_MOSI_PIN = 11;
-const int SDCARD_SCK_PIN = 13;
-const int SDCARD_CS_PIN = BUILTIN_SDCARD;
+#include <display.hpp>
 
 // create the array of filenames
 void Library::array(){
-    File root = SD.open("/");
-    int count = 0;
+    File loops = SD.open("/loops");
     while(true){
-        File track = root.openNextFile();
+        File track = loops.openNextFile();
         if(!track){
             break;
         }
@@ -21,27 +16,34 @@ void Library::array(){
         continue;
         }
         Serial.print(track.name());
-        fileArray[count++] = track.name();
-        //count++;
+        fileArray[index++] = track.name();
         track.close();
     };
-    root.close();
+    loops.close();
 }
 
 // Add a value to the array
 void Library::addValue(String value){
-    fileArray[index++] = value;
+    if(index > size-1){
+        resize();
+        fileArray[index++] = value;
+    }else{
+        fileArray[index++] = value;
+    }
 }
 
-// Print value fron array
-String Library::printValue(int index){
-    String a = fileArray[index];
-    //Serial.println(a);
-    return a;
+// Resize the array
+void Library::resize(){
+    String * temp = new String[size*2];
+    for (int i = 0; i < size; i++){
+        temp[i] = fileArray[i];
+    }
+    size = size*2;
+    fileArray = temp;
+    delete [] temp;
 }
 
 // Return value from array
 String * Library::returnValue(){
-    //String a = fileArray[index];
     return fileArray;
 }
