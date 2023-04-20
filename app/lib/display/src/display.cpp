@@ -187,11 +187,6 @@ void Display::displayMode(int modeValue, int &actualMode){
   }
 }
 
-// copies array from library class
-void Display::setArray(String array[]){
-  //fileArray = array;
-}
-
 // Display Library
 // select from library
 void Display::displayLibrary(const Library& obj){
@@ -216,21 +211,7 @@ void Display::displayLibrary(const Library& obj){
   tft.fillRoundRect(library.x, library.y, library.w, library.h, 8, ILI9341_BLACK);
   tft.print("Select Track - tap to exit");
 
-  tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
-  tft.setCursor(track1.x + 25, track1.y + 8);
-  tft.print(obj.fileArray[0]);
-
-  tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
-  tft.setCursor(track2.x + 25, track2.y + 8);
-  tft.print(obj.fileArray[1]);
-
-  tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
-  tft.setCursor(track3.x + 25, track3.y + 8);
-  tft.print(obj.fileArray[2]);
-
-  tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
-  tft.setCursor(track4.x + 25, track4.y + 8);
-  tft.print(obj.fileArray[3]);
+  libraryTracks(0, obj);
 
   isTouched = false;
 
@@ -256,59 +237,29 @@ void Display::displayLibrary(const Library& obj){
 
       if ((p.x > next.x) && (p.x < (next.x + next.w))) {
           if ((p.y > next.y) && (p.y <= (next.y + next.h))) {
+
               Serial.println("Next pressed");
-              Serial.println(obj.size);
-    
               if(index +4 > obj.size - 1){
-                true;
+                // do nothing
               }else{
                 index = index + 4;
               }
-              Serial.println(index);
         
-              tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
-              tft.setCursor(track1.x + 25, track1.y + 8);
-              tft.print(obj.fileArray[index]);
-
-              tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
-              tft.setCursor(track2.x + 25, track2.y + 8);
-              tft.print(obj.fileArray[index + 1]);
-
-              tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
-              tft.setCursor(track3.x + 25, track3.y + 8);
-              tft.print(obj.fileArray[index + 2]);
-
-              tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
-              tft.setCursor(track4.x + 25, track4.y + 8);
-              tft.print(obj.fileArray[index + 3]);              
+              libraryTracks(index, obj);             
           }
       }
 
       if ((p.x > prev.x) && (p.x < (prev.x + prev.w))) {
           if ((p.y > prev.y) && (p.y <= (prev.y + prev.h))) {
-            Serial.println("Prev pressed");
 
+            Serial.println("Prev pressed");
             index = index - 4;
-          
+
             if(index < 0){
               index = 0;
             }
 
-            tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
-            tft.setCursor(track1.x + 25, track1.y + 8);
-            tft.print(obj.fileArray[index]);
-
-            tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
-            tft.setCursor(track2.x + 25, track2.y + 8);
-            tft.print(obj.fileArray[index + 1]);
-
-            tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
-            tft.setCursor(track3.x + 25, track3.y + 8);
-            tft.print(obj.fileArray[index + 2]);
-
-            tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
-            tft.setCursor(track4.x + 25, track4.y + 8);
-            tft.print(obj.fileArray[index + 3]);  
+            libraryTracks(index, obj);
           }
       }
     }
@@ -361,12 +312,31 @@ void Display::displayLibrary(const Library& obj){
   setNameChange(true);
 }
 
+void Display::libraryTracks(int index, const Library& obj){
+
+  tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
+  tft.setCursor(track1.x + 25, track1.y + 8);
+  tft.print(obj.fileArray[index]);
+
+  tft.fillRoundRect(track2.x, track2.y, track2.w, track2.h, 8, ILI9341_BLACK);
+  tft.setCursor(track2.x + 25, track2.y + 8);
+  tft.print(obj.fileArray[index + 1]);
+
+  tft.fillRoundRect(track3.x, track3.y, track3.w, track3.h, 8, ILI9341_BLACK);
+  tft.setCursor(track3.x + 25, track3.y + 8);
+  tft.print(obj.fileArray[index + 2]);
+
+  tft.fillRoundRect(track4.x, track4.y, track4.w, track4.h, 8, ILI9341_BLACK);
+  tft.setCursor(track4.x + 25, track4.y + 8);
+  tft.print(obj.fileArray[index + 3]);     
+
+}
 
 // Reacts to touch
 void Display::showLib(const Library& obj){
   if(ts.touched() && isTouched == false){
-    delay(100);
 
+    delay(100);
     p = ts.getPoint();
     p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
     p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
@@ -378,14 +348,12 @@ void Display::showLib(const Library& obj){
           selectMode(); 
         }
     }
-
     // display library
     if ((p.x > trackInfo.x) && (p.x < (trackInfo.x + trackInfo.w))) {
         if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
           displayLibrary(obj); 
         }
     }
-
     // Reverse on / off
     if ((p.x > reverse.x) && (p.x < (reverse.x + reverse.w))) {
         if ((p.y > reverse.y) && (p.y <= (reverse.y + reverse.h))) {
@@ -430,7 +398,6 @@ void Display::selectMode(){
           this->modeChange = 1;
           isTouched = true;
         }
-
         if(getMode() == 1 && !isTouched){
           tft.setCursor(mode.x + 5, mode.y + 10);
           tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);

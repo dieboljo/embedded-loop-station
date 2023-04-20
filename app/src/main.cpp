@@ -71,11 +71,8 @@ void setup() {
 
   initializeSdCard();
 
+  // Create file array for track selections
   lib.array();
-  // create fileArray containing names of SD card files
-  String * fileArray = lib.returnValue();
-  //copy fileArray to display array
-  //disp.setArray(fileArray);
 
   // boot display up
   disp.setup();

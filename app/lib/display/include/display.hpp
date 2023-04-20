@@ -56,15 +56,14 @@ class Display{
     static const Layout reverse;
 
     float volumeChange;
-    //String * fileArray; // array of files from SD card
     boolean isTouched = false;
     String fileName; // holds name of file to be used
+
     int modeStatus = 1; // 1 = overdub. 2 = replace
     int modeChange = 0;
-
-    boolean nameChange = false;
+    bool nameChange = false;
     int panChange = 50;
-    boolean reverseBool = false;
+    bool reverseBool = false;
 
     ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
     XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
@@ -87,7 +86,6 @@ class Display{
         void setup();
         void bootup();
         void mainScreen();
-        void showLibrary();
         void setPlayButton (boolean audio);
         void setRecordButton (boolean audio);
         void setStopButton (boolean audio);
@@ -96,6 +94,7 @@ class Display{
         void displayMode(int modeValue, int &actualMode);
         void showLib(const Library& obj);
         void displayLibrary(const Library& obj);
+        void libraryTracks(int index, const Library& obj);
         void selectMode();
         void setModeButton();
         void setFileName(String name) {this->fileName = name;}

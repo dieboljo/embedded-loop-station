@@ -14,7 +14,7 @@ class Library{
         friend class Display;
 
     public:
-        // Constructor and Destructor
+        // Constructor and Destructor - Defualt array size is 20
         Library(int size = SIZE) : size(size), index(0) {fileArray = new String[size];}
         ~Library() {delete [] fileArray;}
 
