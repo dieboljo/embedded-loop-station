@@ -91,7 +91,6 @@ class Display{
         void setStopButton (boolean audio);
         void displayTrack(String name);
         void displayVol();
-        void displayMode(int modeValue, int &actualMode);
         void showLib(const Library& obj);
         void displayLibrary(const Library& obj);
         void libraryTracks(int index, const Library& obj);
@@ -102,8 +101,8 @@ class Display{
         void displayPan();
         void setReverseButton();
         void reverseButton();
+        void updateStatus(bool record, bool stop, bool play);
 
-        void setArray(String array[]);
         String getFileName() {return fileName;};
 
 };

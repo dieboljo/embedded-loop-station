@@ -123,36 +123,32 @@ void loop() {
   }
   
   // Moinitor reverse flag
+  /*
   if(disp.getRevBool()){
     Serial.println("Reverse Entered");
     //track.reverse();        Commented out - Need work
     disp.setRevBool(false);
     status = Status::Play;
   }
+  */
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      disp.setRecordButton(false);
-      disp.setStopButton(false);
-      disp.setPlayButton(true);
+      disp.updateStatus(false, false, true);
       disp.displayTrack("Playing");
       track.punchOut();
       status = Status::Play;
       break;
     case Status::Play:
-      disp.setRecordButton(true);
-      disp.setStopButton(false);
-      disp.setPlayButton(false);
+      disp.updateStatus(true, false, false);
       disp.displayTrack("Recording");
       track.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      disp.setRecordButton(true);
-      disp.setStopButton(false);
-      disp.setPlayButton(false);
+      disp.updateStatus(true, false, false);
       disp.displayTrack("Recording");
       if (track.record(mode, pan)) {
         Serial.println("Resumed recording");
@@ -160,9 +156,7 @@ void loop() {
       status = Status::Record;
       break;
     case Status::Stop:
-      disp.setRecordButton(true);
-      disp.setStopButton(false);
-      disp.setPlayButton(false);
+      disp.updateStatus(true, false, false);
       disp.displayTrack("Recording");
       if (track.startRecording(mode, pan)) {
         Serial.println("Recording started");
@@ -175,10 +169,7 @@ void loop() {
   }
 
   if (buttons.stop.fallingEdge()) {
-
-    disp.setRecordButton(false);
-    disp.setStopButton(true);
-    disp.setPlayButton(false);
+    disp.updateStatus(false, true, false);
     disp.displayTrack("Stopped");
 
     Serial.println("Stop Button Pressed");
@@ -192,23 +183,17 @@ void loop() {
     Serial.println("Play Button Pressed");
     switch (status) {
     case Status::Play:
-      disp.setRecordButton(false);
-      disp.setStopButton(false);
-      disp.setPlayButton(true);
+      disp.updateStatus(false, false, true);
       disp.displayTrack("Playing");
     case Status::Record:
-      disp.setRecordButton(false);
-      disp.setStopButton(false);
-      disp.setPlayButton(false);
+      disp.updateStatus(false, false, false);
       if (track.pause()) {
         Serial.println("Paused");
       }
       status = Status::Pause;
       break;
     case Status::Pause:
-      disp.setRecordButton(false);
-      disp.setStopButton(false);
-      disp.setPlayButton(true);
+      disp.updateStatus(false, false, true);
       disp.displayTrack("Playing");
       if (track.play()) {
         Serial.println("Resumed playback");
@@ -216,9 +201,7 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Stop:
-      disp.setRecordButton(false);
-      disp.setStopButton(false);
-      disp.setPlayButton(true);
+      disp.updateStatus(false, false, true);
       disp.displayTrack("Playing");
       if (track.startPlaying()) {
         Serial.println("Playback started");
