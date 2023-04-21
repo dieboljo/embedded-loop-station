@@ -5,16 +5,11 @@
 
 // Bounce objects to easily and reliably read the buttons
 struct Buttons {
-  /* Bounce left;
-  Bounce nav;
-  Bounce select;
-  Bounce right; */
   Bounce stop;
   Bounce record;
   Bounce play;
+  Bounce mode;
+  Bounce save;
 };
-
-enum class Mode { Replace, Overdub };
-enum class Status { Stop, Record, Play, Pause };
 
 #endif

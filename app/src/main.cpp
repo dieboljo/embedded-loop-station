@@ -1,20 +1,21 @@
-#include <Bounce.h>
 #include <config.h>
 #include <track-controller.hpp>
 #include <types.hpp>
-#include <usb_audio.h>
 #include <utils.hpp>
 
 AudioControlSGTL5000 interface;
 
+#ifdef USE_USB_INPUT
+AudioInputUSB source;
+// Audio library needs at least one non-USB input to update properly
+AudioInputI2S dummy;
+#else
 AudioInputI2S source;
+#endif
 
 #ifdef USE_USB_OUTPUT
-/* USB output */
-AudioOutputAnalog dac;
 AudioOutputUSB sink;
 #else
-/* Audio shield output */
 AudioOutputI2S sink;
 #endif
 
@@ -29,24 +30,20 @@ Track track("file1.wav", "file2.wav", &source);
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
-AudioConnection sourceToPeakRight(source, 0, sourcePeakRight, 0);
+AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
 AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
 
-#ifdef USE_USB_OUTPUT
-AudioConnection sourceToDac(source, 0, dac, 0);
-#endif
-
 Status status = Status::Stop;
 
-// TODO: Control this through user input
-// Mode mode = Mode::Overdub;
-Mode mode = Mode::Replace;
+Mode mode = Mode::Overdub;
+
+float pan = 0.0;
 
 Buttons buttons = {
-    Bounce(buttonStopPin, 8),
-    Bounce(buttonRecordPin, 8),
-    Bounce(buttonPlayPin, 8),
+    Bounce(buttonStopPin, 8), Bounce(buttonRecordPin, 8),
+    Bounce(buttonPlayPin, 8), Bounce(buttonModePin, 8),
+    Bounce(buttonSavePin, 8),
 };
 
 void setup() {
@@ -72,15 +69,31 @@ void setup() {
 
 void loop() {
   // First, read the buttons
-  buttons.record.update();
-  buttons.stop.update();
-  buttons.play.update();
+  readButtons(buttons);
 
+#ifndef USE_USB_OUTPUT
   adjustVolume(interface);
+#endif
+
+  adjustPan(&pan, track, mode);
 
   monitorAudioEngine();
 
   // Respond to button presses
+  if (buttons.save.fallingEdge()) {
+    status = Status::Stop;
+    track.save();
+  }
+
+  if (buttons.mode.fallingEdge()) {
+    if (mode == Mode::Overdub) {
+      mode = Mode::Replace;
+      Serial.println("Mode: REPLACE");
+    } else {
+      mode = Mode::Overdub;
+      Serial.println("Mode: OVERDUB");
+    }
+  }
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
@@ -90,17 +103,17 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Play:
-      track.punchIn(mode);
+      track.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      if (track.record(mode)) {
+      if (track.record(mode, pan)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      if (track.startRecording(mode)) {
+      if (track.startRecording(mode, pan)) {
         Serial.println("Recording started");
       }
       status = Status::Record;
