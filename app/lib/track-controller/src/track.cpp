@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include <SD.h>
+#include <math.h>
 #include <track.hpp>
 
 // Audio buffer sizes
@@ -10,7 +10,7 @@ const size_t Track::recordBufferSize = 131072; // 128k
 const AudioBuffer::bufType Track::bufferLocation = AudioBuffer::inExt;
 
 // Input gains for recording (overdub or replace) vs playback
-const Track::RecordGain Track::recordGain = {0.0, 0.5, 1.0};
+const Track::Gain Track::gain = {0.0, 0.8, 1.0};
 
 // Create the read/write files, and configure the audio buffers
 bool Track::begin() {
@@ -22,47 +22,14 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-bool Track::checkLoopEnded(Status status) {
-  switch (status) {
-  case Status::Stop:
-  case Status::Pause:
-    return false;
-  case Status::Play:
-    if (playback.isPlaying()) {
-      // Continue
-      if (millis() % 1000 == 0) {
-        Serial.println(">");
-      }
-      return false;
-    } else if (!playback.isPlaying() && recording.positionMillis()) {
-      Serial.println("Looping back from play");
-      // End of loop, switch to recorded audio
-      swapBuffers();
-    } else if (!playbackFile) {
-      if (!loopEstablished && recording.positionMillis()) {
-        Serial.println("Setting the base loop");
-        swapBuffers();
-      }
-      // Nothing recorded yet, wait for initial recording
-      Serial.println("Nothing to play yet, record something already!");
-    }
-    return true;
-  case Status::Record:
-    if (millis() % 1000 == 0) {
-      Serial.println("o");
-    }
-    if (!playbackFile) {
-      // First recording, keep it moving
-      return false;
-    } else if (!playback.isPlaying()) {
-      swapBuffers();
-      return true;
-    }
-    return false;
-  default:
-    Serial.println("This shouldn't be reached");
-    return false;
+bool Track::checkLoop(Status status) {
+  if (playbackFile && !playback.isPlaying()) {
+    // End of loop, switch to recorded audio
+    Serial.println(status == Status::Play ? "Looping back from play"
+                                          : "Looping back from record");
+    return swapBuffers();
   }
+  return true;
 }
 
 // SD audio objects need buffers configuring
@@ -106,6 +73,27 @@ bool Track::initializeFiles() {
   return success;
 }
 
+void Track::pan(float panPos, Mode mode) {
+  if (!isRecording) {
+    return;
+  }
+  if (mode == Mode::Replace) {
+    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
+    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
+  } else {
+    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
+    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
+  }
+}
+
+float Track::panLeft(float gain, float panPos) {
+  return gain * cosf(panPos * (M_PI / 2));
+}
+
+float Track::panRight(float gain, float panPos) {
+  return gain * sinf(panPos * (M_PI / 2));
+}
+
 // Pause recording and playback, and disable recording
 bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();
@@ -119,25 +107,37 @@ bool Track::play() {
 
 // Enable recording at the current track position,
 // in either replace or overdub mode
-void Track::punchIn(Mode mode) {
+void Track::punchIn(Mode mode, float panPos) {
   if (mode == Mode::Replace) {
-    bus.gain(Channel::Source, recordGain.solo);
-    bus.gain(Channel::Feedback, recordGain.mute);
+    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
+    busLeft.gain(Channel::Feedback, gain.mute);
+    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
+    busRight.gain(Channel::Feedback, gain.mute);
   } else {
-    bus.gain(Channel::Source, recordGain.mix);
-    bus.gain(Channel::Feedback, recordGain.mix);
+    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
+    busLeft.gain(Channel::Feedback, gain.mix);
+    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
+    busRight.gain(Channel::Feedback, gain.mix);
   }
+  isRecording = true;
 }
 
 // Disable recording immediately
 void Track::punchOut() {
-  bus.gain(Channel::Source, recordGain.mute);
-  bus.gain(Channel::Feedback, recordGain.solo);
+  busLeft.gain(Channel::Source, gain.mute);
+  busLeft.gain(Channel::Feedback, gain.solo);
+  busRight.gain(Channel::Source, gain.mute);
+  busRight.gain(Channel::Feedback, gain.solo);
+  isRecording = false;
+  if (!loopEstablished && recording.positionMillis()) {
+    Serial.println("Setting the base loop");
+    swapBuffers();
+  }
 }
 
 // Resume recording from a paused state
-bool Track::record(Mode mode) {
-  punchIn(mode);
+bool Track::record(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   return resume();
 }
 
@@ -146,8 +146,49 @@ bool Track::resume() {
   if (playbackFile && feedbackFile) {
     return playback.play() && feedback.play() && recording.record();
   } else {
-    return recording.record();
+    return isRecording && recording.record();
   }
+}
+
+void Track::save() {
+  stop();
+  char label[30];
+  sprintf(label, "/loops/%ld.wav", Teensy3Clock.get());
+  AudioNoInterrupts();
+  if (!SD.exists("/loops")) {
+    SD.mkdir("/loops");
+  }
+  if (SD.exists(label)) {
+    SD.remove(label);
+  }
+  File writeFile = SD.open(label, FILE_WRITE_BEGIN);
+  File readFile = SD.open(readFileName);
+  if (!writeFile || !readFile) {
+    Serial.println("Failed to save track");
+    return;
+  }
+  Serial.print("Saving track");
+  byte buf[512];
+  int bufSize = sizeof(buf);
+  while (readFile.available()) {
+    if (ms > 1000) {
+      Serial.print(".");
+      ms = 0;
+    }
+    int nbytes = readFile.available();
+    if (nbytes > bufSize) {
+      readFile.read(buf, bufSize);
+      writeFile.write(buf, bufSize);
+    } else {
+      readFile.read(buf, nbytes);
+      writeFile.write(buf, nbytes);
+    }
+  }
+  readFile.close();
+  writeFile.close();
+  Serial.print("\nSaved track to file: ");
+  Serial.println(label);
+  AudioInterrupts();
 }
 
 // Opens all file streams in a paused state,
@@ -176,8 +217,8 @@ bool Track::startPlaying() {
 }
 
 // Start recording from a stopped state
-bool Track::startRecording(Mode mode) {
-  punchIn(mode);
+bool Track::startRecording(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   return start();
 }
 
@@ -200,9 +241,10 @@ bool Track::stop(bool cancel) {
 
 // Rotate read and write file pointers
 // whenever a loop reaches its end
-void Track::swapBuffers() {
+bool Track::swapBuffers() {
   if (!stop()) {
     Serial.println("Failed to stop audio streams");
+    return false;
   }
   AudioNoInterrupts();
   if (!loopEstablished) {
@@ -211,15 +253,27 @@ void Track::swapBuffers() {
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
-  Serial.printf("Read file: %s, Write file %s\n", readFileName, writeFileName);
+  Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
   AudioInterrupts();
-  startPlaying();
+  return startPlaying();
 }
 
-Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
-    : loopEstablished(false), source(s),
-      sourceToBus(*source, 0, bus, Channel::Source),
-      feedbackToBus(feedback, 0, bus, Channel::Feedback),
-      busToPeak(bus, 0, peak, 0), busToRecordingLeft(bus, 0, recording, 0),
-      busToRecordingRight(bus, 0, recording, 1), readFileName(f1),
+#ifdef USE_USB_INPUT
+Track::Track(const char *f1, const char *f2, AudioInputUSB *s)
+    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
+      sourceToBusRight(*source, 1, busRight, Channel::Source),
+      feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
+      feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
+      busLeftToRecording(busLeft, 0, recording, 0),
+      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
+#else
+Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
+    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
+      sourceToBusRight(*source, 1, busRight, Channel::Source),
+      feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
+      feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
+      busLeftToRecording(busLeft, 0, recording, 0),
+      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
+      writeFileName(f2){};
+#endif

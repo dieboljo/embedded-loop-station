@@ -1,5 +1,6 @@
 #include "Audio.h"
 #include <config.h>
+#include <include/track-test.hpp>
 #include <track-controller.hpp>
 #include <unity.h>
 
@@ -7,6 +8,9 @@ AudioInputI2S source;
 AudioControlSGTL5000 interface;
 TrackController controllerBase(&source);
 TrackController controller = controllerBase;
+TrackTest trackBase("FILE1.WAV", "FILE2.WAV", &source);
+TrackTest track = trackBase;
+const char *testFile = "FILE.WAV";
 
 int i = 0;
 bool loopTestsStarted = false;
@@ -15,6 +19,38 @@ bool stopLoopTests = false;
 /*
 ## Tests
 */
+
+// Single track tests
+
+void test_beginTrack() {
+  bool hasBegun = track.begin();
+  TEST_ASSERT_TRUE(hasBegun);
+}
+
+// TODO: Fix this test (need to wait several loops)
+void test_pauseTrack() {
+  track.begin();
+  track.startRecording(Mode::Replace);
+  TEST_ASSERT_TRUE(track.pause());
+}
+
+void test_startPlayingTrack() {
+  track.begin();
+  TEST_ASSERT_TRUE(track.startPlaying());
+}
+
+void test_startRecordingTrack() {
+  track.begin();
+  TEST_ASSERT_TRUE(track.startRecording(Mode::Replace, 0.0));
+}
+
+void test_stopTrack() {
+  track.begin();
+  track.startPlaying();
+  TEST_ASSERT_TRUE(track.stop());
+}
+
+// Multi track tests
 
 void test_begin() {
   bool hasBegun = controller.begin();
@@ -36,7 +72,7 @@ void test_startPlaying() {
 
 void test_startRecording() {
   controller.begin();
-  TEST_ASSERT_TRUE(controller.startRecording(Mode::Replace));
+  TEST_ASSERT_TRUE(controller.startRecording(Mode::Replace, 0.0));
 }
 
 void test_stop() {
@@ -49,7 +85,10 @@ void test_stop() {
 ## Test Runner
 */
 
-void setUp(void) { controller = controllerBase; }
+void setUp(void) {
+  track = trackBase;
+  controller = controllerBase;
+}
 
 void tearDown(void) {
   i = 0;
@@ -82,6 +121,7 @@ void setup() {
   delay(2000);
 
   UNITY_BEGIN();
+  RUN_TEST(test_beginTrack);
   RUN_TEST(test_begin);
   RUN_TEST(test_setSelectedTrack);
   delay(500);
@@ -91,6 +131,14 @@ void loop() {
   if (!loopTestsStarted) {
     // Only run these tests once, not in every loop
     loopTestsStarted = true;
+    RUN_TEST(test_startPlayingTrack);
+    delay(500);
+    RUN_TEST(test_startRecordingTrack);
+    delay(500);
+    RUN_TEST(test_pauseTrack);
+    delay(500);
+    RUN_TEST(test_stopTrack);
+    delay(500);
     RUN_TEST(test_startPlaying);
     delay(500);
     RUN_TEST(test_startRecording);

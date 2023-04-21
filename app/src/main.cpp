@@ -25,14 +25,14 @@ AudioAnalyzePeak sinkPeakLeft;
 AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
-Track track("file1.wav", "file2.wav", &source);
+TrackController controller(&source);
 
-AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
-AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
+AudioConnection playbackToSinkLeft(controller.mixLeft, 0, sink, 0);
+AudioConnection playbackToSinkRight(controller.mixRight, 0, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
 AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
-AudioConnection playbackToPeakLeft(track.playback, 0, sinkPeakLeft, 0);
-AudioConnection playbackToPeakRight(track.playback, 1, sinkPeakRight, 0);
+AudioConnection playbackToPeakLeft(controller.mixLeft, 0, sinkPeakLeft, 0);
+AudioConnection playbackToPeakRight(controller.mixRight, 0, sinkPeakRight, 0);
 
 Status status = Status::Stop;
 
@@ -64,7 +64,7 @@ void setup() {
 
   initializeSdCard();
 
-  track.begin();
+  controller.begin();
 }
 
 void loop() {
@@ -75,14 +75,15 @@ void loop() {
   adjustVolume(interface);
 #endif
 
-  adjustPan(&pan, track, mode);
+  adjustPan(&pan, controller, mode);
 
   monitorAudioEngine();
 
   // Respond to button presses
   if (buttons.save.fallingEdge()) {
     status = Status::Stop;
-    track.save();
+    // TODO: implement save() in TrackController
+    // track.save();
   }
 
   if (buttons.mode.fallingEdge()) {
@@ -99,21 +100,21 @@ void loop() {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      track.punchOut();
+      controller.punchOut();
       status = Status::Play;
       break;
     case Status::Play:
-      track.punchIn(mode, pan);
+      controller.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      if (track.record(mode, pan)) {
+      if (controller.record(mode, pan)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      if (track.startRecording(mode, pan)) {
+      if (controller.startRecording(mode, pan)) {
         Serial.println("Recording started");
       }
       status = Status::Record;
@@ -125,7 +126,7 @@ void loop() {
 
   if (buttons.stop.fallingEdge()) {
     Serial.println("Stop Button Pressed");
-    if (track.stop(true)) {
+    if (controller.stop(true)) {
       Serial.println("Loop stopped");
     }
     status = Status::Stop;
@@ -136,19 +137,19 @@ void loop() {
     switch (status) {
     case Status::Play:
     case Status::Record:
-      if (track.pause()) {
+      if (controller.pause()) {
         Serial.println("Paused");
       }
       status = Status::Pause;
       break;
     case Status::Pause:
-      if (track.play()) {
+      if (controller.play()) {
         Serial.println("Resumed playback");
       }
       status = Status::Play;
       break;
     case Status::Stop:
-      if (track.startPlaying()) {
+      if (controller.startPlaying()) {
         Serial.println("Playback started");
       }
       status = Status::Play;
@@ -158,7 +159,7 @@ void loop() {
     }
   }
 
-  status = track.checkLoopEnded(status);
+  status = controller.checkTracks(status);
 
   // Print input or output levels to the serial monitor.
   if (monitorInput) {

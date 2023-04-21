@@ -12,7 +12,6 @@ class TrackController {
 
   AudioConnection trackToMixLeft[numTracks];
   AudioConnection trackToMixRight[numTracks];
-  void swapBuffers();
 
 public:
   TrackController(AudioInputI2S *s);
@@ -21,18 +20,18 @@ public:
   AudioMixer4 mixRight;
 
   bool begin();
-  Status checkLoopEnded(Status status);
+  Status checkTracks(Status status);
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
+  void pan(float panPos, Mode mode);
   bool play();
   bool pause();
-  void punchIn(Mode mode);
+  void punchIn(Mode mode, float panPos);
   void punchOut();
-  float readPeak() { return tracks[selectedTrack].readPeak(); };
-  bool record(Mode mode);
+  bool record(Mode mode, float panPos);
   void setSelectedTrack(int track);
   bool startPlaying();
-  bool startRecording(Mode mode);
+  bool startRecording(Mode mode, float panPos);
   bool stop(bool cancel = false);
 };
 

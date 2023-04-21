@@ -15,14 +15,14 @@ float adjustVolume(AudioControlSGTL5000 &interface) {
   return vol;
 }
 
-void adjustPan(float *currentPan, Track &track, Mode mode) {
+void adjustPan(float *currentPan, TrackController &controller, Mode mode) {
   int knob = analogRead(panPin);
   float panPos = (float)knob / knobMax;
   // Check that knob change exceeds threshold before changing state
   if (panPos < *currentPan + 0.05 && panPos > *currentPan - 0.05) {
     return;
   }
-  track.pan(panPos, mode);
+  controller.pan(panPos, mode);
   *currentPan = panPos;
   Serial.print("Pan: ");
   Serial.println(panPos - 0.5);

@@ -2,10 +2,10 @@
 #define UTILS_HPP
 
 #include "types.hpp"
-#include <track.hpp>
+#include <track-controller.hpp>
 
 void adjustMicLevel();
-void adjustPan(float *currentPan, Track &track, Mode mode);
+void adjustPan(float *currentPan, TrackController &controller, Mode mode);
 float adjustVolume(AudioControlSGTL5000 &interface);
 void configureButtons();
 void findSGTL5000(AudioControlSGTL5000 &interface);

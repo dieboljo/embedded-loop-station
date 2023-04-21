@@ -9,7 +9,7 @@ bool TrackController::begin() {
 };
 
 // Check if the loop has ended, and restart if true
-Status TrackController::checkLoopEnded(Status status) {
+Status TrackController::checkTracks(Status status) {
   switch (status) {
   case Status::Stop:
   case Status::Pause:
@@ -19,42 +19,28 @@ Status TrackController::checkLoopEnded(Status status) {
       // Nothing recorded yet, wait for initial recording
       Serial.println("Nothing to play yet, record something already!");
       return Status::Stop;
-    } else {
-      if (millis() % 1000 == 0) {
-        Serial.println(">");
-      }
     }
+    if (millis() % 1000 == 0)
+      Serial.println(">");
     break;
   case Status::Record:
-    if (baseTrack == -1) {
+    if (baseTrack == -1)
       baseTrack = selectedTrack;
-    }
-    if (millis() % 1000 == 0) {
+    if (!tracks[selectedTrack].isRecording)
+      return Status::Play;
+    if (millis() % 1000 == 0)
       Serial.println("o");
-    }
     break;
   default:
     Serial.println("This shouldn't be reached");
     break;
   }
 
-  bool loopEnded = tracks[baseTrack].checkLoopEnded(status);
-  if (loopEnded) {
-    stop();
-    swapBuffers();
-    startPlaying();
-    return Status::Play;
-  } else {
-    for (int i = 0; i < numTracks; i++) {
-      Status trackStatus = i == baseTrack ? status : Status::Play;
-      if (tracks[i].checkLoopEnded(trackStatus)) {
-        tracks[i].stop();
-        tracks[i].swapBuffers();
-        tracks[i].startPlaying();
-      }
-    }
-    return status;
+  for (int i = 0; i < numTracks; i++) {
+    Status trackStatus = i == baseTrack ? status : Status::Play;
+    tracks[i].checkLoop(trackStatus);
   }
+  return status;
 }
 
 bool TrackController::pause() {
@@ -65,6 +51,10 @@ bool TrackController::pause() {
   return success;
 };
 
+void TrackController::pan(float panPos, Mode mode) {
+  tracks[selectedTrack].pan(panPos, mode);
+}
+
 bool TrackController::play() {
   bool success = true;
   for (auto track : tracks) {
@@ -73,14 +63,8 @@ bool TrackController::play() {
   return success;
 }
 
-void TrackController::punchIn(Mode mode) {
-  for (int i = 0; i < numTracks; i++) {
-    if (i == selectedTrack) {
-      tracks[i].punchIn(mode);
-    } else {
-      tracks[i].punchOut();
-    }
-  }
+void TrackController::punchIn(Mode mode, float panPos) {
+  tracks[selectedTrack].punchIn(mode, panPos);
 }
 
 void TrackController::punchOut() {
@@ -89,11 +73,11 @@ void TrackController::punchOut() {
   }
 }
 
-bool TrackController::record(Mode mode) {
+bool TrackController::record(Mode mode, float panPos) {
   bool success = true;
   for (int i = 0; i < numTracks; i++) {
-    success = success &&
-              (i == selectedTrack ? tracks[i].record(mode) : tracks[i].play());
+    success = success && (i == selectedTrack ? tracks[i].record(mode, panPos)
+                                             : tracks[i].play());
   }
   return success;
 };
@@ -115,11 +99,12 @@ bool TrackController::startPlaying() {
   return success;
 };
 
-bool TrackController::startRecording(Mode mode) {
+bool TrackController::startRecording(Mode mode, float panPos) {
   bool success = true;
   for (int i = 0; i < numTracks; i++) {
-    success = success && (i == selectedTrack ? tracks[i].startRecording(mode)
-                                             : tracks[i].startPlaying());
+    success =
+        success && (i == selectedTrack ? tracks[i].startRecording(mode, panPos)
+                                       : tracks[i].startPlaying());
   }
   return success;
 };
@@ -130,12 +115,6 @@ bool TrackController::stop(bool cancel) {
     success = success && track.stop(cancel);
   }
   return success;
-};
-
-void TrackController::swapBuffers() {
-  for (auto track : tracks) {
-    track.swapBuffers();
-  }
 };
 
 TrackController::TrackController(AudioInputI2S *s)
