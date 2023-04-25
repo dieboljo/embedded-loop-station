@@ -131,6 +131,7 @@ void Track::punchOut() {
   isRecording = false;
   if (!loopEstablished && recording.positionMillis()) {
     Serial.println("Setting the base loop");
+    loopEstablished = true;
     swapBuffers();
   }
 }
@@ -146,7 +147,10 @@ bool Track::resume() {
   if (playbackFile && feedbackFile) {
     return playback.play() && feedback.play() && recording.record();
   } else {
-    return isRecording && recording.record();
+    if (isRecording) {
+      return recording.record();
+    }
+    return true;
   }
 }
 
@@ -247,9 +251,6 @@ bool Track::swapBuffers() {
     return false;
   }
   AudioNoInterrupts();
-  if (!loopEstablished) {
-    loopEstablished = true;
-  }
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
@@ -259,18 +260,18 @@ bool Track::swapBuffers() {
 }
 
 #ifdef USE_USB_INPUT
-Track::Track(const char *f1, const char *f2, AudioInputUSB *s)
-    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
-      sourceToBusRight(*source, 1, busRight, Channel::Source),
+Track::Track(const char *f1, const char *f2, AudioInputUSB &s)
+    : source(s), sourceToBusLeft(source, 0, busLeft, Channel::Source),
+      sourceToBusRight(source, 1, busRight, Channel::Source),
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),
       busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
 #else
-Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
-    : source(s), sourceToBusLeft(*source, 0, busLeft, Channel::Source),
-      sourceToBusRight(*source, 1, busRight, Channel::Source),
+Track::Track(const char *f1, const char *f2, AudioInputI2S &s)
+    : source(s), sourceToBusLeft(source, 0, busLeft, Channel::Source),
+      sourceToBusRight(source, 1, busRight, Channel::Source),
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),

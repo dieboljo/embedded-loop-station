@@ -37,7 +37,7 @@ Status TrackController::checkTracks(Status status) {
   }
 
   for (int i = 0; i < numTracks; i++) {
-    Status trackStatus = i == baseTrack ? status : Status::Play;
+    Status trackStatus = i == selectedTrack ? status : Status::Play;
     tracks[i].checkLoop(trackStatus);
   }
   return status;
@@ -117,15 +117,38 @@ bool TrackController::stop(bool cancel) {
   return success;
 };
 
-TrackController::TrackController(AudioInputI2S *s)
-    : tracks{Track("file-1-a.wav", "file-1-b.wav", s),
-             Track("file-2-a.wav", "file-2-b.wav", s),
-             Track("file-3-a.wav", "file-3-b.wav", s)},
-      trackToMixLeft{AudioConnection(tracks[0].playback, 0, mixLeft, 0),
-                     AudioConnection(tracks[1].playback, 0, mixLeft, 1),
-                     AudioConnection(tracks[2].playback, 0, mixLeft, 2)},
+#ifdef USE_USB_INPUT
+TrackController::TrackController(AudioInputUSB &s)
+    : tracks{
+          Track("file-1-a.wav", "file-1-b.wav", s),
+          /* Track("file-2-a.wav", "file-2-b.wav", s),
+          Track("file-3-a.wav", "file-3-b.wav", s), */
+      },
+      trackToMixLeft{
+          AudioConnection(tracks[0].playback, 0, mixLeft, 0),
+          /* AudioConnection(tracks[1].playback, 0, mixLeft, 1),
+          AudioConnection(tracks[2].playback, 0, mixLeft, 2), */
+      },
       trackToMixRight{
           AudioConnection(tracks[0].playback, 1, mixRight, 0),
-          AudioConnection(tracks[1].playback, 1, mixRight, 1),
-          AudioConnection(tracks[2].playback, 1, mixRight, 2),
+          /* AudioConnection(tracks[1].playback, 1, mixRight, 1),
+          AudioConnection(tracks[2].playback, 1, mixRight, 2), */
       } {};
+#else
+TrackController::TrackController(AudioInputI2S &s)
+    : tracks{
+          Track("file-1-a.wav", "file-1-b.wav", s),
+          /* Track("file-2-a.wav", "file-2-b.wav", s),
+          Track("file-3-a.wav", "file-3-b.wav", s), */
+      },
+      trackToMixLeft{
+          AudioConnection(tracks[0].playback, 0, mixLeft, 0),
+          /* AudioConnection(tracks[1].playback, 0, mixLeft, 1),
+          AudioConnection(tracks[2].playback, 0, mixLeft, 2), */
+      },
+      trackToMixRight{
+          AudioConnection(tracks[0].playback, 1, mixRight, 0),
+          /* AudioConnection(tracks[1].playback, 1, mixRight, 1),
+          AudioConnection(tracks[2].playback, 1, mixRight, 2), */
+      } {};
+#endif

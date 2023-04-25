@@ -4,7 +4,8 @@
 #include "track.hpp"
 
 class TrackController {
-  static const int numTracks = 3;
+  // static const int numTracks = 3;
+  static const int numTracks = 1;
   int selectedTrack = 0;
   int baseTrack = -1;
 
@@ -14,7 +15,11 @@ class TrackController {
   AudioConnection trackToMixRight[numTracks];
 
 public:
-  TrackController(AudioInputI2S *s);
+#ifdef USE_USB_INPUT
+  TrackController(AudioInputUSB &s);
+#else
+  TrackController(AudioInputI2S &s);
+#endif
 
   AudioMixer4 mixLeft;
   AudioMixer4 mixRight;

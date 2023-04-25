@@ -25,7 +25,7 @@ AudioAnalyzePeak sinkPeakLeft;
 AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
-TrackController controller(&source);
+TrackController controller(source);
 
 AudioConnection playbackToSinkLeft(controller.mixLeft, 0, sink, 0);
 AudioConnection playbackToSinkRight(controller.mixRight, 0, sink, 1);

@@ -33,9 +33,9 @@ class Track {
 
   // Order of signal flow
 #ifdef USE_USB_INPUT
-  AudioInputUSB *source;
+  AudioInputUSB &source;
 #else
-  AudioInputI2S *source;
+  AudioInputI2S &source;
 #endif
   AudioMixer4 busLeft;
   AudioMixer4 busRight;
@@ -63,9 +63,9 @@ protected:
 
 public:
 #ifdef USE_USB_INPUT
-  Track(const char *f1, const char *f2, AudioInputUSB *s);
+  Track(const char *f1, const char *f2, AudioInputUSB &s);
 #else
-  Track(const char *f1, const char *f2, AudioInputI2S *s);
+  Track(const char *f1, const char *f2, AudioInputI2S &s);
 #endif
 
   bool isRecording = false;
