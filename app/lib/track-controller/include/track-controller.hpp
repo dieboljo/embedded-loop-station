@@ -4,15 +4,25 @@
 #include "track.hpp"
 
 class TrackController {
+  struct Gain {
+    float replace;
+    float overdub;
+    float play;
+  };
+  static const Gain gain;
+
   // static const int numTracks = 3;
   static const int numTracks = 1;
   int selectedTrack = 0;
   int baseTrack = -1;
 
-  Track tracks[numTracks];
+  Track track1;
+  AudioConnection track1ToMixLeft;
+  AudioConnection track1ToMixRight;
 
-  AudioConnection trackToMixLeft[numTracks];
-  AudioConnection trackToMixRight[numTracks];
+  Track *tracks[numTracks] = {&track1};
+
+  elapsedMillis ms;
 
 public:
 #ifdef USE_USB_INPUT

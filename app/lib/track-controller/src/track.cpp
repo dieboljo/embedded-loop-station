@@ -250,12 +250,10 @@ bool Track::swapBuffers() {
     Serial.println("Failed to stop audio streams");
     return false;
   }
-  AudioNoInterrupts();
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
   Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
-  AudioInterrupts();
   return startPlaying();
 }
 
