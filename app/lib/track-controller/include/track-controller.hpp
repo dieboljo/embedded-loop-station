@@ -9,20 +9,24 @@ class TrackController {
     float overdub;
     float play;
   };
-  static const Gain gain;
-
-  // static const int numTracks = 3;
-  static const int numTracks = 1;
-  int selectedTrack = 0;
-  int baseTrack = -1;
 
   Track track1;
+  Track track2;
   AudioConnection track1ToMixLeft;
   AudioConnection track1ToMixRight;
+  AudioConnection track2ToMixLeft;
+  AudioConnection track2ToMixRight;
 
-  Track *tracks[numTracks] = {&track1};
+  static const Gain gain;
+  static const int numTracks = 2;
 
+  int baseTrack = -1;
   elapsedMillis ms;
+  int selectedTrack = 0;
+  Track *tracks[numTracks] = {&track1, &track2};
+
+  void patchMixer();
+  void printStatus(Status status);
 
 public:
 #ifdef USE_USB_INPUT

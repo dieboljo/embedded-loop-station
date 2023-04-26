@@ -23,7 +23,7 @@ bool Track::begin() {
 
 // Check if the loop has ended, and restart if true
 bool Track::checkLoop(Status status) {
-  if (playbackFile && !playback.isPlaying()) {
+  if (loopEstablished && !playback.isPlaying()) {
     // End of loop, switch to recorded audio
     Serial.println(status == Status::Play ? "Looping back from play"
                                           : "Looping back from record");

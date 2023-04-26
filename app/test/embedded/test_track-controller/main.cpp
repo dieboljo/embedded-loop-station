@@ -6,7 +6,7 @@
 
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
-TrackController controllerBase(&source);
+TrackController controllerBase(source);
 TrackController controller = controllerBase;
 TrackTest trackBase("FILE1.WAV", "FILE2.WAV", &source);
 TrackTest track = trackBase;

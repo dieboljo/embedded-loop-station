@@ -46,10 +46,6 @@ Buttons buttons = {
     Bounce(buttonSavePin, 8),
 };
 
-elapsedMillis ms;
-boolean recStarted = false;
-boolean recStopped = false;
-
 void setup() {
   initializeSerialCommunication();
 
@@ -161,19 +157,6 @@ void loop() {
     default:
       break;
     }
-  }
-
-  if (ms > 5000 && !recStarted) {
-    recStarted = true;
-    if (controller.startRecording(mode, pan)) {
-      Serial.println("Recording started");
-    }
-    status = Status::Record;
-  }
-  if (ms > 10000 && !recStopped) {
-    recStopped = true;
-    controller.punchOut();
-    status = Status::Play;
   }
 
   status = controller.checkTracks(status);
