@@ -1,13 +1,24 @@
 #include <track-controller.hpp>
 
-const TrackController::Gain TrackController::gain = {0.0, 0.8, 1.0};
+const TrackController::Gain TrackController::gain = {0.0, 0.3, 1.0};
+
+void TrackController::adjustOutput() {
+  outMixLeft.gain(selectedTrack, gain.play);
+  outMixRight.gain(selectedTrack, gain.play);
+}
+
+void TrackController::adjustOutput(Mode mode) {
+  float outputGain = mode == Mode::Overdub ? gain.overdub : gain.replace;
+  outMixLeft.gain(selectedTrack, outputGain);
+  outMixRight.gain(selectedTrack, outputGain);
+}
 
 bool TrackController::begin() {
   bool success = true;
   for (auto track : tracks) {
     success = success && track->begin();
   }
-  patchMixer();
+  patchConnections();
   return success;
 };
 
@@ -56,19 +67,18 @@ void TrackController::pan(float panPos, Mode mode) {
   tracks[selectedTrack]->pan(panPos, mode);
 }
 
+void TrackController::patchConnections() {
+  for (auto connection : patchCords) {
+    connection->connect();
+  }
+}
+
 bool TrackController::play() {
   bool success = true;
   for (auto track : tracks) {
     success = success && track->play();
   }
   return success;
-}
-
-void TrackController::patchMixer() {
-  track1ToMixLeft.connect();
-  track1ToMixRight.connect();
-  track2ToMixLeft.connect();
-  track2ToMixRight.connect();
 }
 
 void TrackController::printStatus(Status status) {
@@ -79,10 +89,12 @@ void TrackController::printStatus(Status status) {
 }
 
 void TrackController::punchIn(Mode mode, float panPos) {
+  adjustOutput(mode);
   tracks[selectedTrack]->punchIn(mode, panPos);
 }
 
 void TrackController::punchOut() {
+  adjustOutput();
   for (auto track : tracks) {
     track->punchOut();
   }
@@ -136,16 +148,24 @@ bool TrackController::stop(bool cancel) {
 TrackController::TrackController(AudioInputUSB &s)
     : track1("file-1-a.wav", "file-1-b.wav", s),
       track2("file-2-a.wav", "file-2-b.wav", s),
-      track1ToMixLeft(track1.playback, 0, mixLeft, 0),
-      track1ToMixRight(track1.playback, 1, mixRight, 0),
-      track2ToMixLeft(track2.playback, 0, mixLeft, 1),
-      track2ToMixRight(track2.playback, 1, mixRight, 1){};
+      track1ToOutMixLeft(track1.playback, 0, outMixLeft, 0),
+      track1ToOutMixRight(track1.playback, 1, outMixRight, 0),
+      track2ToOutMixLeft(track2.playback, 0, outMixLeft, 1),
+      track2ToOutMixRight(track2.playback, 1, outMixRight, 1),
+      track1ToRecMixLeft(track1.playback, 0, recMixLeft, 0),
+      track1ToRecMixRight(track1.playback, 1, recMixRight, 0),
+      track2ToRecMixLeft(track2.playback, 0, recMixLeft, 1),
+      track2ToRecMixRight(track2.playback, 1, recMixRight, 1){};
 #else
 TrackController::TrackController(AudioInputI2S &s)
     : track1("file-1-a.wav", "file-1-b.wav", s),
       track2("file-2-a.wav", "file-2-b.wav", s),
-      track1ToMixLeft(track1.playback, 0, mixLeft, 0),
-      track1ToMixRight(track1.playback, 1, mixRight, 0),
-      track2ToMixLeft(track2.playback, 0, mixLeft, 1),
-      track2ToMixRight(track2.playback, 1, mixRight, 1){};
+      track1ToOutMixLeft(track1.playback, 0, outMixLeft, 0),
+      track1ToOutMixRight(track1.playback, 1, outMixRight, 0),
+      track2ToOutMixLeft(track2.playback, 0, outMixLeft, 1),
+      track2ToOutMixRight(track2.playback, 1, outMixRight, 1),
+      track1ToRecMixLeft(track1.playback, 0, recMixLeft, 0),
+      track1ToRecMixRight(track1.playback, 1, recMixRight, 0),
+      track2ToRecMixLeft(track2.playback, 0, recMixLeft, 1),
+      track2ToRecMixRight(track2.playback, 1, recMixRight, 1){};
 #endif

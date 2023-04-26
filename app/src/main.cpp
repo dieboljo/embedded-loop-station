@@ -27,12 +27,13 @@ AudioAnalyzePeak sinkPeakRight;
 // The track where data is recorded
 TrackController controller(source);
 
-AudioConnection playbackToSinkLeft(controller.mixLeft, 0, sink, 0);
-AudioConnection playbackToSinkRight(controller.mixRight, 0, sink, 1);
+AudioConnection playbackToSinkLeft(controller.outMixLeft, 0, sink, 0);
+AudioConnection playbackToSinkRight(controller.outMixRight, 0, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
 AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
-AudioConnection playbackToPeakLeft(controller.mixLeft, 0, sinkPeakLeft, 0);
-AudioConnection playbackToPeakRight(controller.mixRight, 0, sinkPeakRight, 0);
+AudioConnection playbackToPeakLeft(controller.outMixLeft, 0, sinkPeakLeft, 0);
+AudioConnection playbackToPeakRight(controller.outMixRight, 0, sinkPeakRight,
+                                    0);
 
 Status status = Status::Stop;
 
