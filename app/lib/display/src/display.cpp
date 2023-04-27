@@ -5,44 +5,42 @@
 // touchscreen offset for four corners
 const Display::Layout Display::touchScreen = {400, 400, 3879, 3843};
 
-// Display item location values - Screen is 240x320
+// Display item location values - Screen is 320x240
 const Display::Layout Display::boot = {40, 120, 240, 360};
 const Display::Layout Display::play = {190, 70, 105, 32};
 const Display::Layout Display::stop = {110, 70, 70, 32};
 const Display::Layout Display::record = {10, 70, 90, 32};
-const Display::Layout Display::volume = {260, 180, 50, 50};
-const Display::Layout Display::mode = {10, 190, 90, 40};
-const Display::Layout Display::library = {10, 10, 300, 30};
+const Display::Layout Display::volume = {260, 185, 50, 50};
+const Display::Layout Display::mode = {10, 195, 90, 40};
+const Display::Layout Display::reverse = {10, 148, 90, 40};
+const Display::Layout Display::library = {140, 110, 170, 40};
 const Display::Layout Display::trackInfo = {10, 10, 300, 50};
-const Display::Layout Display::track1 = {70, 60, 180, 32};
-const Display::Layout Display::track2 = {70, 100, 180, 32};
-const Display::Layout Display::track3 = {70, 140, 180, 32};
-const Display::Layout Display::track4 = {70, 180, 180, 32};
+const Display::Layout Display::track1 = {70, 70, 180, 32};
+const Display::Layout Display::track2 = {70, 110, 180, 32};
+const Display::Layout Display::track3 = {70, 150, 180, 32};
+const Display::Layout Display::track4 = {70, 190, 180, 32};
 const Display::Layout Display::next = {260, 100, 50, 50};
 const Display::Layout Display::prev = {10, 100, 50, 50};
-const Display::Layout Display::reverse = {160, 160, 60, 60};
 const Display::Layout Display::panBar = {10, 110, 120, 30};
 const Display::Layout Display::panDot = {16, 125, 5, 0};
+const Display::Layout Display::save = {110, 195, 90, 40};
 
 // Display setup - call during setup
 void Display::setup(){
-  //Setup LCD screen
   tft.begin();
-  // touch screen
   ts.begin();
   tft.setRotation(3);
   tft.fillScreen(ILI9341_LIGHTGREY);
+  modeObj = ModeObj::Overdub;
   bootup();
 }
 
 // Intro bootup screen
 void Display::bootup(){
   tft.fillScreen(ILI9341_BLACK);
-  //tft.setCursor(BOOT_X, BOOT_Y);
   tft.setCursor(boot.x, boot.y);
   tft.setFont(Arial_10);
   tft.setTextColor(ILI9341_WHITE);
-  //load screen
   tft.print ("Embedded Digital Audio Loop Station");
   delay(3000);
   mainScreen();
@@ -51,37 +49,53 @@ void Display::bootup(){
 // setup the main screen
 void Display::mainScreen(){
   tft.fillScreen(ILI9341_WHITE);
+
+  for (int y = 0; y < 240; y++) {
+    uint8_t r = map(y, 0, 240, 255, 0);
+    uint8_t b = map(y, 0, 240, 0, 255);
+    uint16_t color = tft.color565(r, 0, b);
+    tft.fillRect(0, y, 320, 1, color);
+  }
+
   //Draw buttons
-  setPlayButton (false);
-  setStopButton (false);
-  setRecordButton (false);
-  setPanBar();
-  setModeButton();
-  setReverseButton();
+  playButton (false);
+  stopButton (false);
+  recordButton (false);
+  pan();
+  modeButton();
+  reverseButton();
+  saveButton();
+  libraryButton();
   displayVol();
-  String defaultTrack = "Tap for library";
+  String defaultTrack = "Audio Loop Station";
   displayTrack(defaultTrack);
 }
 
 // setup reverse button
-void Display::setReverseButton(){
+void Display::reverseButton(){
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.setCursor(reverse.x + 10, reverse.y + 10);
+  tft.setCursor(reverse.x + 5, reverse.y + 10);
   tft.fillRoundRect(reverse.x, reverse.y, reverse.w, reverse.h, 8, ILI9341_DARKGREY);
-  tft.print("Rev");
-  tft.setCursor(reverse.x + 8, reverse.y + 30);
-  tft.print("OFF");
+  tft.print("Rev OFF");
+}
+
+void Display::saveButton(){
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setCursor(save.x + 20, save.y + 10);
+  tft.fillRoundRect(save.x, save.y, save.w, save.h, 8, ILI9341_DARKGREY);
+  tft.print("Save");
 }
 
 // set the pan bar
-void Display::setPanBar(){
+void Display::pan(){
   tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
   tft.fillCircle(panDot.x, panDot.y, panDot.w, ILI9341_NAVY);
 }
 
 // set mode button
-void Display::setModeButton(){
+void Display::modeButton(){
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
   tft.setCursor(mode.x + 5, mode.y + 10);
@@ -90,7 +104,7 @@ void Display::setModeButton(){
 }
 
 // Set / Display play button
-void Display::setPlayButton (boolean playStatus){
+void Display::playButton (bool playStatus){
   tft.setCursor(play.x + 8, play.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
@@ -106,7 +120,7 @@ void Display::setPlayButton (boolean playStatus){
 }
 
 // Set / Display record button
-void Display::setRecordButton (boolean recordStatus){
+void Display::recordButton (bool recordStatus){
   tft.setCursor(record.x + 8, record.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
@@ -122,7 +136,7 @@ void Display::setRecordButton (boolean recordStatus){
 }
 
 // Set / Display stop button
-void Display::setStopButton (boolean stopStatus){
+void Display::stopButton (bool stopStatus){
   tft.setCursor(stop.x + 8, stop.y + 8);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
@@ -137,6 +151,14 @@ void Display::setStopButton (boolean stopStatus){
   }
 }
 
+void Display::libraryButton (){
+  tft.setCursor(library.x + 50, library.y + 10);
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.fillRoundRect(library.x, library.y, library.w, library.h, 4, ILI9341_BLACK);
+  tft.print ("Library");
+  
+}
 
 // Display Track name
 void Display::displayTrack(String name){
@@ -151,6 +173,15 @@ void Display::displayTrack(String name){
 void Display::displayVol(){
   // read the knob position (analog input A1)
   int vol = map(analogRead(A1), 0, 1000, 0, 100);
+
+  tft.setCursor(volume.x + 12, volume.y + 8);
+  tft.setFont(Arial_10);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.fillRoundRect(volume.x, volume.y, volume.w , volume.h, 8, ILI9341_BLACK);
+  tft.println("Vol");
+  tft.setCursor(volume.x + 15, volume.y + 28);
+  tft.print(vol);
+
   // Volume pot is very sensitive - need to set a change range
   if (volumeChange <= (vol * .95) || volumeChange >= (vol * 1.05)){
     tft.setCursor(volume.x + 12, volume.y + 8);
@@ -172,7 +203,13 @@ void Display::displayLibrary(const Library& obj){
   String name;
   int index = 0;
 
-  tft.fillScreen(ILI9341_WHITE);
+  for (int y = 0; y < 240; y++) {
+    uint8_t r = map(y, 0, 240, 255, 0);
+    uint8_t b = map(y, 0, 240, 0, 255);
+    uint16_t color = tft.color565(r, 0, b);
+    tft.fillRect(0, y, 320, 1, color);
+  }
+
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
@@ -184,14 +221,14 @@ void Display::displayLibrary(const Library& obj){
   tft.fillRoundRect(prev.x, prev.y, prev.w, prev.h, 8, ILI9341_BLACK);
   tft.print("Prev");
 
-  tft.setCursor(library.x + 50, library.y + 5);
-  tft.fillRoundRect(library.x, library.y, library.w, library.h, 8, ILI9341_BLACK);
+  tft.setCursor(trackInfo.x + 50, trackInfo.y + 20);
+  tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK);
   tft.print("Select Track - tap to exit");
 
   libraryTracks(0, obj);
-
+  delay(500);
   isTouched = false;
-
+  
   while(true){
     if(ts.touched() && isTouched == false){
       // get touch location
@@ -311,7 +348,7 @@ void Display::libraryTracks(int index, const Library& obj){
 }
 
 // Reacts to touch
-void Display::showLib(const Library& obj){
+void Display::handleTouch(const Library& obj){
   if(ts.touched() && isTouched == false){
 
     delay(100);
@@ -327,15 +364,24 @@ void Display::showLib(const Library& obj){
         }
     }
     // display library
-    if ((p.x > trackInfo.x) && (p.x < (trackInfo.x + trackInfo.w))) {
-        if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
+    if ((p.x > library.x) && (p.x < (library.x + library.w))) {
+        if ((p.y > library.y) && (p.y <= (library.y + library.h))) {
           displayLibrary(obj); 
         }
     }
     // Reverse on / off
     if ((p.x > reverse.x) && (p.x < (reverse.x + reverse.w))) {
         if ((p.y > reverse.y) && (p.y <= (reverse.y + reverse.h))) {
-          reverseButton(); 
+          handleReverseButton(); 
+        }
+    }
+    // Save Button
+    if ((p.x > save.x) && (p.x < (save.x + save.w))) {
+        if ((p.y > save.y) && (p.y <= (save.y + save.h))) {
+
+          // Call save function here
+
+          Serial.println("Save button pushed");
         }
     }
 
@@ -348,7 +394,7 @@ void Display::showLib(const Library& obj){
 }
 
 
-// Displays the mode - Overdub or Replace
+// Displays the mode - Overdub or Replace const Mode& modeObj
 // Sets mode changed flags
 void Display::selectMode(){
 
@@ -358,9 +404,7 @@ void Display::selectMode(){
   isTouched = false;
 
   if(ts.touched() && isTouched == false){
-    Serial.println("mode pressed");
-    Serial.println(modeStatus);
-
+  
     p = ts.getPoint();
     delay(100);
     p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
@@ -368,20 +412,20 @@ void Display::selectMode(){
 
     if ((p.x > mode.x) && (p.x < (mode.x + mode.w))) {
       if ((p.y > mode.y) && (p.y <= (mode.y + mode.h))) {
-        if(getMode() == 2 && !isTouched){
+        if(modeObj == ModeObj::Overdub && !isTouched){
           tft.setCursor(mode.x + 5, mode.y + 10);
           tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
           tft.print("Replace");
-          this->modeStatus = 1;
-          this->modeChange = 1;
+          modeObj = ModeObj::Replace;
+          this->modeChange = true;
           isTouched = true;
         }
-        if(getMode() == 1 && !isTouched){
+        if(modeObj == ModeObj::Replace && !isTouched){
           tft.setCursor(mode.x + 5, mode.y + 10);
           tft.fillRoundRect(mode.x, mode.y, mode.w, mode.h, 8, ILI9341_BLACK);
           tft.print("Overdub");
-          this->modeStatus = 2;
-          this->modeChange = 1;
+          modeObj = ModeObj::Overdub;
+          this->modeChange = true;
           isTouched = true;
         }
       }
@@ -389,13 +433,20 @@ void Display::selectMode(){
   }
 }
 
-
 // displays pan
 // pan is very sensitive and "quick" when below a lower threshold of half/output
 // below this threshold
 // ---- Need to adjust for a smoother display experience
 void Display::displayPan(){
+  
   int16_t pan = map(analogRead(A2), 0, 1000, 0, 100);
+
+  tft.setCursor(panBar.x + 40, panBar.y +10);
+  tft.setFont(Arial_14);
+  tft.setTextColor(ILI9341_BLACK);
+  tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
+  tft.print("PAN");
+  tft.fillCircle(panDot.x + pan, panDot.y, panDot.w, ILI9341_NAVY);
 
   if (panChange < (pan - 5) || panChange > (pan + 1)){
     
@@ -412,7 +463,7 @@ void Display::displayPan(){
 
 // displays the reverse button.
 // Sets flag for reverse
-void Display::reverseButton(){
+void Display::handleReverseButton(){
 
   isTouched = false;
 
@@ -427,20 +478,18 @@ void Display::reverseButton(){
       if ((p.y > reverse.y) && (p.y <= (reverse.y + reverse.h))) {
         tft.setFont(BUTTON_FONT);
         tft.setTextColor(ILI9341_BLACK);
-        tft.setCursor(reverse.x + 10, reverse.y + 10);
+        tft.setCursor(reverse.x + 5, reverse.y + 10);
         if(!reverseBool && !isTouched){
           tft.fillRoundRect(reverse.x, reverse.y, reverse.w , reverse.h, 8, ILI9341_RED);
-          tft.print("Rev");
+          tft.print("Rev ON");
           tft.setCursor(reverse.x + 13, reverse.y + 30);
-          tft.print("ON");
           setRevBool(true);
           isTouched = true;
         }
         if(reverseBool && !isTouched){
           tft.fillRoundRect(reverse.x, reverse.y, reverse.w , reverse.h, 8, ILI9341_LIGHTGREY);
-          tft.print("Rev");
+          tft.print("Rev OFF");
           tft.setCursor(reverse.x + 8, reverse.y + 30);
-          tft.print("OFF");
           setRevBool(false);
           isTouched = true;
         }
@@ -450,7 +499,7 @@ void Display::reverseButton(){
 }
 
 void Display::updateStatus(bool record, bool stop, bool play){
-  setRecordButton(record);
-  setStopButton(stop);
-  setPlayButton(play);
+  recordButton(record);
+  stopButton(stop);
+  playButton(play);
 }

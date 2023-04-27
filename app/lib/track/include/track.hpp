@@ -82,6 +82,7 @@ public:
   bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);
 
+  const char *getTrackName() {return readFileName;}
 };
 
 #endif

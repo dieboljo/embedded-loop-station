@@ -32,6 +32,7 @@ Track track("file1.wav", "file2.wav", &source);
 Display disp;
 // Library instance
 Library lib;
+String myString;
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
@@ -78,6 +79,8 @@ void setup() {
   disp.setup();
 
   track.begin();
+
+  myString = String(track.getTrackName());
 }
 
 void loop() {
@@ -98,26 +101,24 @@ void loop() {
   // Run display controls
   disp.displayVol();
   disp.displayPan();
-  disp.showLib(lib);
+  disp.handleTouch(lib);
 
   // Get name change from library selection
   if(disp.getNameChange()){
-    String name = disp.getFileName();
-    Serial.println(name);
-    //track.setWriteFileName(name);
+    myString = disp.getFileName();
     disp.setNameChange(false);
   }
 
   // Mointor mode change
-  if(disp.getModeChange() == 1){
-    if(disp.getMode() == 1){
+  if(disp.getModeChange()){
+    if(mode == Mode::Overdub){
       mode = Mode::Replace;
-      disp.setModeChange(0);
+      disp.setModeChange(false);
       Serial.println("Mode: REPLACE");
     }
     else{
       mode = Mode::Overdub;
-      disp.setModeChange(0);
+      disp.setModeChange(false);
       Serial.println("Mode: OVERDUB");
     }
   }
@@ -137,7 +138,7 @@ void loop() {
     switch (status) {
     case Status::Record:
       disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing");
+      disp.displayTrack("Playing " + myString);
       track.punchOut();
       status = Status::Play;
       break;
@@ -184,7 +185,7 @@ void loop() {
     switch (status) {
     case Status::Play:
       disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing");
+      disp.displayTrack("Playing " + myString);
     case Status::Record:
       disp.updateStatus(false, false, false);
       if (track.pause()) {
@@ -194,7 +195,7 @@ void loop() {
       break;
     case Status::Pause:
       disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing");
+      disp.displayTrack("Playing " + myString);
       if (track.play()) {
         Serial.println("Resumed playback");
       }
@@ -202,7 +203,7 @@ void loop() {
       break;
     case Status::Stop:
       disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing");
+      disp.displayTrack("Playing " + myString);
       if (track.startPlaying()) {
         Serial.println("Playback started");
       }

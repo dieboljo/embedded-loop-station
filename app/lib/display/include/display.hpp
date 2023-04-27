@@ -7,12 +7,6 @@
 #include <font_Arial.h> // Font for display
 #include <library.hpp>
 
-// touchscreen offset for four corners
-#define TS_MINX 400
-#define TS_MINY 400
-#define TS_MAXX 3879
-#define TS_MAXY 3843
-
 // LCD control pins defined by board
 #define TFT_CS 40
 #define TFT_DC  9
@@ -23,6 +17,8 @@
 
 //Font for buttons
 #define BUTTON_FONT Arial_14
+
+enum class ModeObj {Overdub, Replace};
 
 class Display{
     private:
@@ -54,56 +50,61 @@ class Display{
     static const Layout panBar;
     static const Layout panDot;
     static const Layout reverse;
+    static const Layout save;
 
-    float volumeChange;
-    boolean isTouched = false;
+    bool nameChange = false;
+    bool reverseBool = false;
+    bool isTouched = false;
+    bool modeChange = false;
+
     String fileName; // holds name of file to be used
 
-    int modeStatus = 1; // 1 = overdub. 2 = replace
-    int modeChange = 0;
-    bool nameChange = false;
     int panChange = 50;
-    bool reverseBool = false;
+    float volumeChange;
 
+    ModeObj modeObj;
     ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
     XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
     TS_Point p;
 
     public:
 
-        void setMode(int num) {this->modeStatus = num;}
-        int getMode() const {return this->modeStatus;}
-
-        void setModeChange(int num) {this->modeChange = num;}
+        void setModeChange(bool change) {this->modeChange = change;}
         int getModeChange() const {return this->modeChange;}
 
-        void setNameChange(boolean change) {this->nameChange = change;}
-        boolean getNameChange() const {return this->nameChange;}
+        void setNameChange(bool change) {this->nameChange = change;}
+        bool getNameChange() const {return this->nameChange;}
 
-        void setRevBool(boolean change) {this->reverseBool = change;}
-        boolean getRevBool() const {return this->reverseBool;}
+        void setRevBool(bool change) {this->reverseBool = change;}
+        bool getRevBool() const {return this->reverseBool;}
+
+        void setFileName(String name) {this->fileName = name;}
+        String getFileName() {return fileName;};
 
         void setup();
         void bootup();
         void mainScreen();
-        void setPlayButton (boolean audio);
-        void setRecordButton (boolean audio);
-        void setStopButton (boolean audio);
+        void playButton(bool audio);
+        void recordButton(bool audio);
+        void stopButton(bool audio);
+        void saveButton();
+        //void handleSaveButton(bool audio);
+        void reverseButton();
+        void libraryButton();
+        //void handleLibraryButton(bool audio);
+        void handleReverseButton();
         void displayTrack(String name);
         void displayVol();
-        void showLib(const Library& obj);
+        void handleTouch(const Library& obj);
         void displayLibrary(const Library& obj);
         void libraryTracks(int index, const Library& obj);
         void selectMode();
-        void setModeButton();
-        void setFileName(String name) {this->fileName = name;}
-        void setPanBar();
+        void modeButton();
+        void pan();
         void displayPan();
-        void setReverseButton();
-        void reverseButton();
         void updateStatus(bool record, bool stop, bool play);
 
-        String getFileName() {return fileName;};
+        
 
 };
 
