@@ -47,6 +47,9 @@ Mode mode = Mode::Overdub;
 
 float pan = 0.0;
 
+uint32_t position;
+uint32_t length;
+
 Buttons buttons = {
     Bounce(buttonStopPin, 8),
     Bounce(buttonRecordPin, 8),
@@ -122,6 +125,8 @@ void loop() {
       Serial.println("Mode: OVERDUB");
     }
   }
+  position = track.getPosition();
+  length = track.getLegnth();
   
   // Moinitor reverse flag
   /*
@@ -213,7 +218,11 @@ void loop() {
       break;
     }
   }
-
+  
+  if(status == Status::Play){
+    disp.displayPosition(position, length);
+  }
+  
   status = track.checkLoopEnded(status);
 
   // Print input or output levels to the serial monitor.

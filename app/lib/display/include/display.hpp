@@ -19,6 +19,7 @@
 #define BUTTON_FONT Arial_14
 
 enum class ModeObj {Overdub, Replace};
+enum class KnobReset {ON, OFF};
 
 class Display{
     private:
@@ -62,6 +63,7 @@ class Display{
     int panChange = 50;
     float volumeChange;
 
+    KnobReset knobReset;
     ModeObj modeObj;
     ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
     XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
@@ -88,12 +90,11 @@ class Display{
         void recordButton(bool audio);
         void stopButton(bool audio);
         void saveButton();
-        //void handleSaveButton(bool audio);
         void reverseButton();
         void libraryButton();
-        //void handleLibraryButton(bool audio);
         void handleReverseButton();
         void displayTrack(String name);
+        void displayPosition(uint32_t position, u_int32_t length);
         void displayVol();
         void handleTouch(const Library& obj);
         void displayLibrary(const Library& obj);
@@ -103,8 +104,6 @@ class Display{
         void pan();
         void displayPan();
         void updateStatus(bool record, bool stop, bool play);
-
-        
 
 };
 

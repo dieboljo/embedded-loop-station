@@ -269,3 +269,11 @@ Track::Track(const char *f1, const char *f2, AudioInputI2S *s)
       busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
       writeFileName(f2){};
 #endif
+
+uint32_t Track::getPosition(){
+  return playback.positionMillis();
+}
+
+uint32_t Track::getLegnth(){
+  return playback.lengthMillis();
+}

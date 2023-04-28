@@ -61,12 +61,12 @@ void Display::mainScreen(){
   playButton (false);
   stopButton (false);
   recordButton (false);
-  pan();
+  displayPan();
+  displayVol();
   modeButton();
   reverseButton();
   saveButton();
   libraryButton();
-  displayVol();
   String defaultTrack = "Audio Loop Station";
   displayTrack(defaultTrack);
 }
@@ -174,13 +174,16 @@ void Display::displayVol(){
   // read the knob position (analog input A1)
   int vol = map(analogRead(A1), 0, 1000, 0, 100);
 
-  tft.setCursor(volume.x + 12, volume.y + 8);
-  tft.setFont(Arial_10);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.fillRoundRect(volume.x, volume.y, volume.w , volume.h, 8, ILI9341_BLACK);
-  tft.println("Vol");
-  tft.setCursor(volume.x + 15, volume.y + 28);
-  tft.print(vol);
+  if(knobReset == KnobReset::ON){
+    tft.setCursor(volume.x + 12, volume.y + 8);
+    tft.setFont(Arial_10);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.fillRoundRect(volume.x, volume.y, volume.w , volume.h, 8, ILI9341_BLACK);
+    tft.println("Vol");
+    tft.setCursor(volume.x + 15, volume.y + 28);
+    tft.print(vol);
+    knobReset = KnobReset::OFF;
+  }
 
   // Volume pot is very sensitive - need to set a change range
   if (volumeChange <= (vol * .95) || volumeChange >= (vol * 1.05)){
@@ -227,9 +230,14 @@ void Display::displayLibrary(const Library& obj){
 
   libraryTracks(0, obj);
   delay(500);
-  isTouched = false;
+  
   
   while(true){
+    if (ts.touched() && isTouched) {
+       // touchscreen is no longer being touched, reset flag
+      isTouched = false; 
+    }
+
     if(ts.touched() && isTouched == false){
       // get touch location
       p = ts.getPoint();
@@ -243,6 +251,7 @@ void Display::displayLibrary(const Library& obj){
         if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
           isTouched = false;
           // reset to main screen
+          knobReset = KnobReset::ON;
           mainScreen();
           delay(50);
           return;
@@ -318,6 +327,8 @@ void Display::displayLibrary(const Library& obj){
         }
       }
     }
+  // Set exit flag
+  knobReset = KnobReset::ON;
   // reset to main screen
   mainScreen();
   // sets new file name to be used
@@ -356,7 +367,7 @@ void Display::handleTouch(const Library& obj){
     p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
     p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
     isTouched = true;
-
+    
     // select mode
     if ((p.x > mode.x) && (p.x < (mode.x + mode.w))) {
         if ((p.y > mode.y) && (p.y <= (mode.y + mode.h))) {
@@ -440,13 +451,14 @@ void Display::selectMode(){
 void Display::displayPan(){
   
   int16_t pan = map(analogRead(A2), 0, 1000, 0, 100);
-
-  tft.setCursor(panBar.x + 40, panBar.y +10);
-  tft.setFont(Arial_14);
-  tft.setTextColor(ILI9341_BLACK);
-  tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
-  tft.print("PAN");
-  tft.fillCircle(panDot.x + pan, panDot.y, panDot.w, ILI9341_NAVY);
+  if(knobReset == KnobReset::ON){
+    tft.setCursor(panBar.x + 40, panBar.y +10);
+    tft.setFont(Arial_14);
+    tft.setTextColor(ILI9341_BLACK);
+    tft.fillRoundRect(panBar.x, panBar.y, panBar.w , panBar.h, 8, ILI9341_DARKGREY);
+    tft.print("PAN");
+    tft.fillCircle(panDot.x + pan, panDot.y, panDot.w, ILI9341_NAVY);
+  }
 
   if (panChange < (pan - 5) || panChange > (pan + 1)){
     
@@ -502,4 +514,27 @@ void Display::updateStatus(bool record, bool stop, bool play){
   recordButton(record);
   stopButton(stop);
   playButton(play);
+}
+
+void Display::displayPosition(uint32_t position, uint32_t length){
+  int x = map(position, 0, length, 10, 295);
+  
+  //tft.fillRoundRect(10,50,300,10,8,ILI9341_BLACK);
+  //tft.fillCircle(10+x,53, 5, ILI9341_WHITE);
+
+  
+  tft.drawFastHLine(10 + x, 50, 5, ILI9341_WHITE);
+  tft.drawFastHLine(10 + x, 51, 5, ILI9341_WHITE);
+  tft.drawFastHLine(10 + x, 52, 5, ILI9341_WHITE);
+  tft.drawFastHLine(10 + x, 53, 5, ILI9341_WHITE);
+  tft.drawFastHLine(10 + x, 54, 5, ILI9341_WHITE);
+  tft.drawFastHLine(10 + x, 55, 5, ILI9341_WHITE);
+
+  tft.drawFastHLine(10 + x, 50, 1, ILI9341_BLACK);
+  tft.drawFastHLine(10 + x, 51, 1, ILI9341_BLACK);
+  tft.drawFastHLine(10 + x, 52, 1, ILI9341_BLACK);
+  tft.drawFastHLine(10 + x, 53, 1, ILI9341_BLACK);
+  tft.drawFastHLine(10 + x, 54, 1, ILI9341_BLACK);
+  tft.drawFastHLine(10 + x, 55, 1, ILI9341_BLACK);
+  
 }

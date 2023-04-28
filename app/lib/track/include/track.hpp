@@ -83,6 +83,8 @@ public:
   bool stop(bool cancel = false);
 
   const char *getTrackName() {return readFileName;}
+  uint32_t getPosition();
+  uint32_t getLegnth();
 };
 
 #endif
