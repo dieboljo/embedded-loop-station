@@ -35,6 +35,7 @@ void configureButtons() {
   pinMode(buttonPlayPin, INPUT_PULLUP);
   pinMode(buttonModePin, INPUT_PULLUP);
   pinMode(buttonSavePin, INPUT_PULLUP);
+  pinMode(buttonNextTrackPin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -120,6 +121,7 @@ void readButtons(Buttons &buttons) {
   buttons.play.update();
   buttons.mode.update();
   buttons.save.update();
+  buttons.nextTrack.update();
 }
 
 // Read and display stereo input or output channels

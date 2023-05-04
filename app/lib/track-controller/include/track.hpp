@@ -72,12 +72,12 @@ public:
   AudioPlayWAVstereo playback;
 
   bool begin();
-  bool checkLoop(Status status);
+  bool checkLoop(Status status, uint32_t loopLength);
   void pan(float panPos, Mode mode);
   bool play();
   bool pause();
   void punchIn(Mode mode, float pan);
-  void punchOut();
+  uint32_t punchOut();
   bool record(Mode mode, float pan);
   void save();
   bool startPlaying();

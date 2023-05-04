@@ -44,7 +44,7 @@ float pan = 0.0;
 Buttons buttons = {
     Bounce(buttonStopPin, 8), Bounce(buttonRecordPin, 8),
     Bounce(buttonPlayPin, 8), Bounce(buttonModePin, 8),
-    Bounce(buttonSavePin, 8),
+    Bounce(buttonSavePin, 8), Bounce(buttonNextTrackPin, 8),
 };
 
 void setup() {
@@ -95,6 +95,12 @@ void loop() {
       mode = Mode::Overdub;
       Serial.println("Mode: OVERDUB");
     }
+  }
+
+  if (buttons.nextTrack.fallingEdge()) {
+    int selectedTrack = controller.nextTrack();
+    Serial.print("Current track: ");
+    Serial.println(selectedTrack);
   }
 
   if (buttons.record.fallingEdge()) {

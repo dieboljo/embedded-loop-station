@@ -10,6 +10,7 @@ struct Buttons {
   Bounce play;
   Bounce mode;
   Bounce save;
+  Bounce nextTrack;
 };
 
 enum class Mode { Replace, Overdub };

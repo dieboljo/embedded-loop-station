@@ -27,6 +27,7 @@ class TrackController {
   static const int numTracks = 2;
 
   int baseTrack = -1;
+  uint32_t loopLength = 0;
   elapsedMillis ms;
   int selectedTrack = 0;
   Track *tracks[numTracks] = {&track1, &track2};
@@ -54,13 +55,13 @@ public:
   Status checkTracks(Status status);
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
+  int nextTrack();
   void pan(float panPos, Mode mode);
   bool play();
   bool pause();
   void punchIn(Mode mode, float panPos);
   void punchOut();
   bool record(Mode mode, float panPos);
-  void setSelectedTrack(int track);
   bool startPlaying();
   bool startRecording(Mode mode, float panPos);
   bool stop(bool cancel = false);

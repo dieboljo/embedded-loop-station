@@ -22,8 +22,12 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-bool Track::checkLoop(Status status) {
-  if (loopEstablished && !playback.isPlaying()) {
+bool Track::checkLoop(Status status, uint32_t loopLength) {
+  if (
+      // Clamp track length to loop length
+      (loopLength && recording.positionMillis() >= loopLength) ||
+      // Track reached its end
+      (loopEstablished && !playback.isPlaying())) {
     // End of loop, switch to recorded audio
     Serial.println(status == Status::Play ? "Looping back from play"
                                           : "Looping back from record");
@@ -123,17 +127,21 @@ void Track::punchIn(Mode mode, float panPos) {
 }
 
 // Disable recording immediately
-void Track::punchOut() {
+uint32_t Track::punchOut() {
+  uint32_t position = recording.positionMillis();
+  /* if (!isRecording)
+    return position; */
+  isRecording = false;
   busLeft.gain(Channel::Source, gain.mute);
   busLeft.gain(Channel::Feedback, gain.solo);
   busRight.gain(Channel::Source, gain.mute);
   busRight.gain(Channel::Feedback, gain.solo);
-  isRecording = false;
-  if (!loopEstablished && recording.positionMillis()) {
+  if (!loopEstablished && position) {
     Serial.println("Setting the base loop");
     loopEstablished = true;
     swapBuffers();
   }
+  return position;
 }
 
 // Resume recording from a paused state

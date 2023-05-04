@@ -15,6 +15,7 @@ const int buttonStopPin = 4;
 const int buttonPlayPin = 5;
 const int buttonModePin = 41;
 const int buttonSavePin = 40;
+const int buttonNextTrackPin = 39;
 
 // which input on the audio shield will be used?
 const int input = AUDIO_INPUT_MIC;

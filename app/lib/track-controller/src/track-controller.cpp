@@ -29,15 +29,13 @@ Status TrackController::checkTracks(Status status) {
   case Status::Pause:
     return status;
   case Status::Play:
-    if (baseTrack == -1) {
+    if (!loopLength) {
       // Nothing recorded yet, wait for initial recording
       Serial.println("Nothing to play yet, record something already!");
       return Status::Stop;
     }
     break;
   case Status::Record:
-    if (baseTrack == -1)
-      baseTrack = selectedTrack;
     if (!tracks[selectedTrack]->isRecording)
       return Status::Play;
     break;
@@ -50,10 +48,17 @@ Status TrackController::checkTracks(Status status) {
 
   for (int i = 0; i < numTracks; i++) {
     Status trackStatus = i == selectedTrack ? status : Status::Play;
-    tracks[i]->checkLoop(trackStatus);
+    tracks[i]->checkLoop(trackStatus, loopLength);
   }
   return status;
 }
+
+int TrackController::nextTrack() {
+  // If recording, stop
+  punchOut();
+  selectedTrack = (selectedTrack + 1) % numTracks;
+  return selectedTrack;
+};
 
 bool TrackController::pause() {
   bool success = true;
@@ -95,8 +100,11 @@ void TrackController::punchIn(Mode mode, float panPos) {
 
 void TrackController::punchOut() {
   adjustOutput();
-  for (auto track : tracks) {
-    track->punchOut();
+  for (int i = 0; i < numTracks; i++) {
+    uint32_t position = tracks[i]->punchOut();
+    if (i == selectedTrack && !loopLength) {
+      loopLength = position;
+    }
   }
 }
 
@@ -107,15 +115,6 @@ bool TrackController::record(Mode mode, float panPos) {
                                              : tracks[i]->play());
   }
   return success;
-};
-
-void TrackController::setSelectedTrack(int track) {
-  // If recording, stop
-  tracks[selectedTrack]->punchOut();
-  if (track < 0 || track > numTracks - 1) {
-    return;
-  }
-  selectedTrack = track;
 };
 
 bool TrackController::startPlaying() {
