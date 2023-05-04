@@ -91,7 +91,6 @@ void loop() {
   buttons.record.update();
   buttons.stop.update();
   buttons.play.update();
-  //buttons.mode.update();
 
 #ifndef USE_USB_OUTPUT
   adjustVolume(interface);
@@ -125,9 +124,7 @@ void loop() {
       Serial.println("Mode: OVERDUB");
     }
   }
-  position = track.getPosition();
-  length = track.getLegnth();
-  
+    
   // Moinitor reverse flag
   /*
   if(disp.getRevBool()){
@@ -220,6 +217,8 @@ void loop() {
   }
   
   if(status == Status::Play){
+    position = track.getPosition();
+    length = track.getLegnth();
     disp.displayPosition(position, length);
   }
   

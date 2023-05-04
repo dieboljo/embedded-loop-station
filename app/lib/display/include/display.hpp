@@ -52,16 +52,21 @@ class Display{
     static const Layout panDot;
     static const Layout reverse;
     static const Layout save;
+    static const Layout alert;
 
     bool nameChange = false;
     bool reverseBool = false;
     bool isTouched = false;
     bool modeChange = false;
+    bool ifLibrary = false;
+    bool displayOnce = false;
 
     String fileName; // holds name of file to be used
+    String libraryName;
 
     int panChange = 50;
     float volumeChange;
+    int index = 0;
 
     KnobReset knobReset;
     ModeObj modeObj;
@@ -90,6 +95,7 @@ class Display{
         void recordButton(bool audio);
         void stopButton(bool audio);
         void saveButton();
+        void saveAlert();
         void reverseButton();
         void libraryButton();
         void handleReverseButton();
@@ -104,6 +110,7 @@ class Display{
         void pan();
         void displayPan();
         void updateStatus(bool record, bool stop, bool play);
+        void getPoint();
 
 };
 
