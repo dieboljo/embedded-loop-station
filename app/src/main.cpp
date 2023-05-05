@@ -98,6 +98,9 @@ void loop() {
   }
 
   if (buttons.nextTrack.fallingEdge()) {
+    if (status == Status::Record) {
+      status = Status::Play;
+    }
     int selectedTrack = controller.nextTrack();
     Serial.print("Current track: ");
     Serial.println(selectedTrack);

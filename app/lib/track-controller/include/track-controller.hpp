@@ -53,6 +53,7 @@ public:
 
   bool begin();
   Status checkTracks(Status status);
+  void establishLoop();
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
   int nextTrack();

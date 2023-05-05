@@ -53,6 +53,17 @@ Status TrackController::checkTracks(Status status) {
   return status;
 }
 
+void TrackController::establishLoop() {
+  uint32_t position = tracks[selectedTrack]->getPosition();
+  if (position) {
+    Serial.println("Setting the base loop");
+    loopLength = position;
+    for (auto track : tracks) {
+      track->establishLoop();
+    }
+  }
+}
+
 int TrackController::nextTrack() {
   // If recording, stop
   punchOut();
@@ -61,6 +72,8 @@ int TrackController::nextTrack() {
 };
 
 bool TrackController::pause() {
+  if (!loopLength)
+    establishLoop();
   bool success = true;
   for (auto track : tracks) {
     success = success && track->pause();
@@ -94,17 +107,16 @@ void TrackController::printStatus(Status status) {
 }
 
 void TrackController::punchIn(Mode mode, float panPos) {
-  adjustOutput(mode);
+  // adjustOutput(mode);
   tracks[selectedTrack]->punchIn(mode, panPos);
 }
 
 void TrackController::punchOut() {
-  adjustOutput();
-  for (int i = 0; i < numTracks; i++) {
-    uint32_t position = tracks[i]->punchOut();
-    if (i == selectedTrack && !loopLength) {
-      loopLength = position;
-    }
+  if (!loopLength)
+    establishLoop();
+  // adjustOutput();
+  for (auto track : tracks) {
+    track->punchOut();
   }
 }
 
@@ -136,6 +148,8 @@ bool TrackController::startRecording(Mode mode, float panPos) {
 };
 
 bool TrackController::stop(bool cancel) {
+  if (!loopLength && !cancel)
+    establishLoop();
   bool success = true;
   for (auto track : tracks) {
     success = success && track->stop(cancel);

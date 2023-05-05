@@ -73,11 +73,13 @@ public:
 
   bool begin();
   bool checkLoop(Status status, uint32_t loopLength);
+  void establishLoop() { loopEstablished = true; };
+  uint32_t getPosition() { return recording.positionMillis(); };
   void pan(float panPos, Mode mode);
   bool play();
   bool pause();
   void punchIn(Mode mode, float pan);
-  uint32_t punchOut();
+  void punchOut();
   bool record(Mode mode, float pan);
   void save();
   bool startPlaying();
