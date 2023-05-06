@@ -12,26 +12,38 @@ class TrackController {
 
   AudioMixer4 recMixLeft;
   AudioMixer4 recMixRight;
+  AudioRecordWAVstereo recording;
 
+  AudioConnection recMixLeftToRecording;
+  AudioConnection recMixRightToRecording;
+
+  static const AudioBuffer::bufType bufferLocation;
+  static const size_t recordBufferSize;
   static const Gain gain;
   static const int numTracks = 4;
+  static const int fileNameSize = 20;
   static size_t controllerId;
+
+  File recordingFile;
 
   bool isRecording = false;
   uint32_t loopLength = 0;
   elapsedMillis ms;
   int selectedTrack = 0;
 
-  char filenames[2 * numTracks * 20];
+  char recFileNames[2 * fileNameSize];
+  char *readFileName;
+  char *writeFileName;
+
+  char trackFileNames[2 * numTracks * fileNameSize];
   Track *tracks[numTracks];
-  AudioConnection *patchCords[numTracks * 4];
+  AudioConnection *trackConnections[numTracks * 4];
   float panPos[numTracks];
 
   void adjustOutput(Mode mode);
   void adjustOutput();
   static float panLeft(float gain, float pos);
   static float panRight(float gain, float pos);
-  void patchConnections();
   void printStatus(Status status);
   bool start();
   bool swapBuffers();
@@ -49,7 +61,7 @@ public:
   bool begin();
   Status checkTracks(Status status);
   void establishLoop();
-  uint32_t getPosition() { return tracks[selectedTrack]->getPosition(); };
+  uint32_t getPosition() { return recording.positionMillis(); }
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
   int nextTrack();
@@ -60,6 +72,7 @@ public:
   void punchOut();
   void punchOut(bool cancel);
   bool record(Mode mode);
+  void save();
   bool startPlaying();
   bool startRecording(Mode mode);
   bool stop(bool cancel = false);

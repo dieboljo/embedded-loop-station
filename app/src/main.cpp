@@ -82,9 +82,8 @@ void loop() {
 
   // Respond to button presses
   if (buttons.save.fallingEdge()) {
-    // TODO: implement save() in TrackController
-    // status = Status::Stop;
-    // track.save();
+    status = Status::Stop;
+    controller.save();
   }
 
   if (buttons.mode.fallingEdge()) {

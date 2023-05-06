@@ -73,7 +73,6 @@ public:
   void punchIn(Mode mode);
   void punchOut();
   bool resume();
-  void save();
   bool start();
   bool stop(bool cancel = false);
   bool swapBuffers();

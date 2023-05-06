@@ -1,5 +1,12 @@
 #include <track-controller.hpp>
 
+// Audio buffer size
+const size_t TrackController::recordBufferSize = 131072; // 128k
+
+// Location of audio buffer
+const AudioBuffer::bufType TrackController::bufferLocation = AudioBuffer::inExt;
+
+// Monitor gain levels
 const TrackController::Gain TrackController::gain = {0.0, 0.3, 1.0};
 
 size_t TrackController::controllerId = 0;
@@ -28,11 +35,32 @@ void TrackController::adjustOutput(Mode mode) {
 
 bool TrackController::begin() {
   bool success = true;
+  AudioBuffer::result ok = AudioBuffer::ok;
+
+  // Configure loop record buffer
+  success =
+      success && recording.createBuffer(recordBufferSize, bufferLocation) == ok;
+  if (!success) {
+    Serial.println("Failed to configure loop record buffer");
+  }
+
+  // Delete and recreate the read and write files
+  if (SD.exists(writeFileName)) {
+    success = SD.remove(writeFileName);
+  }
+  if (SD.exists(readFileName)) {
+    success = SD.remove(readFileName);
+  }
+  if (!success) {
+    Serial.println("Failed to remove existing loop files");
+  }
+
   for (auto track : tracks) {
     success = success && track->begin();
   }
-  patchConnections();
+
   punchOut();
+
   return success;
 };
 
@@ -58,6 +86,7 @@ Status TrackController::checkTracks(Status status) {
 
   for (auto track : tracks) {
     if (track->checkEnded(loopLength)) {
+      Serial.printf("File size: %d\n", recordingFile.size());
       // End of loop, switch to recorded audio
       Serial.println("Looping back to start");
       swapBuffers();
@@ -108,12 +137,6 @@ float TrackController::panLeft(float gain, float pan) {
 
 float TrackController::panRight(float gain, float pan) {
   return gain * sinf(pan * (M_PI / 2));
-}
-
-void TrackController::patchConnections() {
-  for (auto connection : patchCords) {
-    connection->connect();
-  }
 }
 
 bool TrackController::play() {
@@ -177,12 +200,60 @@ bool TrackController::record(Mode mode) {
   return success;
 };
 
+void TrackController::save() {
+  // For now, discard current changes until a way
+  // to quickly merge a partial loop is implemented
+  stop(true);
+  char label[30];
+  snprintf(label, 30, "/loops/%ld.wav", Teensy3Clock.get());
+  AudioNoInterrupts();
+  if (!SD.exists("/loops")) {
+    SD.mkdir("/loops");
+  }
+  if (SD.exists(label)) {
+    SD.remove(label);
+  }
+  File writeFile = SD.open(label, FILE_WRITE_BEGIN);
+  File readFile = SD.open(readFileName);
+  if (!writeFile || !readFile) {
+    Serial.println("Failed to save track");
+    return;
+  }
+  Serial.print("Saving track");
+  byte buf[512];
+  int bufSize = sizeof(buf);
+  while (readFile.available()) {
+    if (ms > 1000) {
+      Serial.print(".");
+      ms = 0;
+    }
+    int nbytes = readFile.available();
+    if (nbytes > bufSize) {
+      readFile.read(buf, bufSize);
+      writeFile.write(buf, bufSize);
+    } else {
+      readFile.read(buf, nbytes);
+      writeFile.write(buf, nbytes);
+    }
+  }
+  readFile.close();
+  writeFile.close();
+  Serial.print("\nSaved track to file: ");
+  Serial.println(label);
+  AudioInterrupts();
+}
+
 bool TrackController::start() {
   bool success = true;
   AudioNoInterrupts();
+  recordingFile = SD.open(writeFileName, FILE_WRITE_BEGIN);
+  recording.record(recordingFile, true);
+
   for (auto track : tracks) {
     success = success && track->start();
   }
+
+  success = success && recording.record();
   AudioInterrupts();
   return success;
 }
@@ -201,8 +272,13 @@ bool TrackController::stop(bool cancel) {
   punchOut(cancel);
   bool success = true;
   AudioNoInterrupts();
+  recording.pause();
   for (auto track : tracks) {
     success = success && track->stop(cancel);
+  }
+  recording.stop();
+  if (cancel) {
+    SD.remove(writeFileName);
   }
   AudioInterrupts();
   return success;
@@ -213,14 +289,29 @@ bool TrackController::swapBuffers() {
     Serial.println("Failed to stop audio streams");
     return false;
   }
+
+  char *temp = readFileName;
+  readFileName = writeFileName;
+  writeFileName = temp;
+  Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
+
   for (auto track : tracks) {
     track->swapBuffers();
   }
+
   return start();
 };
 
 #ifdef USE_USB_INPUT
-TrackController::TrackController(AudioInputUSB &s) {
+TrackController::TrackController(AudioInputUSB &s)
+    : recMixLeftToRecording(recMixLeft, 0, recording, 0),
+      recMixRightToRecording(recMixRight, 0, recording, 1) {
+  readFileName = &recFileNames[0];
+  snprintf(readFileName, fileNameSize, "mix-%d-a.wav", controllerId);
+
+  writeFileName = &recFileNames[fileNameSize];
+  snprintf(writeFileName, fileNameSize, "mix-%d-b.wav", controllerId);
+
   for (int i = 0; i < numTracks; i++) {
     panPos[i] = 0.5;
 
@@ -247,27 +338,35 @@ TrackController::TrackController(AudioInputUSB &s) {
   controllerId++;
 };
 #else
-TrackController::TrackController(AudioInputI2S &s) {
+TrackController::TrackController(AudioInputI2S &s)
+    : recMixLeftToRecording(recMixLeft, 0, recording, 0),
+      recMixRightToRecording(recMixRight, 0, recording, 1) {
+  readFileName = &recFileNames[0];
+  snprintf(readFileName, fileNameSize, "mix-%d-a.wav", controllerId);
+
+  writeFileName = &recFileNames[fileNameSize];
+  snprintf(writeFileName, fileNameSize, "mix-%d-b.wav", controllerId);
+
   for (int i = 0; i < numTracks; i++) {
     panPos[i] = 0.5;
 
-    int b1 = i * 2 * 20;
-    char *f1 = &filenames[b1];
-    snprintf(f1, 20, "track-%d-%d-a.wav", controllerId, i);
+    size_t b1 = i * 2 * fileNameSize;
+    char *f1 = &trackFileNames[b1];
+    snprintf(f1, fileNameSize, "track-%d-%d-a.wav", controllerId, i);
 
-    int b2 = b1 + 20;
-    char *f2 = &filenames[b2];
-    snprintf(f2, 20, "track-%d-%d-b.wav", controllerId, i);
+    size_t b2 = b1 + fileNameSize;
+    char *f2 = &trackFileNames[b2];
+    snprintf(f2, fileNameSize, "track-%d-%d-b.wav", controllerId, i);
 
     tracks[i] = new Track(f1, f2, s);
 
-    patchCords[i * 4] =
+    trackConnections[i * 4] =
         new AudioConnection(tracks[i]->playback, 0, outMixLeft, i);
-    patchCords[i * 4 + 1] =
+    trackConnections[i * 4 + 1] =
         new AudioConnection(tracks[i]->playback, 1, outMixRight, i);
-    patchCords[i * 4 + 2] =
+    trackConnections[i * 4 + 2] =
         new AudioConnection(tracks[i]->playback, 0, recMixLeft, i);
-    patchCords[i * 4 + 3] =
+    trackConnections[i * 4 + 3] =
         new AudioConnection(tracks[i]->playback, 1, recMixRight, i);
   }
 

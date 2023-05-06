@@ -31,7 +31,7 @@ bool Track::checkEnded(uint32_t loopLength) {
   return false;
 }
 
-// SD audio objects need buffers configuring
+// SD audio objects need buffer configuration
 bool Track::configureBuffers() {
   AudioBuffer::result ok = AudioBuffer::ok;
   bool configured =
@@ -110,54 +110,12 @@ bool Track::resume() {
   }
 }
 
-void Track::save() {
-  stop();
-  char label[30];
-  sprintf(label, "/loops/%ld.wav", Teensy3Clock.get());
-  AudioNoInterrupts();
-  if (!SD.exists("/loops")) {
-    SD.mkdir("/loops");
-  }
-  if (SD.exists(label)) {
-    SD.remove(label);
-  }
-  File writeFile = SD.open(label, FILE_WRITE_BEGIN);
-  File readFile = SD.open(readFileName);
-  if (!writeFile || !readFile) {
-    Serial.println("Failed to save track");
-    return;
-  }
-  Serial.print("Saving track");
-  byte buf[512];
-  int bufSize = sizeof(buf);
-  while (readFile.available()) {
-    if (ms > 1000) {
-      Serial.print(".");
-      ms = 0;
-    }
-    int nbytes = readFile.available();
-    if (nbytes > bufSize) {
-      readFile.read(buf, bufSize);
-      writeFile.write(buf, bufSize);
-    } else {
-      readFile.read(buf, nbytes);
-      writeFile.write(buf, nbytes);
-    }
-  }
-  readFile.close();
-  writeFile.close();
-  Serial.print("\nSaved track to file: ");
-  Serial.println(label);
-  AudioInterrupts();
-}
-
 // Opens all file streams in a paused state,
 // then starts playing them at once.
 // This allows play streams to queue their buffers.
 bool Track::start() {
   playbackFile = SD.open(readFileName);
   feedbackFile = SD.open(readFileName);
-  Serial.printf("File size: %d\n", playbackFile.size());
   if (playbackFile.size() && feedbackFile.size()) {
     playback.play(playbackFile, true);
     feedback.play(feedbackFile, true);
@@ -192,7 +150,6 @@ bool Track::swapBuffers() {
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
-  Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
   return true;
 }
 
