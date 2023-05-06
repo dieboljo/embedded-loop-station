@@ -22,14 +22,10 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-bool Track::checkEnded(Status status, uint32_t loopLength) {
+bool Track::checkEnded(uint32_t loopLength) {
   // Track reached its end
   if (loopEstablished &&
       (recording.positionMillis() >= loopLength || !playback.isPlaying())) {
-    // End of loop, switch to recorded audio
-    Serial.println(status == Status::Play ? "Looping back from play"
-                                          : "Looping back from record");
-    swapBuffers();
     return true;
   }
   return false;
@@ -193,15 +189,11 @@ bool Track::stop(bool cancel) {
 // Rotate read and write file pointers
 // whenever a loop reaches its end
 bool Track::swapBuffers() {
-  if (!stop()) {
-    Serial.println("Failed to stop audio streams");
-    return false;
-  }
   const char *temp = readFileName;
   readFileName = writeFileName;
   writeFileName = temp;
   Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
-  return start();
+  return true;
 }
 
 #ifdef USE_USB_INPUT

@@ -41,10 +41,12 @@ class TrackController {
 
   void adjustOutput(Mode mode);
   void adjustOutput();
-  float panLeft(float gain, float pos);
-  float panRight(float gain, float pos);
+  static float panLeft(float gain, float pos);
+  static float panRight(float gain, float pos);
   void patchConnections();
   void printStatus(Status status);
+  bool start();
+  bool swapBuffers();
 
 public:
 #ifdef USE_USB_INPUT
@@ -59,6 +61,7 @@ public:
   bool begin();
   Status checkTracks(Status status);
   void establishLoop();
+  uint32_t getPosition() { return tracks[selectedTrack]->getPosition(); };
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
   int nextTrack();

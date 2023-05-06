@@ -54,13 +54,11 @@ Status TrackController::checkTracks(Status status) {
 
   printStatus(status);
 
-  for (int i = 0; i < numTracks; i++) {
-    Status trackStatus = i == selectedTrack ? status : Status::Play;
-    AudioNoInterrupts();
-    bool trackEnded = tracks[i]->checkEnded(trackStatus, loopLength);
-    AudioInterrupts();
-    if (i == selectedTrack && trackEnded) {
-      punchOut();
+  for (auto track : tracks) {
+    if (track->checkEnded(loopLength)) {
+      // End of loop, switch to recorded audio
+      Serial.println("Looping back to start");
+      swapBuffers();
       return Status::Play;
     }
   }
@@ -177,8 +175,7 @@ bool TrackController::record(Mode mode) {
   return success;
 };
 
-bool TrackController::startPlaying() {
-  punchOut();
+bool TrackController::start() {
   bool success = true;
   AudioNoInterrupts();
   for (auto track : tracks) {
@@ -186,17 +183,16 @@ bool TrackController::startPlaying() {
   }
   AudioInterrupts();
   return success;
+}
+
+bool TrackController::startPlaying() {
+  punchOut();
+  return start();
 };
 
 bool TrackController::startRecording(Mode mode) {
   punchIn(mode);
-  bool success = true;
-  AudioNoInterrupts();
-  for (auto track : tracks) {
-    success = success && track->start();
-  }
-  AudioInterrupts();
-  return success;
+  return start();
 };
 
 bool TrackController::stop(bool cancel) {
@@ -208,6 +204,19 @@ bool TrackController::stop(bool cancel) {
   }
   AudioInterrupts();
   return success;
+};
+
+bool TrackController::swapBuffers() {
+  if (!stop()) {
+    Serial.println("Failed to stop audio streams");
+    return false;
+  }
+  AudioNoInterrupts();
+  for (auto track : tracks) {
+    track->swapBuffers();
+  }
+  AudioInterrupts();
+  return start();
 };
 
 #ifdef USE_USB_INPUT

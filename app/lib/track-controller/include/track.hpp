@@ -51,7 +51,6 @@ class Track {
 
   bool configureBuffers();
   bool initializeFiles();
-  bool swapBuffers();
 
 protected:
   const char *readFileName;
@@ -67,16 +66,17 @@ public:
   AudioPlayWAVstereo playback;
 
   bool begin();
-  bool checkEnded(Status status, uint32_t loopLength);
+  bool checkEnded(uint32_t loopLength);
   void establishLoop() { loopEstablished = true; };
   uint32_t getPosition() { return recording.positionMillis(); };
   bool pause();
   void punchIn(Mode mode);
   void punchOut();
   bool resume();
-  bool start();
   void save();
+  bool start();
   bool stop(bool cancel = false);
+  bool swapBuffers();
 };
 
 #endif
