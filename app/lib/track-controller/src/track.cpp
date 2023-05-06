@@ -219,7 +219,7 @@ bool Track::swapBuffers() {
   readFileName = writeFileName;
   writeFileName = temp;
   Serial.printf("Read file: %s, Write file: %s\n", readFileName, writeFileName);
-  return startPlaying();
+  return start();
 }
 
 #ifdef USE_USB_INPUT

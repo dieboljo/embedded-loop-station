@@ -96,7 +96,7 @@ void TrackController::patchConnections() {
 bool TrackController::play() {
   bool success = true;
   for (auto track : tracks) {
-    success = success && track->play();
+    success = success && track->resume();
   }
   return success;
 }
