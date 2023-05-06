@@ -56,7 +56,9 @@ Status TrackController::checkTracks(Status status) {
 
   for (int i = 0; i < numTracks; i++) {
     Status trackStatus = i == selectedTrack ? status : Status::Play;
+    AudioNoInterrupts();
     bool trackEnded = tracks[i]->checkEnded(trackStatus, loopLength);
+    AudioInterrupts();
     if (i == selectedTrack && trackEnded) {
       punchOut();
       return Status::Play;
@@ -85,15 +87,17 @@ int TrackController::nextTrack() {
 
 bool TrackController::pause() {
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->pause();
   }
+  AudioInterrupts();
   return success;
 };
 
 void TrackController::pan(float pos, Mode mode) {
-  AudioNoInterrupts();
   panPos[selectedTrack] = pos;
+  AudioNoInterrupts();
   adjustOutput(mode);
   AudioInterrupts();
 }
@@ -115,9 +119,11 @@ void TrackController::patchConnections() {
 bool TrackController::play() {
   punchOut();
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->resume();
   }
+  AudioInterrupts();
   return success;
 }
 
@@ -129,18 +135,18 @@ void TrackController::printStatus(Status status) {
 }
 
 void TrackController::punchIn(Mode mode) {
-  AudioNoInterrupts();
   isRecording = true;
+  AudioNoInterrupts();
   adjustOutput(mode);
   tracks[selectedTrack]->punchIn(mode);
   AudioInterrupts();
 }
 
 void TrackController::punchOut() {
-  AudioNoInterrupts();
   if (isRecording && !loopLength)
     establishLoop();
   isRecording = false;
+  AudioNoInterrupts();
   adjustOutput();
   for (auto track : tracks) {
     track->punchOut();
@@ -163,36 +169,44 @@ void TrackController::punchOut(bool cancel) {
 bool TrackController::record(Mode mode) {
   punchIn(mode);
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->resume();
   }
+  AudioInterrupts();
   return success;
 };
 
 bool TrackController::startPlaying() {
   punchOut();
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->start();
   }
+  AudioInterrupts();
   return success;
 };
 
 bool TrackController::startRecording(Mode mode) {
   punchIn(mode);
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->start();
   }
+  AudioInterrupts();
   return success;
 };
 
 bool TrackController::stop(bool cancel) {
   punchOut(cancel);
   bool success = true;
+  AudioNoInterrupts();
   for (auto track : tracks) {
     success = success && track->stop(cancel);
   }
+  AudioInterrupts();
   return success;
 };
 
