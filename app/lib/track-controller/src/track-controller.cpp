@@ -36,11 +36,7 @@ Status TrackController::checkTracks(Status status) {
     }
     break;
   case Status::Record:
-    if (!tracks[selectedTrack]->isRecording)
-      return Status::Play;
-    break;
   default:
-    Serial.println("This shouldn't be reached");
     break;
   }
 
@@ -48,7 +44,11 @@ Status TrackController::checkTracks(Status status) {
 
   for (int i = 0; i < numTracks; i++) {
     Status trackStatus = i == selectedTrack ? status : Status::Play;
-    tracks[i]->checkLoop(trackStatus, loopLength);
+    bool trackEnded = tracks[i]->checkEnded(trackStatus, loopLength);
+    if (i == selectedTrack && trackEnded) {
+      punchOut();
+      return Status::Play;
+    }
   }
   return status;
 }
@@ -82,6 +82,8 @@ bool TrackController::pause() {
 };
 
 void TrackController::pan(float panPos, Mode mode) {
+  if (!isRecording)
+    return;
   tracks[selectedTrack]->pan(panPos, mode);
 }
 
@@ -107,47 +109,50 @@ void TrackController::printStatus(Status status) {
 }
 
 void TrackController::punchIn(Mode mode, float panPos) {
-  // adjustOutput(mode);
+  isRecording = true;
+  adjustOutput(mode);
   tracks[selectedTrack]->punchIn(mode, panPos);
 }
 
 void TrackController::punchOut() {
+  isRecording = false;
+  adjustOutput();
   if (!loopLength)
     establishLoop();
-  // adjustOutput();
   for (auto track : tracks) {
     track->punchOut();
   }
 }
 
 bool TrackController::record(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   bool success = true;
-  for (int i = 0; i < numTracks; i++) {
-    success = success && (i == selectedTrack ? tracks[i]->record(mode, panPos)
-                                             : tracks[i]->play());
+  for (auto track : tracks) {
+    success = success && track->resume();
   }
   return success;
 };
 
 bool TrackController::startPlaying() {
+  punchOut();
   bool success = true;
   for (auto track : tracks) {
-    success = success && track->startPlaying();
+    success = success && track->start();
   }
   return success;
 };
 
 bool TrackController::startRecording(Mode mode, float panPos) {
+  punchIn(mode, panPos);
   bool success = true;
-  for (int i = 0; i < numTracks; i++) {
-    success =
-        success && (i == selectedTrack ? tracks[i]->startRecording(mode, panPos)
-                                       : tracks[i]->startPlaying());
+  for (auto track : tracks) {
+    success = success && track->start();
   }
   return success;
 };
 
 bool TrackController::stop(bool cancel) {
+  punchOut();
   if (!loopLength && !cancel)
     establishLoop();
   bool success = true;

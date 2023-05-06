@@ -22,16 +22,17 @@ bool Track::begin() {
 }
 
 // Check if the loop has ended, and restart if true
-bool Track::checkLoop(Status status, uint32_t loopLength) {
+bool Track::checkEnded(Status status, uint32_t loopLength) {
   // Track reached its end
   if (loopEstablished &&
       (recording.positionMillis() >= loopLength || !playback.isPlaying())) {
     // End of loop, switch to recorded audio
     Serial.println(status == Status::Play ? "Looping back from play"
                                           : "Looping back from record");
-    return swapBuffers();
+    swapBuffers();
+    return true;
   }
-  return true;
+  return false;
 }
 
 // SD audio objects need buffers configuring
@@ -76,9 +77,6 @@ bool Track::initializeFiles() {
 }
 
 void Track::pan(float panPos, Mode mode) {
-  if (!isRecording) {
-    return;
-  }
   if (mode == Mode::Replace) {
     busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
     busRight.gain(Channel::Source, panRight(gain.solo, panPos));
@@ -101,12 +99,6 @@ bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();
 }
 
-// Resume playing from a paused state
-bool Track::play() {
-  punchOut();
-  return resume();
-}
-
 // Enable recording at the current track position,
 // in either replace or overdub mode
 void Track::punchIn(Mode mode, float panPos) {
@@ -121,7 +113,6 @@ void Track::punchIn(Mode mode, float panPos) {
     busRight.gain(Channel::Source, panRight(gain.mix, panPos));
     busRight.gain(Channel::Feedback, gain.mix);
   }
-  isRecording = true;
 }
 
 // Disable recording immediately
@@ -130,13 +121,6 @@ void Track::punchOut() {
   busLeft.gain(Channel::Feedback, gain.solo);
   busRight.gain(Channel::Source, gain.mute);
   busRight.gain(Channel::Feedback, gain.solo);
-  isRecording = false;
-}
-
-// Resume recording from a paused state
-bool Track::record(Mode mode, float panPos) {
-  punchIn(mode, panPos);
-  return resume();
 }
 
 // Utility to start all audio streams
@@ -208,23 +192,10 @@ bool Track::start() {
   return resume();
 }
 
-// Start playing from a stopped state
-bool Track::startPlaying() {
-  punchOut();
-  return start();
-}
-
-// Start recording from a stopped state
-bool Track::startRecording(Mode mode, float panPos) {
-  punchIn(mode, panPos);
-  return start();
-}
-
 // Pause all audio streams, then close them.
 // This allows the record buffer to flush to
 // its WAV file and update header information.
 bool Track::stop(bool cancel) {
-  punchOut();
   recording.pause();
   playback.pause();
   feedback.pause();

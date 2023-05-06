@@ -53,8 +53,6 @@ class Track {
   bool initializeFiles();
   float panLeft(float gain, float panPos);
   float panRight(float gain, float panPos);
-  bool resume();
-  bool start();
   bool swapBuffers();
 
 protected:
@@ -68,22 +66,19 @@ public:
   Track(const char *f1, const char *f2, AudioInputI2S &s);
 #endif
 
-  bool isRecording = false;
   AudioPlayWAVstereo playback;
 
   bool begin();
-  bool checkLoop(Status status, uint32_t loopLength);
+  bool checkEnded(Status status, uint32_t loopLength);
   void establishLoop() { loopEstablished = true; };
   uint32_t getPosition() { return recording.positionMillis(); };
   void pan(float panPos, Mode mode);
-  bool play();
   bool pause();
   void punchIn(Mode mode, float pan);
   void punchOut();
-  bool record(Mode mode, float pan);
+  bool resume();
+  bool start();
   void save();
-  bool startPlaying();
-  bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);
 };
 

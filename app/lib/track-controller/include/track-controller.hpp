@@ -26,6 +26,8 @@ class TrackController {
   static const Gain gain;
   static const int numTracks = 2;
 
+  bool isRecording = false;
+
   int baseTrack = -1;
   uint32_t loopLength = 0;
   elapsedMillis ms;
