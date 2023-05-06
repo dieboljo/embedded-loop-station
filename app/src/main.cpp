@@ -54,7 +54,7 @@ void setup() {
   configureButtons();
 
   // Audio connections require memory
-  AudioMemory(20);
+  AudioMemory(30);
 
   // Initialize processor and memory measurements
   AudioProcessorUsageMaxReset();
@@ -103,7 +103,7 @@ void loop() {
     }
     int selectedTrack = controller.nextTrack();
     Serial.print("Current track: ");
-    Serial.println(selectedTrack);
+    Serial.println(selectedTrack + 1);
   }
 
   if (buttons.record.fallingEdge()) {
