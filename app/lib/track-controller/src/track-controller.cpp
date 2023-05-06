@@ -3,14 +3,25 @@
 const TrackController::Gain TrackController::gain = {0.0, 0.3, 1.0};
 
 void TrackController::adjustOutput() {
-  outMixLeft.gain(selectedTrack, gain.play);
-  outMixRight.gain(selectedTrack, gain.play);
+  float pp = panPos[selectedTrack];
+  recMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
+  recMixRight.gain(selectedTrack, panRight(gain.play, pp));
+  outMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
+  outMixRight.gain(selectedTrack, panRight(gain.play, pp));
 }
 
 void TrackController::adjustOutput(Mode mode) {
-  float outputGain = mode == Mode::Overdub ? gain.overdub : gain.replace;
-  outMixLeft.gain(selectedTrack, outputGain);
-  outMixRight.gain(selectedTrack, outputGain);
+  float pp = panPos[selectedTrack];
+  recMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
+  recMixRight.gain(selectedTrack, panRight(gain.play, pp));
+  if (isRecording) {
+    float outputGain = mode == Mode::Overdub ? gain.overdub : gain.replace;
+    outMixLeft.gain(selectedTrack, panLeft(outputGain, pp));
+    outMixRight.gain(selectedTrack, panRight(outputGain, pp));
+  } else {
+    outMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
+    outMixRight.gain(selectedTrack, panRight(gain.play, pp));
+  }
 }
 
 bool TrackController::begin() {
@@ -19,6 +30,7 @@ bool TrackController::begin() {
     success = success && track->begin();
   }
   patchConnections();
+  punchOut();
   return success;
 };
 
@@ -72,8 +84,6 @@ int TrackController::nextTrack() {
 };
 
 bool TrackController::pause() {
-  if (!loopLength)
-    establishLoop();
   bool success = true;
   for (auto track : tracks) {
     success = success && track->pause();
@@ -81,10 +91,19 @@ bool TrackController::pause() {
   return success;
 };
 
-void TrackController::pan(float panPos, Mode mode) {
-  if (!isRecording)
-    return;
-  tracks[selectedTrack]->pan(panPos, mode);
+void TrackController::pan(float pos, Mode mode) {
+  AudioNoInterrupts();
+  panPos[selectedTrack] = pos;
+  adjustOutput(mode);
+  AudioInterrupts();
+}
+
+float TrackController::panLeft(float gain, float pan) {
+  return gain * cosf(pan * (M_PI / 2));
+}
+
+float TrackController::panRight(float gain, float pan) {
+  return gain * sinf(pan * (M_PI / 2));
 }
 
 void TrackController::patchConnections() {
@@ -94,6 +113,7 @@ void TrackController::patchConnections() {
 }
 
 bool TrackController::play() {
+  punchOut();
   bool success = true;
   for (auto track : tracks) {
     success = success && track->resume();
@@ -108,24 +128,40 @@ void TrackController::printStatus(Status status) {
   }
 }
 
-void TrackController::punchIn(Mode mode, float panPos) {
+void TrackController::punchIn(Mode mode) {
+  AudioNoInterrupts();
   isRecording = true;
   adjustOutput(mode);
-  tracks[selectedTrack]->punchIn(mode, panPos);
+  tracks[selectedTrack]->punchIn(mode);
+  AudioInterrupts();
 }
 
 void TrackController::punchOut() {
+  AudioNoInterrupts();
+  if (isRecording && !loopLength)
+    establishLoop();
   isRecording = false;
   adjustOutput();
-  if (!loopLength)
-    establishLoop();
   for (auto track : tracks) {
     track->punchOut();
   }
+  AudioInterrupts();
 }
 
-bool TrackController::record(Mode mode, float panPos) {
-  punchIn(mode, panPos);
+void TrackController::punchOut(bool cancel) {
+  AudioNoInterrupts();
+  if (!cancel && !loopLength && isRecording)
+    establishLoop();
+  isRecording = false;
+  adjustOutput();
+  for (auto track : tracks) {
+    track->punchOut();
+  }
+  AudioInterrupts();
+}
+
+bool TrackController::record(Mode mode) {
+  punchIn(mode);
   bool success = true;
   for (auto track : tracks) {
     success = success && track->resume();
@@ -142,8 +178,8 @@ bool TrackController::startPlaying() {
   return success;
 };
 
-bool TrackController::startRecording(Mode mode, float panPos) {
-  punchIn(mode, panPos);
+bool TrackController::startRecording(Mode mode) {
+  punchIn(mode);
   bool success = true;
   for (auto track : tracks) {
     success = success && track->start();
@@ -152,9 +188,7 @@ bool TrackController::startRecording(Mode mode, float panPos) {
 };
 
 bool TrackController::stop(bool cancel) {
-  punchOut();
-  if (!loopLength && !cancel)
-    establishLoop();
+  punchOut(cancel);
   bool success = true;
   for (auto track : tracks) {
     success = success && track->stop(cancel);

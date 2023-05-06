@@ -114,17 +114,17 @@ void loop() {
       status = Status::Play;
       break;
     case Status::Play:
-      controller.punchIn(mode, pan);
+      controller.punchIn(mode);
       status = Status::Record;
       break;
     case Status::Pause:
-      if (controller.record(mode, pan)) {
+      if (controller.record(mode)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      if (controller.startRecording(mode, pan)) {
+      if (controller.startRecording(mode)) {
         Serial.println("Recording started");
       }
       status = Status::Record;

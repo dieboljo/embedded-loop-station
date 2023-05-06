@@ -27,11 +27,12 @@ class TrackController {
   static const int numTracks = 2;
 
   bool isRecording = false;
-
   int baseTrack = -1;
   uint32_t loopLength = 0;
   elapsedMillis ms;
   int selectedTrack = 0;
+
+  float panPos[numTracks] = {0.5, 0.5};
   Track *tracks[numTracks] = {&track1, &track2};
   AudioConnection *patchCords[numTracks * 4] = {
       &track1ToOutMixLeft,  &track1ToOutMixRight, &track2ToOutMixLeft,
@@ -40,6 +41,8 @@ class TrackController {
 
   void adjustOutput(Mode mode);
   void adjustOutput();
+  float panLeft(float gain, float pos);
+  float panRight(float gain, float pos);
   void patchConnections();
   void printStatus(Status status);
 
@@ -62,11 +65,12 @@ public:
   void pan(float panPos, Mode mode);
   bool play();
   bool pause();
-  void punchIn(Mode mode, float panPos);
+  void punchIn(Mode mode);
   void punchOut();
-  bool record(Mode mode, float panPos);
+  void punchOut(bool cancel);
+  bool record(Mode mode);
   bool startPlaying();
-  bool startRecording(Mode mode, float panPos);
+  bool startRecording(Mode mode);
   bool stop(bool cancel = false);
 };
 

@@ -76,24 +76,6 @@ bool Track::initializeFiles() {
   return success;
 }
 
-void Track::pan(float panPos, Mode mode) {
-  if (mode == Mode::Replace) {
-    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
-    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
-  } else {
-    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
-    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
-  }
-}
-
-float Track::panLeft(float gain, float panPos) {
-  return gain * cosf(panPos * (M_PI / 2));
-}
-
-float Track::panRight(float gain, float panPos) {
-  return gain * sinf(panPos * (M_PI / 2));
-}
-
 // Pause recording and playback, and disable recording
 bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();
@@ -101,16 +83,16 @@ bool Track::pause() {
 
 // Enable recording at the current track position,
 // in either replace or overdub mode
-void Track::punchIn(Mode mode, float panPos) {
+void Track::punchIn(Mode mode) {
   if (mode == Mode::Replace) {
-    busLeft.gain(Channel::Source, panLeft(gain.solo, panPos));
+    busLeft.gain(Channel::Source, gain.solo);
     busLeft.gain(Channel::Feedback, gain.mute);
-    busRight.gain(Channel::Source, panRight(gain.solo, panPos));
+    busRight.gain(Channel::Source, gain.solo);
     busRight.gain(Channel::Feedback, gain.mute);
   } else {
-    busLeft.gain(Channel::Source, panLeft(gain.mix, panPos));
+    busLeft.gain(Channel::Source, gain.mix);
     busLeft.gain(Channel::Feedback, gain.mix);
-    busRight.gain(Channel::Source, panRight(gain.mix, panPos));
+    busRight.gain(Channel::Source, gain.mix);
     busRight.gain(Channel::Feedback, gain.mix);
   }
 }

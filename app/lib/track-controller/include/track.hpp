@@ -51,8 +51,6 @@ class Track {
 
   bool configureBuffers();
   bool initializeFiles();
-  float panLeft(float gain, float panPos);
-  float panRight(float gain, float panPos);
   bool swapBuffers();
 
 protected:
@@ -72,9 +70,8 @@ public:
   bool checkEnded(Status status, uint32_t loopLength);
   void establishLoop() { loopEstablished = true; };
   uint32_t getPosition() { return recording.positionMillis(); };
-  void pan(float panPos, Mode mode);
   bool pause();
-  void punchIn(Mode mode, float pan);
+  void punchIn(Mode mode);
   void punchOut();
   bool resume();
   bool start();
