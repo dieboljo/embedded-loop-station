@@ -61,6 +61,7 @@ public:
   AudioPlayWAVstereo playback;
 
   bool begin();
+  void clear();
   bool checkEnded(uint32_t loopLength);
   void establishLoop() { loopEstablished = true; };
   uint32_t getPosition() { return recording.positionMillis(); };

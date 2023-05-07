@@ -96,6 +96,12 @@ Status TrackController::checkTracks(Status status) {
   return status;
 }
 
+void TrackController::clearTrack() {
+  stop(true);
+  tracks[selectedTrack]->clear();
+  Serial.printf("Track %d cleared\n", selectedTrack + 1);
+}
+
 void TrackController::establishLoop() {
   uint32_t position = tracks[selectedTrack]->getPosition();
   if (position) {

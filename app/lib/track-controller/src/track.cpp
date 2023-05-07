@@ -24,11 +24,15 @@ bool Track::begin() {
 // Check if the loop has ended, and restart if true
 bool Track::checkEnded(uint32_t loopLength) {
   // Track reached its end
-  if (loopEstablished &&
-      (recording.positionMillis() >= loopLength || !playback.isPlaying())) {
+  if (loopEstablished && recording.positionMillis() >= loopLength) {
     return true;
   }
   return false;
+}
+
+void Track::clear() {
+  SD.remove(readFileName);
+  SD.remove(writeFileName);
 }
 
 // SD audio objects need buffer configuration

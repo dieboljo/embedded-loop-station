@@ -66,6 +66,7 @@ public:
 
   bool begin();
   Status checkTracks(Status status);
+  void clearTrack();
   void establishLoop();
   uint32_t getPosition() { return recording.positionMillis(); }
   int getNumTracks() { return numTracks; };
