@@ -44,6 +44,7 @@ class TrackController {
   Track *tracks[numTracks];
   AudioConnection *trackConnections[numTracks * 4];
   float panPos[numTracks];
+  float fadePos[numTracks];
 
   void adjustOutput(Mode mode);
   void adjustOutput();
@@ -68,6 +69,7 @@ public:
   Status checkTracks(Status status);
   void clearTrack();
   void establishLoop();
+  void fade(float fadePos, Mode mode);
   uint32_t getPosition() { return recording.positionMillis(); }
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };

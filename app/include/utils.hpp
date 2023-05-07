@@ -5,6 +5,7 @@
 #include <track-controller.hpp>
 
 void adjustMicLevel();
+void adjustFade(float *currentFade, TrackController &controller, Mode mode);
 void adjustPan(float *currentPan, TrackController &controller, Mode mode);
 float adjustVolume(AudioControlSGTL5000 &interface);
 void configureButtons();

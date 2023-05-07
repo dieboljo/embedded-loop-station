@@ -13,24 +13,26 @@ size_t TrackController::controllerId = 0;
 
 void TrackController::adjustOutput() {
   float pp = panPos[selectedTrack];
-  recMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
-  recMixRight.gain(selectedTrack, panRight(gain.play, pp));
-  outMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
-  outMixRight.gain(selectedTrack, panRight(gain.play, pp));
+  float fp = fadePos[selectedTrack];
+  recMixLeft.gain(selectedTrack, panLeft(fp, pp));
+  recMixRight.gain(selectedTrack, panRight(fp, pp));
+  outMixLeft.gain(selectedTrack, panLeft(fp, pp));
+  outMixRight.gain(selectedTrack, panRight(fp, pp));
 }
 
 void TrackController::adjustOutput(Mode mode) {
   float pp = panPos[selectedTrack];
-  recMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
-  recMixRight.gain(selectedTrack, panRight(gain.play, pp));
+  float fp = fadePos[selectedTrack];
+  recMixLeft.gain(selectedTrack, panLeft(fp, pp));
+  recMixRight.gain(selectedTrack, panRight(fp, pp));
   if (isRecording) {
-    float outputGain = mode == Mode::Overdub ? gain.overdub : gain.replace;
-    outMixLeft.gain(selectedTrack, panLeft(outputGain, pp));
-    outMixRight.gain(selectedTrack, panRight(outputGain, pp));
-  } else {
-    outMixLeft.gain(selectedTrack, panLeft(gain.play, pp));
-    outMixRight.gain(selectedTrack, panRight(gain.play, pp));
+    float dampenedGain = mode == Mode::Overdub ? gain.overdub : gain.replace;
+    if (dampenedGain < fp) {
+      fp = dampenedGain;
+    }
   }
+  outMixLeft.gain(selectedTrack, panLeft(fp, pp));
+  outMixRight.gain(selectedTrack, panRight(fp, pp));
 }
 
 bool TrackController::begin() {
@@ -111,6 +113,13 @@ void TrackController::establishLoop() {
       track->establishLoop();
     }
   }
+}
+
+void TrackController::fade(float pos, Mode mode) {
+  fadePos[selectedTrack] = pos;
+  AudioNoInterrupts();
+  adjustOutput(mode);
+  AudioInterrupts();
 }
 
 int TrackController::nextTrack() {
@@ -344,6 +353,7 @@ TrackController::TrackController(AudioInputI2S &s)
 
 void TrackController::createTrack(int trackIdx) {
   panPos[trackIdx] = 0.5;
+  fadePos[trackIdx] = 0.5;
 
   size_t b1 = trackIdx * 2 * fileNameSize;
   char *f1 = &trackFileNames[b1];

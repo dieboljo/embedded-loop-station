@@ -24,7 +24,7 @@ AudioAnalyzePeak sourcePeakRight;
 AudioAnalyzePeak sinkPeakLeft;
 AudioAnalyzePeak sinkPeakRight;
 
-// The track where data is recorded
+// Controls the tracks where data is recorded
 TrackController controller(source);
 
 AudioConnection playbackToSinkLeft(controller.outMixLeft, 0, sink, 0);
@@ -35,10 +35,10 @@ AudioConnection playbackToPeakLeft(controller.outMixLeft, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(controller.outMixRight, 0, sinkPeakRight,
                                     0);
 
+// Global variables
 Status status = Status::Stop;
-
 Mode mode = Mode::Overdub;
-
+float fade = 0.0;
 float pan = 0.0;
 
 Buttons buttons = {
@@ -77,6 +77,7 @@ void loop() {
   adjustVolume(interface);
 #endif
 
+  adjustFade(&fade, controller, mode);
   adjustPan(&pan, controller, mode);
 
   monitorAudioEngine();
