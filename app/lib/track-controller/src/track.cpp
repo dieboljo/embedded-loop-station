@@ -155,8 +155,8 @@ bool Track::swapBuffers() {
 
 #ifdef USE_USB_INPUT
 Track::Track(const char *f1, const char *f2, AudioInputUSB &s)
-    : source(s), sourceToBusLeft(source, 0, busLeft, Channel::Source),
-      sourceToBusRight(source, 1, busRight, Channel::Source),
+    : sourceToBusLeft(s, 0, busLeft, Channel::Source),
+      sourceToBusRight(s, 1, busRight, Channel::Source),
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),
@@ -164,8 +164,8 @@ Track::Track(const char *f1, const char *f2, AudioInputUSB &s)
       writeFileName(f2){};
 #else
 Track::Track(const char *f1, const char *f2, AudioInputI2S &s)
-    : source(s), sourceToBusLeft(source, 0, busLeft, Channel::Source),
-      sourceToBusRight(source, 1, busRight, Channel::Source),
+    : sourceToBusLeft(s, 0, busLeft, Channel::Source),
+      sourceToBusRight(s, 1, busRight, Channel::Source),
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),

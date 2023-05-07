@@ -32,11 +32,6 @@ class Track {
   File feedbackFile;
 
   // Order of signal flow
-#ifdef USE_USB_INPUT
-  AudioInputUSB &source;
-#else
-  AudioInputI2S &source;
-#endif
   AudioMixer4 busLeft;
   AudioMixer4 busRight;
   AudioRecordWAVstereo recording;

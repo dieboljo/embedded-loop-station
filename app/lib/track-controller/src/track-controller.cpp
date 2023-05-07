@@ -304,7 +304,7 @@ bool TrackController::swapBuffers() {
 
 #ifdef USE_USB_INPUT
 TrackController::TrackController(AudioInputUSB &s)
-    : recMixLeftToRecording(recMixLeft, 0, recording, 0),
+    : source(s), recMixLeftToRecording(recMixLeft, 0, recording, 0),
       recMixRightToRecording(recMixRight, 0, recording, 1) {
   readFileName = &recFileNames[0];
   snprintf(readFileName, fileNameSize, "mix-%d-a.wav", controllerId);
@@ -313,33 +313,14 @@ TrackController::TrackController(AudioInputUSB &s)
   snprintf(writeFileName, fileNameSize, "mix-%d-b.wav", controllerId);
 
   for (int i = 0; i < numTracks; i++) {
-    panPos[i] = 0.5;
-
-    int b1 = i * 2 * 20;
-    char *f1 = &filenames[b1];
-    snprintf(f1, 20, "track-%d-%d-a.wav", controllerId, i);
-
-    int b2 = b1 + 20;
-    char *f2 = &filenames[b2];
-    snprintf(f2, 20, "track-%d-%d-b.wav", controllerId, i);
-
-    tracks[i] = new Track(f1, f2, s);
-
-    patchCords[i * 4] =
-        new AudioConnection(tracks[i]->playback, 0, outMixLeft, i);
-    patchCords[i * 4 + 1] =
-        new AudioConnection(tracks[i]->playback, 1, outMixRight, i);
-    patchCords[i * 4 + 2] =
-        new AudioConnection(tracks[i]->playback, 0, recMixLeft, i);
-    patchCords[i * 4 + 3] =
-        new AudioConnection(tracks[i]->playback, 1, recMixRight, i);
+    createTrack(i);
   }
 
   controllerId++;
 };
 #else
 TrackController::TrackController(AudioInputI2S &s)
-    : recMixLeftToRecording(recMixLeft, 0, recording, 0),
+    : source(s), recMixLeftToRecording(recMixLeft, 0, recording, 0),
       recMixRightToRecording(recMixRight, 0, recording, 1) {
   readFileName = &recFileNames[0];
   snprintf(readFileName, fileNameSize, "mix-%d-a.wav", controllerId);
@@ -348,28 +329,32 @@ TrackController::TrackController(AudioInputI2S &s)
   snprintf(writeFileName, fileNameSize, "mix-%d-b.wav", controllerId);
 
   for (int i = 0; i < numTracks; i++) {
-    panPos[i] = 0.5;
-
-    size_t b1 = i * 2 * fileNameSize;
-    char *f1 = &trackFileNames[b1];
-    snprintf(f1, fileNameSize, "track-%d-%d-a.wav", controllerId, i);
-
-    size_t b2 = b1 + fileNameSize;
-    char *f2 = &trackFileNames[b2];
-    snprintf(f2, fileNameSize, "track-%d-%d-b.wav", controllerId, i);
-
-    tracks[i] = new Track(f1, f2, s);
-
-    trackConnections[i * 4] =
-        new AudioConnection(tracks[i]->playback, 0, outMixLeft, i);
-    trackConnections[i * 4 + 1] =
-        new AudioConnection(tracks[i]->playback, 1, outMixRight, i);
-    trackConnections[i * 4 + 2] =
-        new AudioConnection(tracks[i]->playback, 0, recMixLeft, i);
-    trackConnections[i * 4 + 3] =
-        new AudioConnection(tracks[i]->playback, 1, recMixRight, i);
+    createTrack(i);
   }
 
   controllerId++;
 };
 #endif
+
+void TrackController::createTrack(int trackIdx) {
+  panPos[trackIdx] = 0.5;
+
+  size_t b1 = trackIdx * 2 * fileNameSize;
+  char *f1 = &trackFileNames[b1];
+  snprintf(f1, fileNameSize, "track-%d-%d-a.wav", controllerId, trackIdx);
+
+  size_t b2 = b1 + fileNameSize;
+  char *f2 = &trackFileNames[b2];
+  snprintf(f2, fileNameSize, "track-%d-%d-b.wav", controllerId, trackIdx);
+
+  tracks[trackIdx] = new Track(f1, f2, source);
+
+  trackConnections[trackIdx * 4] =
+      new AudioConnection(tracks[trackIdx]->playback, 0, outMixLeft, trackIdx);
+  trackConnections[trackIdx * 4 + 1] =
+      new AudioConnection(tracks[trackIdx]->playback, 1, outMixRight, trackIdx);
+  trackConnections[trackIdx * 4 + 2] =
+      new AudioConnection(tracks[trackIdx]->playback, 0, recMixLeft, trackIdx);
+  trackConnections[trackIdx * 4 + 3] =
+      new AudioConnection(tracks[trackIdx]->playback, 1, recMixRight, trackIdx);
+}

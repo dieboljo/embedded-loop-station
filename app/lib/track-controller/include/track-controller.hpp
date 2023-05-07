@@ -14,6 +14,11 @@ class TrackController {
   AudioMixer4 recMixRight;
   AudioRecordWAVstereo recording;
 
+#ifdef USE_USB_INPUT
+  AudioInputUSB &source;
+#else
+  AudioInputI2S &source;
+#endif
   AudioConnection recMixLeftToRecording;
   AudioConnection recMixRightToRecording;
 
@@ -42,6 +47,7 @@ class TrackController {
 
   void adjustOutput(Mode mode);
   void adjustOutput();
+  void createTrack(int trackNumber);
   static float panLeft(float gain, float pos);
   static float panRight(float gain, float pos);
   void printStatus(Status status);
