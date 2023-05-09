@@ -5,8 +5,7 @@
 #include <Audio.h>
 #include <TimeLib.h>
 
-enum class Mode { Replace, Overdub };
-enum class Status { Stop, Record, Play, Pause };
+#include "types.hpp"
 
 class Track {
 
@@ -85,9 +84,9 @@ public:
   bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);
 
-  const char *getTrackName() {return readFileName;}
-  uint32_t getPosition();
-  uint32_t getLegnth();
+  const char *getTrackName() { return readFileName; }
+  uint32_t getPosition() { return playback.positionMillis(); }
+  uint32_t getLength() { return playback.lengthMillis(); }
 };
 
 #endif

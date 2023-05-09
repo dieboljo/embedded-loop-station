@@ -32,7 +32,7 @@ Track track("file1.wav", "file2.wav", &source);
 Display disp;
 // Library instance
 Library lib;
-String myString;
+// String myString;
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
@@ -82,7 +82,7 @@ void setup() {
 
   track.begin();
 
-  myString = String(track.getTrackName());
+  // myString = String(track.getTrackName());
 }
 
 void loop() {
@@ -103,12 +103,12 @@ void loop() {
   disp.handleTouch(lib);
 
   // Get name change from library selection
-  if (disp.getNameChange()) {
+  /* if (disp.getNameChange()) {
     myString = disp.getFileName();
     disp.setNameChange(false);
-  }
+  } */
 
-  // Mointor mode change
+  // Monitor mode change
   if (disp.getModeChange()) {
     if (mode == Mode::Overdub) {
       mode = Mode::Replace;
@@ -131,28 +131,20 @@ void loop() {
     Serial.println("Record Button Pressed");
     switch (status) {
     case Status::Record:
-      disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing " + myString);
       track.punchOut();
       status = Status::Play;
       break;
     case Status::Play:
-      disp.updateStatus(true, false, false);
-      disp.displayTrack("Recording");
       track.punchIn(mode, pan);
       status = Status::Record;
       break;
     case Status::Pause:
-      disp.updateStatus(true, false, false);
-      disp.displayTrack("Recording");
       if (track.record(mode, pan)) {
         Serial.println("Resumed recording");
       }
       status = Status::Record;
       break;
     case Status::Stop:
-      disp.updateStatus(true, false, false);
-      disp.displayTrack("Recording");
       if (track.startRecording(mode, pan)) {
         Serial.println("Recording started");
       }
@@ -164,8 +156,6 @@ void loop() {
   }
 
   if (buttons.stop.fallingEdge()) {
-    disp.updateStatus(false, true, false);
-    disp.displayTrack("Stopped");
 
     Serial.println("Stop Button Pressed");
     if (track.stop(true)) {
@@ -178,26 +168,19 @@ void loop() {
     Serial.println("Play Button Pressed");
     switch (status) {
     case Status::Play:
-      disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing " + myString);
     case Status::Record:
-      disp.updateStatus(false, false, false);
       if (track.pause()) {
         Serial.println("Paused");
       }
       status = Status::Pause;
       break;
     case Status::Pause:
-      disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing " + myString);
       if (track.play()) {
         Serial.println("Resumed playback");
       }
       status = Status::Play;
       break;
     case Status::Stop:
-      disp.updateStatus(false, false, true);
-      disp.displayTrack("Playing " + myString);
       if (track.startPlaying()) {
         Serial.println("Playback started");
       }
@@ -210,11 +193,13 @@ void loop() {
 
   if (status == Status::Play) {
     position = track.getPosition();
-    length = track.getLegnth();
+    length = track.getLength();
     disp.displayPosition(position, length);
   }
 
   status = track.checkLoopEnded(status);
+
+  disp.updateStatus(status);
 
   // Print input or output levels to the serial monitor.
   if (monitorInput) {
