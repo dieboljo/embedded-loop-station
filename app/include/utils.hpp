@@ -1,6 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "types.hpp"
 #include <track.hpp>
 
 void adjustMicLevel();
@@ -12,6 +13,7 @@ void initializeInterface(AudioControlSGTL5000 &interface);
 void initializeSdCard();
 void initializeSerialCommunication();
 void monitorAudioEngine();
+void readButtons(Buttons &buttons);
 void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
                 elapsedMillis *ms, const char *label);
 void showInputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);

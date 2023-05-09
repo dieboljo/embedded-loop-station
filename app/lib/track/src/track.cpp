@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <SD.h>
 #include <math.h>
 #include <track.hpp>
@@ -180,6 +179,47 @@ bool Track::resume() {
   } else {
     return recording.record();
   }
+}
+
+void Track::save() {
+  stop();
+  char label[30];
+  sprintf(label, "/loops/%ld.wav", Teensy3Clock.get());
+  AudioNoInterrupts();
+  if (!SD.exists("/loops")) {
+    SD.mkdir("/loops");
+  }
+  if (SD.exists(label)) {
+    SD.remove(label);
+  }
+  File writeFile = SD.open(label, FILE_WRITE_BEGIN);
+  File readFile = SD.open(readFileName);
+  if (!writeFile || !readFile) {
+    Serial.println("Failed to save track");
+    return;
+  }
+  Serial.print("Saving track");
+  byte buf[512];
+  int bufSize = sizeof(buf);
+  while (readFile.available()) {
+    if (ms > 1000) {
+      Serial.print(".");
+      ms = 0;
+    }
+    int nbytes = readFile.available();
+    if (nbytes > bufSize) {
+      readFile.read(buf, bufSize);
+      writeFile.write(buf, bufSize);
+    } else {
+      readFile.read(buf, nbytes);
+      writeFile.write(buf, nbytes);
+    }
+  }
+  readFile.close();
+  writeFile.close();
+  Serial.print("\nSaved track to file: ");
+  Serial.println(label);
+  AudioInterrupts();
 }
 
 // Opens all file streams in a paused state,

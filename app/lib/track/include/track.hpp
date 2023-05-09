@@ -1,7 +1,9 @@
 #ifndef TRACK_HPP
 #define TRACK_HPP
 
+#include <Arduino.h>
 #include <Audio.h>
+#include <TimeLib.h>
 
 enum class Mode { Replace, Overdub };
 enum class Status { Stop, Record, Play, Pause };
@@ -78,6 +80,7 @@ public:
   void punchIn(Mode mode, float pan);
   void punchOut();
   bool record(Mode mode, float pan);
+  void save();
   bool startPlaying();
   bool startRecording(Mode mode, float pan);
   bool stop(bool cancel = false);

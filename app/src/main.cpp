@@ -1,9 +1,9 @@
 #include <config.h>
+#include <display.hpp>
+#include <library.hpp>
 #include <track.hpp>
 #include <types.hpp>
 #include <utils.hpp>
-#include <display.hpp>
-#include <library.hpp>
 
 AudioControlSGTL5000 interface;
 
@@ -51,10 +51,9 @@ uint32_t position;
 uint32_t length;
 
 Buttons buttons = {
-    Bounce(buttonStopPin, 8),
-    Bounce(buttonRecordPin, 8),
-    Bounce(buttonPlayPin, 8),
-    Bounce(buttonModePin, 8),
+    Bounce(buttonStopPin, 8), Bounce(buttonRecordPin, 8),
+    Bounce(buttonPlayPin, 8), Bounce(buttonModePin, 8),
+    Bounce(buttonSavePin, 8),
 };
 
 void setup() {
@@ -88,9 +87,7 @@ void setup() {
 
 void loop() {
   // First, read the buttons
-  buttons.record.update();
-  buttons.stop.update();
-  buttons.play.update();
+  readButtons(buttons);
 
 #ifndef USE_USB_OUTPUT
   adjustVolume(interface);
@@ -106,34 +103,29 @@ void loop() {
   disp.handleTouch(lib);
 
   // Get name change from library selection
-  if(disp.getNameChange()){
+  if (disp.getNameChange()) {
     myString = disp.getFileName();
     disp.setNameChange(false);
   }
 
   // Mointor mode change
-  if(disp.getModeChange()){
-    if(mode == Mode::Overdub){
+  if (disp.getModeChange()) {
+    if (mode == Mode::Overdub) {
       mode = Mode::Replace;
       disp.setModeChange(false);
       Serial.println("Mode: REPLACE");
-    }
-    else{
+    } else {
       mode = Mode::Overdub;
       disp.setModeChange(false);
       Serial.println("Mode: OVERDUB");
     }
   }
-    
-  // Moinitor reverse flag
-  /*
-  if(disp.getRevBool()){
-    Serial.println("Reverse Entered");
-    //track.reverse();        Commented out - Need work
-    disp.setRevBool(false);
-    status = Status::Play;
+
+  // Respond to button presses
+  if (buttons.save.fallingEdge()) {
+    status = Status::Stop;
+    track.save();
   }
-  */
 
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
@@ -215,13 +207,13 @@ void loop() {
       break;
     }
   }
-  
-  if(status == Status::Play){
+
+  if (status == Status::Play) {
     position = track.getPosition();
     length = track.getLegnth();
     disp.displayPosition(position, length);
   }
-  
+
   status = track.checkLoopEnded(status);
 
   // Print input or output levels to the serial monitor.
