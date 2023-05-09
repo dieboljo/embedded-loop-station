@@ -1,4 +1,6 @@
 #include <config.h>
+#include <display.hpp>
+#include <library.hpp>
 #include <track.hpp>
 #include <types.hpp>
 #include <utils.hpp>
@@ -26,6 +28,11 @@ AudioAnalyzePeak sinkPeakRight;
 
 // The track where data is recorded
 Track track("file1.wav", "file2.wav", &source);
+// Display instance
+Display disp;
+// Library instance
+Library lib;
+// String myString;
 
 AudioConnection playbackToSinkLeft(track.playback, 0, sink, 0);
 AudioConnection playbackToSinkRight(track.playback, 1, sink, 1);
@@ -39,6 +46,9 @@ Status status = Status::Stop;
 Mode mode = Mode::Overdub;
 
 float pan = 0.0;
+
+uint32_t position;
+uint32_t length;
 
 Buttons buttons = {
     Bounce(buttonStopPin, 8), Bounce(buttonRecordPin, 8),
@@ -64,7 +74,15 @@ void setup() {
 
   initializeSdCard();
 
+  // Create file array for track selections
+  lib.array();
+
+  // boot display up
+  disp.setup();
+
   track.begin();
+
+  // myString = String(track.getTrackName());
 }
 
 void loop() {
@@ -79,20 +97,34 @@ void loop() {
 
   monitorAudioEngine();
 
+  // Run display controls
+  disp.displayVol();
+  disp.displayPan();
+  disp.handleTouch(lib);
+
+  // Get name change from library selection
+  /* if (disp.getNameChange()) {
+    myString = disp.getFileName();
+    disp.setNameChange(false);
+  } */
+
+  // Monitor mode change
+  if (disp.getModeChange()) {
+    if (mode == Mode::Overdub) {
+      mode = Mode::Replace;
+      disp.setModeChange(false);
+      Serial.println("Mode: REPLACE");
+    } else {
+      mode = Mode::Overdub;
+      disp.setModeChange(false);
+      Serial.println("Mode: OVERDUB");
+    }
+  }
+
   // Respond to button presses
   if (buttons.save.fallingEdge()) {
     status = Status::Stop;
     track.save();
-  }
-
-  if (buttons.mode.fallingEdge()) {
-    if (mode == Mode::Overdub) {
-      mode = Mode::Replace;
-      Serial.println("Mode: REPLACE");
-    } else {
-      mode = Mode::Overdub;
-      Serial.println("Mode: OVERDUB");
-    }
   }
 
   if (buttons.record.fallingEdge()) {
@@ -124,6 +156,7 @@ void loop() {
   }
 
   if (buttons.stop.fallingEdge()) {
+
     Serial.println("Stop Button Pressed");
     if (track.stop(true)) {
       Serial.println("Loop stopped");
@@ -158,7 +191,15 @@ void loop() {
     }
   }
 
+  if (status == Status::Play) {
+    position = track.getPosition();
+    length = track.getLength();
+    disp.displayPosition(position, length);
+  }
+
   status = track.checkLoopEnded(status);
+
+  disp.updateStatus(status);
 
   // Print input or output levels to the serial monitor.
   if (monitorInput) {
