@@ -56,7 +56,9 @@ private:
   static const Layout save;
   static const Layout alert;
 
-  const Layout *libraryEntries[4] = {&track1, &track2, &track3, &track4};
+  static const int numLibEntries = 4;
+  const Layout *libraryEntries[numLibEntries] = {&track1, &track2, &track3,
+                                                 &track4};
 
   bool nameChange = false;
   bool reverseBool = false;
@@ -117,13 +119,16 @@ public:
   void getPoint();
 
   void clearScreen();
-  bool clickedLibrary();
-  bool clickedMain();
+  bool clickedLibraryNav();
+  bool clickedLibraryEntry();
+  bool clickedMainNav();
   bool clickedMode();
+  bool clickedNext();
+  bool clickedPrevious();
   bool clickedSave();
   bool clickedReverse();
   void drawLibraryNavButton();
-  void drawLibraryEntry(int entry);
+  void drawLibraryEntry(int e);
   void drawMainNavButton();
   void drawModeButton(Mode m);
   void drawNextButton();

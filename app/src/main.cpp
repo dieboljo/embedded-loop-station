@@ -201,12 +201,15 @@ void loop() {
     disp.drawSaveButton(false);
   }
 
-  if (disp.clickedMain()) {
+  if (disp.clickedMainNav()) {
     disp.showMainScreen();
   }
 
-  if (disp.clickedLibrary()) {
+  if (disp.clickedLibraryNav()) {
     disp.showLibraryScreen();
+  }
+
+  if (disp.clickedLibraryEntry()) {
   }
 
   /*

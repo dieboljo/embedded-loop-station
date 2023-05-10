@@ -35,7 +35,25 @@ void Display::clearScreen() {
   }
 }
 
-bool Display::clickedLibrary() {
+bool Display::clickedLibraryEntry() {
+  if (!isTouched)
+    return false;
+  if (screen != Screen::Library)
+    return false;
+  for (int i = 0; i < numLibEntries; i++) {
+    const Layout *entry = libraryEntries[i];
+    if ((p.x > entry->x) && (p.x < (entry->x + entry->w))) {
+      if ((p.y > entry->y) && (p.y <= (entry->y + entry->h))) {
+        Serial.printf("Loop %s selected\n", lib.fileArray[i].c_str());
+        isTouched = false;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool Display::clickedLibraryNav() {
   if (screen != Screen::Main)
     return false;
   if (!isTouched)
@@ -50,7 +68,7 @@ bool Display::clickedLibrary() {
   return false;
 }
 
-bool Display::clickedMain() {
+bool Display::clickedMainNav() {
   if (!isTouched)
     return false;
   if (screen != Screen::Library)
@@ -58,6 +76,36 @@ bool Display::clickedMain() {
   if ((p.x > trackInfo.x) && (p.x < (trackInfo.x + trackInfo.w))) {
     if ((p.y > trackInfo.y) && (p.y <= (trackInfo.y + trackInfo.h))) {
       Serial.println("Return to main screen clicked");
+      isTouched = false;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Display::clickedNext() {
+  if (!isTouched)
+    return false;
+  if (screen != Screen::Library)
+    return false;
+  if ((p.x > next.x) && (p.x < (next.x + next.w))) {
+    if ((p.y > next.y) && (p.y <= (next.y + next.h))) {
+      Serial.println("Next button clicked");
+      isTouched = false;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Display::clickedPrevious() {
+  if (!isTouched)
+    return false;
+  if (screen != Screen::Library)
+    return false;
+  if ((p.x > prev.x) && (p.x < (prev.x + prev.w))) {
+    if ((p.y > prev.y) && (p.y <= (prev.y + prev.h))) {
+      Serial.println("Previous button clicked");
       isTouched = false;
       return true;
     }
@@ -162,9 +210,6 @@ void Display::drawPosition(uint32_t position, uint32_t length) {
     return;
 
   int x = map(position, 0, length, 20, 290);
-
-  // tft.fillRoundRect(10,50,300,10,8,ILI9341_BLACK);
-  // tft.fillCircle(10+x,53, 5, ILI9341_WHITE);
 
   tft.drawFastHLine(20, 50, 285, ILI9341_BLACK);
   tft.drawFastHLine(20, 51, 285, ILI9341_BLACK);
@@ -282,7 +327,7 @@ void Display::update(AppState newState) {
     drawMainNavButton();
     drawPreviousButton();
     drawNextButton();
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < numLibEntries; i++) {
       drawLibraryEntry(i);
     }
   }
@@ -480,16 +525,17 @@ void Display::drawMainNavButton() {
   tft.print("Select loop file - tap to exit");
 }
 
-void Display::drawLibraryEntry(int entry) {
+void Display::drawLibraryEntry(int e) {
   if (!redraw)
     return;
 
+  const Layout *entry = libraryEntries[e];
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
-  tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
-  tft.setCursor(track1.x + 25, track1.y + 8);
-  tft.print(lib.fileArray[index]);
+  tft.fillRoundRect(entry->x, entry->y, entry->w, entry->h, 8, ILI9341_BLACK);
+  tft.setCursor(entry->x + 25, entry->y + 8);
+  tft.print(lib.fileArray[e]);
 }
 
 // Display Library - select from library
