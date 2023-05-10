@@ -116,6 +116,8 @@ void TrackController::establishLoop() {
 }
 
 void TrackController::fade(float pos, Mode mode) {
+  if (pos == fadePos[selectedTrack])
+    return;
   fadePos[selectedTrack] = pos;
   AudioNoInterrupts();
   adjustOutput(mode);
@@ -140,6 +142,8 @@ bool TrackController::pause() {
 };
 
 void TrackController::pan(float pos, Mode mode) {
+  if (pos == panPos[selectedTrack])
+    return;
   panPos[selectedTrack] = pos;
   AudioNoInterrupts();
   adjustOutput(mode);

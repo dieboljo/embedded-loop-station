@@ -3,42 +3,45 @@
 
 const float knobMax = 1023.0;
 
-void adjustFade(float *currentFade, TrackController &controller, Mode mode) {
+float readFade(float currentFade) {
   int knob = analogRead(fadePin);
   float fadePos = (float)knob / knobMax;
-  // Check that knob change exceeds threshold before changing state
-  if (fadePos < *currentFade + 0.05 && fadePos > *currentFade - 0.05) {
-    return;
+  // Return current if knob change doesn't exceed threshold
+  if (fadePos < currentFade + 0.05 && fadePos > currentFade - 0.05) {
+    return currentFade;
   }
-  controller.fade(fadePos, mode);
-  *currentFade = fadePos;
   Serial.print("Fade: ");
   Serial.println(fadePos);
+  return fadePos;
 }
 
 // Adjust the mic gain in response to the peak level
 // TODO Implement or delete this
 void adjustMicLevel() {}
 
-void adjustPan(float *currentPan, TrackController &controller, Mode mode) {
+float readPan(float currentPan) {
   int knob = analogRead(panPin);
   float panPos = (float)knob / knobMax;
-  // Check that knob change exceeds threshold before changing state
-  if (panPos < *currentPan + 0.05 && panPos > *currentPan - 0.05) {
-    return;
+  // Return current if knob change doesn't exceed threshold
+  if (panPos < currentPan + 0.05 && panPos > currentPan - 0.05) {
+    return currentPan;
   }
-  controller.pan(panPos, mode);
-  *currentPan = panPos;
   Serial.print("Pan: ");
   Serial.println(panPos - 0.5);
+  return panPos;
 }
 
 // Read the volume knob position (analog input A1)
-float adjustVolume(AudioControlSGTL5000 &interface) {
+float readVolume(float currentVolume) {
   int knob = analogRead(volumePin);
-  float vol = (float)knob / knobMax;
-  interface.volume(vol);
-  return vol;
+  float volPos = (float)knob / knobMax;
+  // Return current if knob change doesn't exceed threshold
+  if (volPos < currentVolume + 0.05 && volPos > currentVolume - 0.05) {
+    return currentVolume;
+  }
+  Serial.print("Volume: ");
+  Serial.println(volPos);
+  return volPos;
 }
 
 // Configure the pushbutton pins

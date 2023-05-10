@@ -47,7 +47,7 @@ Status status = Status::Stop;
 Mode mode = Mode::Overdub;
 float fade = 0.0;
 float pan = 0.0;
-
+float volume = 0.0;
 uint32_t position;
 uint32_t length;
 
@@ -88,48 +88,24 @@ void setup() {
 }
 
 void loop() {
-  // First, read the buttons
-  readButtons(buttons);
 
+  /*
+  ## 1. Read
+  */
+
+  readButtons(buttons);
+  disp.readTouch();
+  pan = readPan(pan);
+  fade = readFade(fade);
 #ifndef USE_USB_OUTPUT
-  adjustVolume(interface);
+  volume = readVolume(volume);
 #endif
 
-  adjustFade(&fade, controller, mode);
-  adjustPan(&pan, controller, mode);
+  /*
+  ## 2. Respond
+  */
 
-  monitorAudioEngine();
-
-  // Run display controls
-  disp.displayVol();
-  disp.displayPan();
-  disp.handleTouch(lib);
-
-  // Get name change from library selection
-  /* if (disp.getNameChange()) {
-    myString = disp.getFileName();
-    disp.setNameChange(false);
-  } */
-
-  // Monitor mode change
-  if (disp.getModeChange()) {
-    if (mode == Mode::Overdub) {
-      mode = Mode::Replace;
-      disp.setModeChange(false);
-      Serial.println("Mode: REPLACE");
-    } else {
-      mode = Mode::Overdub;
-      disp.setModeChange(false);
-      Serial.println("Mode: OVERDUB");
-    }
-  }
-
-  // Respond to button presses
-  if (buttons.save.fallingEdge()) {
-    status = Status::Stop;
-    controller.save();
-  }
-
+  // Next track button clicked
   if (buttons.nextTrack.fallingEdge()) {
     if (status == Status::Record) {
       status = Status::Play;
@@ -139,11 +115,13 @@ void loop() {
     Serial.println(selectedTrack + 1);
   }
 
+  // Clear track button clicked
   if (buttons.clearTrack.fallingEdge()) {
     status = Status::Stop;
     controller.clearTrack();
   }
 
+  // Record button clicked
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
     switch (status) {
@@ -172,8 +150,8 @@ void loop() {
     }
   }
 
+  // Stop button clicked
   if (buttons.stop.fallingEdge()) {
-
     Serial.println("Stop Button Pressed");
     if (controller.stop(true)) {
       Serial.println("Loop stopped");
@@ -181,6 +159,7 @@ void loop() {
     status = Status::Stop;
   }
 
+  // Play button clicked
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Pressed");
     switch (status) {
@@ -208,15 +187,71 @@ void loop() {
     }
   }
 
-  status = controller.checkTracks(status);
-
-  if (status == Status::Play) {
-    position = controller.getPosition();
-    length = controller.getLength();
-    disp.displayPosition(position, length);
+  // Mode button clicked
+  if (disp.clickedMode()) {
+    if (mode == Mode::Overdub) {
+      Serial.println("Mode: REPLACE");
+      mode = Mode::Replace;
+    } else {
+      Serial.println("Mode: OVERDUB");
+      mode = Mode::Overdub;
+    }
   }
 
-  disp.updateStatus(status);
+  // Save button clicked
+  if (disp.clickedSave()) {
+    controller.stop(true);
+    status = Status::Stop;
+    disp.drawSaveButton(true);
+    controller.save();
+    disp.drawSaveButton(false);
+  }
+
+  if (disp.clickedMain()) {
+    disp.showMainScreen();
+  }
+
+  if (disp.clickedLibrary()) {
+    disp.showLibraryScreen();
+  }
+
+  /*
+  ## 3. Update audio
+  */
+
+  interface.volume(volume);
+  if (input == AUDIO_INPUT_MIC) {
+    adjustMicLevel();
+  }
+
+  controller.pan(pan, mode);
+  controller.fade(fade, mode);
+  status = controller.checkTracks(status);
+
+  /*
+  ## 4. Update display
+  */
+
+  disp.drawPosition(controller.getPosition(), controller.getLength());
+  disp.drawModeButton(mode);
+  disp.drawPan(pan);
+  disp.drawStatus(status);
+  disp.drawSaveButton(false);
+  disp.drawVolume(volume);
+  disp.drawTrackName(controller.getSelectedTrack());
+
+  // Get name change from library selection
+  /* if (disp.getNameChange()) {
+    myString = disp.getFileName();
+    disp.setNameChange(false);
+  } */
+
+  /*
+  ## 5. Log
+  */
+
+  // Print audio engine usage
+  monitorAudioEngine();
 
   // Print input or output levels to the serial monitor.
   if (monitorInput) {
@@ -224,10 +259,5 @@ void loop() {
   }
   if (monitorOutput) {
     showOutputLevels(&sinkPeakLeft, &sinkPeakRight);
-  }
-
-  // when using a microphone, continuously adjust gain
-  if (input == AUDIO_INPUT_MIC) {
-    adjustMicLevel();
   }
 }

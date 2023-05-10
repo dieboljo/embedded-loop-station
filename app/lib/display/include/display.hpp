@@ -32,6 +32,8 @@ private:
     int h;
   };
 
+  enum class Screen { Main, Library };
+
   // Display items
   static const Layout touchScreen;
   static const Layout boot;
@@ -54,15 +56,30 @@ private:
   static const Layout save;
   static const Layout alert;
 
+  const Layout *libraryEntries[4] = {&track1, &track2, &track3, &track4};
+
   bool nameChange = false;
   bool reverseBool = false;
   bool isTouched = false;
   bool modeChange = false;
   bool libraryVisible = false;
   bool displayOnce = false;
+  bool redraw = true;
 
-  Status displayedStatus = Status::Stop;
-  int displayedTrack = 0;
+  struct DrawState {
+    Mode mode;
+    int pan;
+    int position;
+    bool saving;
+    Status status;
+    int track;
+    int volume;
+  };
+
+  DrawState state = {
+      Mode::Overdub, 0, 0, false, Status::Stop, 0, 0,
+  };
+  Screen screen = Screen::Main;
 
   String fileName; // holds name of file to be used
   String libraryName;
@@ -72,7 +89,6 @@ private:
   int index = 0;
 
   KnobReset knobReset;
-  Mode modeObj;
   ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
   XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
   TS_Point p;
@@ -96,28 +112,32 @@ public:
   void playButton(bool audio);
   void recordButton(bool audio);
   void stopButton(bool audio);
-  void saveButton();
   void saveAlert();
   void reverseButton();
-  void libraryButton();
   void handleReverseButton();
-  void displayTrack(String name);
-  void displayPosition(uint32_t position, uint32_t length);
-  void displayVol();
   void handleTouch(const Library &obj);
   void displayLibrary(const Library &obj);
   void libraryTracks(int index, const Library &obj);
-  void selectMode();
   void modeButton();
   void pan();
-  void displayPan();
-  void updateStatus(Status status);
   void getPoint();
 
+  bool clickedLibrary();
+  bool clickedMain();
+  bool clickedMode();
+  bool clickedSave();
+  bool clickedReverse();
+  void drawModeButton(Mode m);
+  void drawPan(float p);
+  void drawPosition(uint32_t position, uint32_t length);
+  void drawLibraryButton();
+  void drawSaveButton(bool s);
+  void drawStatus(Status status);
+  void drawTrackName(int track);
+  void drawVolume(float v);
   void readTouch();
-  bool libraryClicked();
-  bool saveClicked();
-  bool reverseClicked();
+  void showLibraryScreen();
+  void showMainScreen();
 };
 
 #endif
