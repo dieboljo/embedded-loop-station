@@ -12,9 +12,9 @@ void initializeSdCard();
 void initializeSerialCommunication();
 void monitorAudioEngine();
 void readButtons(Buttons &buttons);
-float readFade(float currentFade);
-float readPan(float currentPan);
-float readVolume(float currentVolume);
+void readFade(AppState &appState);
+void readPan(AppState &appState);
+void readVolume(AppState &appState);
 void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
                 elapsedMillis *ms, const char *label);
 void showInputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);

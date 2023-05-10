@@ -131,16 +131,6 @@ int TrackController::nextTrack() {
   return selectedTrack;
 };
 
-bool TrackController::pause() {
-  bool success = true;
-  AudioNoInterrupts();
-  for (auto track : tracks) {
-    success = success && track->pause();
-  }
-  AudioInterrupts();
-  return success;
-};
-
 void TrackController::pan(float pos, Mode mode) {
   if (pos == panPos[selectedTrack])
     return;
@@ -165,9 +155,21 @@ bool TrackController::play() {
   for (auto track : tracks) {
     success = success && track->resume();
   }
+  success = success && recording.record();
   AudioInterrupts();
   return success;
 }
+
+bool TrackController::pause() {
+  bool success = true;
+  AudioNoInterrupts();
+  success = success && recording.pause();
+  for (auto track : tracks) {
+    success = success && track->pause();
+  }
+  AudioInterrupts();
+  return success;
+};
 
 void TrackController::printStatus(Status status) {
   if (ms > 1000) {
@@ -215,6 +217,7 @@ bool TrackController::record(Mode mode) {
   for (auto track : tracks) {
     success = success && track->resume();
   }
+  success = success && recording.record();
   AudioInterrupts();
   return success;
 };

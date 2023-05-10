@@ -66,18 +66,10 @@ private:
   bool displayOnce = false;
   bool redraw = true;
 
-  struct DrawState {
-    Mode mode;
-    int pan;
-    int position;
-    bool saving;
-    Status status;
-    int track;
-    int volume;
-  };
+  const Library &lib;
 
-  DrawState state = {
-      Mode::Overdub, 0, 0, false, Status::Stop, 0, 0,
+  AppState state = {
+      0., 0, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.,
   };
   Screen screen = Screen::Main;
 
@@ -94,6 +86,8 @@ private:
   TS_Point p;
 
 public:
+  Display(const Library &lib) : lib(lib){};
+
   void setModeChange(bool change) { this->modeChange = change; }
   int getModeChange() const { return this->modeChange; }
 
@@ -122,15 +116,20 @@ public:
   void pan();
   void getPoint();
 
+  void clearScreen();
   bool clickedLibrary();
   bool clickedMain();
   bool clickedMode();
   bool clickedSave();
   bool clickedReverse();
+  void drawLibraryNavButton();
+  void drawLibraryEntry(int entry);
+  void drawMainNavButton();
   void drawModeButton(Mode m);
+  void drawNextButton();
   void drawPan(float p);
   void drawPosition(uint32_t position, uint32_t length);
-  void drawLibraryButton();
+  void drawPreviousButton();
   void drawSaveButton(bool s);
   void drawStatus(Status status);
   void drawTrackName(int track);
@@ -138,6 +137,7 @@ public:
   void readTouch();
   void showLibraryScreen();
   void showMainScreen();
+  void update(AppState newState);
 };
 
 #endif

@@ -71,7 +71,9 @@ public:
   void establishLoop();
   void fade(float fadePos, Mode mode);
   uint32_t getLength() { return loopLength ? loopLength : getPosition(); }
-  uint32_t getPosition() { return recording.positionMillis(); }
+  uint32_t getPosition() {
+    return recording.isStopped() ? 0 : recording.positionMillis();
+  }
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
   int nextTrack();

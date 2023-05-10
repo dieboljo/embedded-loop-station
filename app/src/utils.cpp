@@ -3,45 +3,45 @@
 
 const float knobMax = 1023.0;
 
-float readFade(float currentFade) {
+void readFade(AppState &appState) {
   int knob = analogRead(fadePin);
   float fadePos = (float)knob / knobMax;
   // Return current if knob change doesn't exceed threshold
-  if (fadePos < currentFade + 0.05 && fadePos > currentFade - 0.05) {
-    return currentFade;
+  if (fadePos < appState.fade + 0.05 && fadePos > appState.fade - 0.05) {
+    return;
   }
   Serial.print("Fade: ");
   Serial.println(fadePos);
-  return fadePos;
+  appState.fade = fadePos;
 }
 
 // Adjust the mic gain in response to the peak level
 // TODO Implement or delete this
 void adjustMicLevel() {}
 
-float readPan(float currentPan) {
+void readPan(AppState &appState) {
   int knob = analogRead(panPin);
   float panPos = (float)knob / knobMax;
   // Return current if knob change doesn't exceed threshold
-  if (panPos < currentPan + 0.05 && panPos > currentPan - 0.05) {
-    return currentPan;
+  if (panPos < appState.pan + 0.05 && panPos > appState.pan - 0.05) {
+    return;
   }
   Serial.print("Pan: ");
   Serial.println(panPos - 0.5);
-  return panPos;
+  appState.pan = panPos;
 }
 
 // Read the volume knob position (analog input A1)
-float readVolume(float currentVolume) {
+void readVolume(AppState &appState) {
   int knob = analogRead(volumePin);
   float volPos = (float)knob / knobMax;
   // Return current if knob change doesn't exceed threshold
-  if (volPos < currentVolume + 0.05 && volPos > currentVolume - 0.05) {
-    return currentVolume;
+  if (volPos < appState.volume + 0.05 && volPos > appState.volume - 0.05) {
+    return;
   }
   Serial.print("Volume: ");
   Serial.println(volPos);
-  return volPos;
+  appState.volume = volPos;
 }
 
 // Configure the pushbutton pins

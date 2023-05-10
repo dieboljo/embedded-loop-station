@@ -26,6 +26,15 @@ const Display::Layout Display::panDot = {16, 125, 5, 0};
 const Display::Layout Display::save = {110, 195, 90, 40};
 const Display::Layout Display::alert = {60, 110, 200, 50};
 
+void Display::clearScreen() {
+  for (int y = 0; y < 240; y++) {
+    uint8_t r = map(y, 0, 240, 255, 0);
+    uint8_t b = map(y, 0, 240, 0, 255);
+    uint16_t color = tft.color565(r, 0, b);
+    tft.fillRect(0, y, 320, 1, color);
+  }
+}
+
 bool Display::clickedLibrary() {
   if (screen != Screen::Main)
     return false;
@@ -101,9 +110,7 @@ bool Display::clickedSave() {
   return false;
 }
 
-void Display::drawLibraryButton() {
-  if (screen != Screen::Main)
-    return;
+void Display::drawLibraryNavButton() {
   if (!redraw)
     return;
 
@@ -117,9 +124,7 @@ void Display::drawLibraryButton() {
 
 // Displays the mode - Overdub or Replace
 void Display::drawModeButton(Mode m) {
-  if (screen != Screen::Main)
-    return;
-  if (m == state.mode)
+  if (!redraw && m == state.mode)
     return;
 
   tft.setFont(BUTTON_FONT);
@@ -134,13 +139,10 @@ void Display::drawModeButton(Mode m) {
 
 // displays pan
 void Display::drawPan(float p) {
-  if (screen != Screen::Main)
+  if (!redraw && p == state.pan)
     return;
 
   int panVal = (int)(p * 100);
-
-  if (panVal == state.pan)
-    return;
 
   tft.setCursor(panBar.x + 40, panBar.y + 10);
   tft.setFont(Arial_14);
@@ -150,41 +152,39 @@ void Display::drawPan(float p) {
   tft.print("PAN");
   tft.fillCircle(panDot.x + panVal, panDot.y, panDot.w, ILI9341_NAVY);
 
-  state.pan = panVal;
+  state.pan = p;
 }
 
 void Display::drawPosition(uint32_t position, uint32_t length) {
-  if (screen != Screen::Main)
+  if (!redraw && position == state.position && length == state.length)
+    return;
+  if (position == length)
     return;
 
-  int x = map(position, 0, length, 10, 295);
-
-  if (!redraw && x == state.position)
-    return;
+  int x = map(position, 0, length, 20, 290);
 
   // tft.fillRoundRect(10,50,300,10,8,ILI9341_BLACK);
   // tft.fillCircle(10+x,53, 5, ILI9341_WHITE);
 
-  tft.drawFastHLine(10 + x, 50, 5, ILI9341_WHITE);
-  tft.drawFastHLine(10 + x, 51, 5, ILI9341_WHITE);
-  tft.drawFastHLine(10 + x, 52, 5, ILI9341_WHITE);
-  tft.drawFastHLine(10 + x, 53, 5, ILI9341_WHITE);
-  tft.drawFastHLine(10 + x, 54, 5, ILI9341_WHITE);
-  tft.drawFastHLine(10 + x, 55, 5, ILI9341_WHITE);
+  tft.drawFastHLine(20, 50, 285, ILI9341_BLACK);
+  tft.drawFastHLine(20, 51, 285, ILI9341_BLACK);
+  tft.drawFastHLine(20, 52, 285, ILI9341_BLACK);
+  tft.drawFastHLine(20, 53, 285, ILI9341_BLACK);
+  tft.drawFastHLine(20, 54, 285, ILI9341_BLACK);
+  tft.drawFastHLine(20, 55, 285, ILI9341_BLACK);
 
-  tft.drawFastHLine(10 + x, 50, 1, ILI9341_BLACK);
-  tft.drawFastHLine(10 + x, 51, 1, ILI9341_BLACK);
-  tft.drawFastHLine(10 + x, 52, 1, ILI9341_BLACK);
-  tft.drawFastHLine(10 + x, 53, 1, ILI9341_BLACK);
-  tft.drawFastHLine(10 + x, 54, 1, ILI9341_BLACK);
-  tft.drawFastHLine(10 + x, 55, 1, ILI9341_BLACK);
+  tft.drawFastHLine(x, 50, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, 51, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, 52, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, 53, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, 54, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, 55, 5, ILI9341_WHITE);
 
-  state.position = x;
+  state.position = position;
+  state.length = length;
 }
 
 void Display::drawSaveButton(bool s) {
-  if (screen != Screen::Main)
-    return;
   if (!redraw && s == state.saving)
     return;
 
@@ -198,8 +198,6 @@ void Display::drawSaveButton(bool s) {
 }
 
 void Display::drawStatus(Status status) {
-  if (screen != Screen::Main)
-    return;
   if (!redraw && status == state.status)
     return;
 
@@ -212,8 +210,6 @@ void Display::drawStatus(Status status) {
 
 // Display Track name
 void Display::drawTrackName(int track) {
-  if (screen != Screen::Main)
-    return;
   if (!redraw && track == state.track)
     return;
 
@@ -223,20 +219,17 @@ void Display::drawTrackName(int track) {
   tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8,
                     ILI9341_BLACK);
   tft.print("Track ");
-  tft.print(track);
+  tft.print(track + 1);
 
   state.track = track;
 }
 
 // Display volume
 void Display::drawVolume(float v) {
-  if (screen != Screen::Main)
+  if (!redraw && v == state.volume)
     return;
 
   int volumeVal = (int)(v * 100);
-
-  if (!redraw && volumeVal == state.volume)
-    return;
 
   tft.setCursor(volume.x + 12, volume.y + 8);
   tft.setFont(Arial_10);
@@ -246,7 +239,7 @@ void Display::drawVolume(float v) {
   tft.setCursor(volume.x + 15, volume.y + 28);
   tft.print(volumeVal);
 
-  state.volume = volumeVal;
+  state.volume = v;
 }
 
 void Display::readTouch() {
@@ -269,6 +262,32 @@ void Display::showMainScreen() {
     return;
   screen = Screen::Main;
   redraw = true;
+}
+
+void Display::update(AppState newState) {
+  if (redraw)
+    clearScreen();
+
+  if (screen == Screen::Main) {
+    drawPosition(newState.position, newState.length);
+    drawModeButton(newState.mode);
+    drawPan(newState.pan);
+    drawStatus(newState.status);
+    drawSaveButton(newState.saving);
+    drawVolume(newState.volume);
+    drawTrackName(newState.track);
+    drawLibraryNavButton();
+    reverseButton();
+  } else {
+    drawMainNavButton();
+    drawPreviousButton();
+    drawNextButton();
+    for (int i = 0; i < 4; i++) {
+      drawLibraryEntry(i);
+    }
+  }
+
+  redraw = false;
 }
 
 // Get touch screen location
@@ -318,7 +337,7 @@ void Display::mainScreen() {
   modeButton();
   reverseButton();
   drawSaveButton(false);
-  drawLibraryButton();
+  drawLibraryNavButton();
   String defaultTrack = "Audio Loop Station";
   drawTrackName(state.track);
   redraw = false;
@@ -326,6 +345,9 @@ void Display::mainScreen() {
 
 // setup reverse button
 void Display::reverseButton() {
+  if (!redraw)
+    return;
+
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_BLACK);
   tft.setCursor(reverse.x + 7, reverse.y + 10);
@@ -421,9 +443,57 @@ void Display::stopButton(bool stopStatus) {
   }
 }
 
+void Display::drawNextButton() {
+  if (!redraw)
+    return;
+
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+
+  tft.setCursor(next.x + 5, next.y + 5);
+  tft.fillRoundRect(next.x, next.y, next.w, next.h, 8, ILI9341_BLACK);
+  tft.print("Next");
+}
+
+void Display::drawPreviousButton() {
+  if (!redraw)
+    return;
+
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+
+  tft.setCursor(prev.x + 5, prev.y + 5);
+  tft.fillRoundRect(prev.x, prev.y, prev.w, prev.h, 8, ILI9341_BLACK);
+  tft.print("Prev");
+}
+
+void Display::drawMainNavButton() {
+  if (!redraw)
+    return;
+
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+
+  tft.setCursor(trackInfo.x + 50, trackInfo.y + 20);
+  tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8,
+                    ILI9341_BLACK);
+  tft.print("Select loop file - tap to exit");
+}
+
+void Display::drawLibraryEntry(int entry) {
+  if (!redraw)
+    return;
+
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+
+  tft.fillRoundRect(track1.x, track1.y, track1.w, track1.h, 8, ILI9341_BLACK);
+  tft.setCursor(track1.x + 25, track1.y + 8);
+  tft.print(lib.fileArray[index]);
+}
+
 // Display Library - select from library
 void Display::displayLibrary(const Library &obj) {
-
   if (!displayOnce) {
     p.x = 0;
     p.y = 0;

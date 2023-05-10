@@ -28,10 +28,10 @@ AudioAnalyzePeak sinkPeakRight;
 
 // Controls the tracks where data is recorded
 TrackController controller(source);
-// Display instance
-Display disp;
 // Library instance
 Library lib;
+// Display instance
+Display disp(lib);
 // String myString;
 
 AudioConnection playbackToSinkLeft(controller.outMixLeft, 0, sink, 0);
@@ -42,14 +42,8 @@ AudioConnection playbackToPeakLeft(controller.outMixLeft, 0, sinkPeakLeft, 0);
 AudioConnection playbackToPeakRight(controller.outMixRight, 0, sinkPeakRight,
                                     0);
 
-// Global variables
-Status status = Status::Stop;
-Mode mode = Mode::Overdub;
-float fade = 0.0;
-float pan = 0.0;
-float volume = 0.0;
-uint32_t position;
-uint32_t length;
+// Global state
+AppState state = {0., 0, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.};
 
 Buttons buttons = {
     Bounce(buttonStopPin, 8),       Bounce(buttonRecordPin, 8),
@@ -95,10 +89,10 @@ void loop() {
 
   readButtons(buttons);
   disp.readTouch();
-  pan = readPan(pan);
-  fade = readFade(fade);
+  readPan(state);
+  readFade(state);
 #ifndef USE_USB_OUTPUT
-  volume = readVolume(volume);
+  readVolume(state);
 #endif
 
   /*
@@ -107,8 +101,8 @@ void loop() {
 
   // Next track button clicked
   if (buttons.nextTrack.fallingEdge()) {
-    if (status == Status::Record) {
-      status = Status::Play;
+    if (state.status == Status::Record) {
+      state.status = Status::Play;
     }
     int selectedTrack = controller.nextTrack();
     Serial.print("Current track: ");
@@ -117,33 +111,33 @@ void loop() {
 
   // Clear track button clicked
   if (buttons.clearTrack.fallingEdge()) {
-    status = Status::Stop;
+    state.status = Status::Stop;
     controller.clearTrack();
   }
 
   // Record button clicked
   if (buttons.record.fallingEdge()) {
     Serial.println("Record Button Pressed");
-    switch (status) {
+    switch (state.status) {
     case Status::Record:
       controller.punchOut();
-      status = Status::Play;
+      state.status = Status::Play;
       break;
     case Status::Play:
-      controller.punchIn(mode);
-      status = Status::Record;
+      controller.punchIn(state.mode);
+      state.status = Status::Record;
       break;
     case Status::Pause:
-      if (controller.record(mode)) {
+      if (controller.record(state.mode)) {
         Serial.println("Resumed recording");
       }
-      status = Status::Record;
+      state.status = Status::Record;
       break;
     case Status::Stop:
-      if (controller.startRecording(mode)) {
+      if (controller.startRecording(state.mode)) {
         Serial.println("Recording started");
       }
-      status = Status::Record;
+      state.status = Status::Record;
       break;
     default:
       break;
@@ -156,31 +150,31 @@ void loop() {
     if (controller.stop(true)) {
       Serial.println("Loop stopped");
     }
-    status = Status::Stop;
+    state.status = Status::Stop;
   }
 
   // Play button clicked
   if (buttons.play.fallingEdge()) {
     Serial.println("Play Button Pressed");
-    switch (status) {
+    switch (state.status) {
     case Status::Play:
     case Status::Record:
       if (controller.pause()) {
         Serial.println("Paused");
       }
-      status = Status::Pause;
+      state.status = Status::Pause;
       break;
     case Status::Pause:
       if (controller.play()) {
         Serial.println("Resumed playback");
       }
-      status = Status::Play;
+      state.status = Status::Play;
       break;
     case Status::Stop:
       if (controller.startPlaying()) {
         Serial.println("Playback started");
       }
-      status = Status::Play;
+      state.status = Status::Play;
       break;
     default:
       break;
@@ -189,19 +183,19 @@ void loop() {
 
   // Mode button clicked
   if (disp.clickedMode()) {
-    if (mode == Mode::Overdub) {
+    if (state.mode == Mode::Overdub) {
       Serial.println("Mode: REPLACE");
-      mode = Mode::Replace;
+      state.mode = Mode::Replace;
     } else {
       Serial.println("Mode: OVERDUB");
-      mode = Mode::Overdub;
+      state.mode = Mode::Overdub;
     }
   }
 
   // Save button clicked
   if (disp.clickedSave()) {
     controller.stop(true);
-    status = Status::Stop;
+    state.status = Status::Stop;
     disp.drawSaveButton(true);
     controller.save();
     disp.drawSaveButton(false);
@@ -219,26 +213,22 @@ void loop() {
   ## 3. Update audio
   */
 
-  interface.volume(volume);
+  interface.volume(state.volume);
   if (input == AUDIO_INPUT_MIC) {
     adjustMicLevel();
   }
 
-  controller.pan(pan, mode);
-  controller.fade(fade, mode);
-  status = controller.checkTracks(status);
+  controller.pan(state.pan, state.mode);
+  controller.fade(state.fade, state.mode);
+  state.status = controller.checkTracks(state.status);
+  state.position = controller.getPosition();
+  state.length = controller.getLength();
 
   /*
   ## 4. Update display
   */
 
-  disp.drawPosition(controller.getPosition(), controller.getLength());
-  disp.drawModeButton(mode);
-  disp.drawPan(pan);
-  disp.drawStatus(status);
-  disp.drawSaveButton(false);
-  disp.drawVolume(volume);
-  disp.drawTrackName(controller.getSelectedTrack());
+  disp.update(state);
 
   // Get name change from library selection
   /* if (disp.getNameChange()) {
