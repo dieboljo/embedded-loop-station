@@ -13,13 +13,14 @@ const Display::Layout Display::record = {10, 70, 90, 32};
 const Display::Layout Display::volume = {260, 185, 50, 50};
 const Display::Layout Display::mode = {10, 195, 90, 40};
 const Display::Layout Display::reverse = {10, 148, 90, 40};
-const Display::Layout Display::library = {140, 110, 170, 40};
+const Display::Layout Display::library = {140, 110, 170, 30};
 const Display::Layout Display::trackInfo = {10, 10, 300, 50};
 const Display::Layout Display::track1 = {70, 70, 180, 32};
 const Display::Layout Display::track2 = {70, 110, 180, 32};
 const Display::Layout Display::track3 = {70, 150, 180, 32};
 const Display::Layout Display::track4 = {70, 190, 180, 32};
 const Display::Layout Display::next = {260, 100, 50, 50};
+const Display::Layout Display::nextTrack = {110, 148, 105, 40};
 const Display::Layout Display::prev = {10, 100, 50, 50};
 const Display::Layout Display::panBar = {10, 110, 120, 30};
 const Display::Layout Display::panDot = {16, 125, 5, 0};
@@ -92,6 +93,21 @@ bool Display::clickedNext() {
   if ((p.x > next.x) && (p.x < (next.x + next.w))) {
     if ((p.y > next.y) && (p.y <= (next.y + next.h))) {
       Serial.println("Next button clicked");
+      isTouched = false;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Display::clickedNextTrack() {
+  if (!isTouched)
+    return false;
+  if (screen != Screen::Main)
+    return false;
+  if ((p.x > nextTrack.x) && (p.x < (nextTrack.x + nextTrack.w))) {
+    if ((p.y > nextTrack.y) && (p.y <= (nextTrack.y + nextTrack.h))) {
+      Serial.println("Next Track button clicked");
       isTouched = false;
       return true;
     }
@@ -330,6 +346,7 @@ void Display::update(AppState newState) {
   if (screen == Screen::Main) {
     drawPosition(newState.position, newState.length);
     drawModeButton(newState.mode);
+    drawNextTrackButton();
     drawPan(newState.pan);
     drawStatus(newState.status);
     drawSaveButton(newState.saving);
@@ -509,6 +526,19 @@ void Display::drawNextButton() {
   tft.setCursor(next.x + 5, next.y + 5);
   tft.fillRoundRect(next.x, next.y, next.w, next.h, 8, ILI9341_BLACK);
   tft.print("Next");
+}
+
+void Display::drawNextTrackButton() {
+  if (!redraw)
+    return;
+
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+
+  tft.setCursor(nextTrack.x + 7, nextTrack.y + 10);
+  tft.fillRoundRect(nextTrack.x, nextTrack.y, nextTrack.w, nextTrack.h, 8,
+                    ILI9341_BLACK);
+  tft.print("Next Track");
 }
 
 void Display::drawPreviousButton() {

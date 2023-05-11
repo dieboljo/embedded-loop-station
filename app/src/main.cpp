@@ -100,13 +100,13 @@ void loop() {
   */
 
   // Next track button clicked
-  if (buttons.nextTrack.fallingEdge()) {
+  if (disp.clickedNextTrack()) {
     if (state.status == Status::Record) {
       state.status = Status::Play;
     }
-    int selectedTrack = controller.nextTrack();
+    state.track = controller.nextTrack();
     Serial.print("Current track: ");
-    Serial.println(selectedTrack + 1);
+    Serial.println(state.track + 1);
   }
 
   // Clear track button clicked

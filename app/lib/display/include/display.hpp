@@ -49,6 +49,7 @@ private:
   static const Layout track3;
   static const Layout track4;
   static const Layout next;
+  static const Layout nextTrack;
   static const Layout prev;
   static const Layout panBar;
   static const Layout panDot;
@@ -100,6 +101,7 @@ private:
   void drawMainNavButton();
   void drawModeButton(Mode m);
   void drawNextButton();
+  void drawNextTrackButton();
   void drawPan(float p);
   void drawPosition(uint32_t position, uint32_t length);
   void drawPreviousButton();
@@ -142,6 +144,7 @@ public:
   void bootup();
   bool clickedLibraryEntry();
   bool clickedMode();
+  bool clickedNextTrack();
   bool clickedSave();
   bool clickedReverse();
   const char *getSelectedEntry() { return selectedLibEntry; };
