@@ -196,20 +196,15 @@ void loop() {
   if (disp.clickedSave()) {
     controller.stop(true);
     state.status = Status::Stop;
-    disp.drawSaveButton(true);
-    controller.save();
-    disp.drawSaveButton(false);
-  }
-
-  if (disp.clickedMainNav()) {
-    disp.showMainScreen();
-  }
-
-  if (disp.clickedLibraryNav()) {
-    disp.showLibraryScreen();
+    state.saving = true;
   }
 
   if (disp.clickedLibraryEntry()) {
+    const char *fileName = disp.getSelectedEntry();
+    if (strcmp(fileName, "") != 0) {
+      controller.loadLoop(fileName);
+    }
+    state.status = Status::Stop;
   }
 
   /*
@@ -233,11 +228,11 @@ void loop() {
 
   disp.update(state);
 
-  // Get name change from library selection
-  /* if (disp.getNameChange()) {
-    myString = disp.getFileName();
-    disp.setNameChange(false);
-  } */
+  // Let display draw save status first, since saving will block
+  if (state.saving) {
+    controller.saveLoop();
+    state.saving = false;
+  }
 
   /*
   ## 5. Log

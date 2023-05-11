@@ -76,6 +76,40 @@ bool Track::initializeFiles() {
   return success;
 }
 
+void Track::load(const char *fileName) {
+  AudioNoInterrupts();
+  if (!SD.exists(fileName)) {
+    Serial.printf("File %s does not exist\n", fileName);
+    return;
+  }
+  File writeFile = SD.open(readFileName, FILE_WRITE_BEGIN);
+  File readFile = SD.open(fileName);
+  if (!writeFile || !readFile) {
+    Serial.println("Failed to load into track");
+    return;
+  }
+  Serial.print("Loading track");
+  byte buf[512];
+  int bufSize = sizeof(buf);
+  while (readFile.available()) {
+    if (ms > 1000) {
+      Serial.print(".");
+      ms = 0;
+    }
+    int nbytes = readFile.available();
+    if (nbytes > bufSize) {
+      readFile.read(buf, bufSize);
+      writeFile.write(buf, bufSize);
+    } else {
+      readFile.read(buf, nbytes);
+      writeFile.write(buf, nbytes);
+    }
+  }
+  readFile.close();
+  writeFile.close();
+  AudioInterrupts();
+}
+
 // Pause recording and playback, and disable recording
 bool Track::pause() {
   return playback.pause() && feedback.pause() && recording.pause();

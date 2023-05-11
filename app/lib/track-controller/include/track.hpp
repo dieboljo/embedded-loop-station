@@ -65,6 +65,7 @@ public:
   bool checkEnded(uint32_t loopLength);
   void establishLoop() { loopEstablished = true; };
   uint32_t getPosition() { return recording.positionMillis(); };
+  void load(const char *fileName);
   bool pause();
   void punchIn(Mode mode);
   void punchOut();

@@ -49,6 +49,8 @@ class TrackController {
   void adjustOutput(Mode mode);
   void adjustOutput();
   void createTrack(int trackNumber);
+  void establishLoop();
+  void establishLoop(uint32_t length);
   static float panLeft(float gain, float pos);
   static float panRight(float gain, float pos);
   void printStatus(Status status);
@@ -68,7 +70,6 @@ public:
   bool begin();
   Status checkTracks(Status status);
   void clearTrack();
-  void establishLoop();
   void fade(float fadePos, Mode mode);
   uint32_t getLength() { return loopLength ? loopLength : getPosition(); }
   uint32_t getPosition() {
@@ -76,6 +77,7 @@ public:
   }
   int getNumTracks() { return numTracks; };
   int getSelectedTrack() { return selectedTrack; };
+  void loadLoop(const char *loopFile);
   int nextTrack();
   void pan(float panPos, Mode mode);
   bool play();
@@ -84,7 +86,7 @@ public:
   void punchOut();
   void punchOut(bool cancel);
   bool record(Mode mode);
-  void save();
+  void saveLoop();
   bool startPlaying();
   bool startRecording(Mode mode);
   bool stop(bool cancel = false);

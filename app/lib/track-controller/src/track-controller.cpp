@@ -115,6 +115,16 @@ void TrackController::establishLoop() {
   }
 }
 
+void TrackController::establishLoop(uint32_t length) {
+  if (length) {
+    Serial.println("Setting the base loop");
+    loopLength = length;
+    for (auto track : tracks) {
+      track->establishLoop();
+    }
+  }
+}
+
 void TrackController::fade(float pos, Mode mode) {
   if (pos == fadePos[selectedTrack])
     return;
@@ -222,7 +232,15 @@ bool TrackController::record(Mode mode) {
   return success;
 };
 
-void TrackController::save() {
+void TrackController::loadLoop(const char *loopFile) {
+  stop(true);
+  String fullPath = String("/loops/");
+  fullPath += loopFile;
+  tracks[selectedTrack]->load(fullPath.c_str());
+  Serial.printf("\nLoaded loop into track %d\n", selectedTrack + 1);
+}
+
+void TrackController::saveLoop() {
   // For now, discard current changes until a way
   // to quickly merge a partial loop is implemented
   stop(true);
@@ -260,9 +278,9 @@ void TrackController::save() {
   }
   readFile.close();
   writeFile.close();
+  AudioInterrupts();
   Serial.print("\nSaved track to file: ");
   Serial.println(label);
-  AudioInterrupts();
 }
 
 bool TrackController::start() {
@@ -273,6 +291,9 @@ bool TrackController::start() {
 
   for (auto track : tracks) {
     success = success && track->start();
+    if (!loopLength && track->playback.lengthMillis()) {
+      establishLoop(track->playback.lengthMillis());
+    }
   }
 
   success = success && recording.record();

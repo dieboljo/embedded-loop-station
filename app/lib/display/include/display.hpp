@@ -68,7 +68,9 @@ private:
   bool displayOnce = false;
   bool redraw = true;
 
-  const Library &lib;
+  Library &lib;
+  int libPage = 0;
+  const char *selectedLibEntry = "";
 
   AppState state = {
       0., 0, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.,
@@ -87,8 +89,32 @@ private:
   XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
   TS_Point p;
 
+  void clearScreen();
+  void getPoint();
+  bool clickedLibraryNav();
+  bool clickedMainNav();
+  bool clickedNext();
+  bool clickedPrevious();
+  void drawLibraryNavButton();
+  void drawLibraryEntries();
+  void drawMainNavButton();
+  void drawModeButton(Mode m);
+  void drawNextButton();
+  void drawPan(float p);
+  void drawPosition(uint32_t position, uint32_t length);
+  void drawPreviousButton();
+  void drawSaveButton(bool s);
+  void drawStatus(Status status);
+  void drawTrackName(int track);
+  void drawVolume(float v);
+  void playButton(bool audio);
+  void recordButton(bool audio);
+  void showLibraryScreen();
+  void showMainScreen();
+  void stopButton(bool audio);
+
 public:
-  Display(const Library &lib) : lib(lib){};
+  Display(Library &lib) : lib(lib){};
 
   void setModeChange(bool change) { this->modeChange = change; }
   int getModeChange() const { return this->modeChange; }
@@ -102,12 +128,7 @@ public:
   void setFileName(String name) { this->fileName = name; }
   String getFileName() { return fileName; };
 
-  void setup();
-  void bootup();
   void mainScreen();
-  void playButton(bool audio);
-  void recordButton(bool audio);
-  void stopButton(bool audio);
   void saveAlert();
   void reverseButton();
   void handleReverseButton();
@@ -116,32 +137,15 @@ public:
   void libraryTracks(int index, const Library &obj);
   void modeButton();
   void pan();
-  void getPoint();
 
-  void clearScreen();
-  bool clickedLibraryNav();
+  void setup();
+  void bootup();
   bool clickedLibraryEntry();
-  bool clickedMainNav();
   bool clickedMode();
-  bool clickedNext();
-  bool clickedPrevious();
   bool clickedSave();
   bool clickedReverse();
-  void drawLibraryNavButton();
-  void drawLibraryEntry(int e);
-  void drawMainNavButton();
-  void drawModeButton(Mode m);
-  void drawNextButton();
-  void drawPan(float p);
-  void drawPosition(uint32_t position, uint32_t length);
-  void drawPreviousButton();
-  void drawSaveButton(bool s);
-  void drawStatus(Status status);
-  void drawTrackName(int track);
-  void drawVolume(float v);
+  const char *getSelectedEntry() { return selectedLibEntry; };
   void readTouch();
-  void showLibraryScreen();
-  void showMainScreen();
   void update(AppState newState);
 };
 

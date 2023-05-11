@@ -44,6 +44,7 @@ bool Display::clickedLibraryEntry() {
     const Layout *entry = libraryEntries[i];
     if ((p.x > entry->x) && (p.x < (entry->x + entry->w))) {
       if ((p.y > entry->y) && (p.y <= (entry->y + entry->h))) {
+        selectedLibEntry = lib.fileArray[libPage * numLibEntries + i].c_str();
         Serial.printf("Loop %s selected\n", lib.fileArray[i].c_str());
         isTouched = false;
         return true;
@@ -232,6 +233,10 @@ void Display::drawPosition(uint32_t position, uint32_t length) {
 void Display::drawSaveButton(bool s) {
   if (!redraw && s == state.saving)
     return;
+  if (s == false && state.saving == true) {
+    // New loop saved, refresh library
+    lib.array();
+  }
 
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_BLACK);
@@ -305,11 +310,20 @@ void Display::showLibraryScreen() {
 void Display::showMainScreen() {
   if (screen == Screen::Main)
     return;
+  libPage = 0;
   screen = Screen::Main;
   redraw = true;
 }
 
 void Display::update(AppState newState) {
+  if (clickedMainNav()) {
+    showMainScreen();
+  }
+
+  if (clickedLibraryNav()) {
+    showLibraryScreen();
+  }
+
   if (redraw)
     clearScreen();
 
@@ -327,9 +341,7 @@ void Display::update(AppState newState) {
     drawMainNavButton();
     drawPreviousButton();
     drawNextButton();
-    for (int i = 0; i < numLibEntries; i++) {
-      drawLibraryEntry(i);
-    }
+    drawLibraryEntries();
   }
 
   redraw = false;
@@ -359,7 +371,6 @@ void Display::bootup() {
   tft.setTextColor(ILI9341_WHITE);
   tft.print("Embedded Digital Audio Loop Station");
   delay(3000);
-  mainScreen();
 }
 
 // setup the main screen
@@ -525,17 +536,29 @@ void Display::drawMainNavButton() {
   tft.print("Select loop file - tap to exit");
 }
 
-void Display::drawLibraryEntry(int e) {
-  if (!redraw)
+void Display::drawLibraryEntries() {
+  int p = libPage;
+  if (clickedNext() && (p + 1) * numLibEntries < lib.size) {
+    p++;
+  } else if (clickedPrevious() && p > 0) {
+    p--;
+  }
+
+  if (!redraw && p == libPage)
     return;
 
-  const Layout *entry = libraryEntries[e];
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
-  tft.fillRoundRect(entry->x, entry->y, entry->w, entry->h, 8, ILI9341_BLACK);
-  tft.setCursor(entry->x + 25, entry->y + 8);
-  tft.print(lib.fileArray[e]);
+  for (int i = 0; i < numLibEntries; i++) {
+    const Layout *entry = libraryEntries[i];
+
+    tft.fillRoundRect(entry->x, entry->y, entry->w, entry->h, 8, ILI9341_BLACK);
+    tft.setCursor(entry->x + 25, entry->y + 8);
+    tft.print(lib.fileArray[p * numLibEntries + i]);
+  }
+
+  libPage = p;
 }
 
 // Display Library - select from library
