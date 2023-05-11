@@ -61,13 +61,9 @@ private:
   const Layout *libraryEntries[numLibEntries] = {&track1, &track2, &track3,
                                                  &track4};
 
-  bool nameChange = false;
   bool reverseBool = false;
   bool isTouched = false;
-  bool modeChange = false;
-  bool libraryVisible = false;
-  bool displayOnce = false;
-  bool redraw = true;
+  bool redraw = false;
 
   Library &lib;
   int libPage = 0;
@@ -78,14 +74,6 @@ private:
   };
   Screen screen = Screen::Main;
 
-  String fileName; // holds name of file to be used
-  String libraryName;
-
-  int panChange = 50;
-  float volumeChange;
-  int index = 0;
-
-  KnobReset knobReset;
   ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC);
   XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
   TS_Point p;
@@ -118,27 +106,8 @@ private:
 public:
   Display(Library &lib) : lib(lib){};
 
-  void setModeChange(bool change) { this->modeChange = change; }
-  int getModeChange() const { return this->modeChange; }
-
-  void setNameChange(bool change) { this->nameChange = change; }
-  bool getNameChange() const { return this->nameChange; }
-
-  void setRevBool(bool change) { this->reverseBool = change; }
-  bool getRevBool() const { return this->reverseBool; }
-
-  void setFileName(String name) { this->fileName = name; }
-  String getFileName() { return fileName; };
-
-  void mainScreen();
-  void saveAlert();
   void reverseButton();
-  void handleReverseButton();
-  void handleTouch(const Library &obj);
-  void displayLibrary(const Library &obj);
-  void libraryTracks(int index, const Library &obj);
-  void modeButton();
-  void pan();
+  // void handleReverseButton();
 
   void setup();
   void bootup();
