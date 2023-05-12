@@ -268,7 +268,7 @@ void Display::drawStatus(Status status) {
     return;
 
   recordButton(status == Status::Record);
-  stopButton(status == Status::Stop);
+  stopButton(status == Status::Pause);
   playButton(status == Status::Play);
 
   state.status = status;
@@ -420,11 +420,10 @@ void Display::playButton(bool playStatus) {
 
   if (!playStatus) { // button is set inactive, redraw button inactive
     tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_BLACK);
-    tft.print("Play Audio");
   } else { // button is active, redraw button active
     tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_GREEN);
-    tft.print("Playing");
   }
+  tft.print("Play");
 }
 
 // Set / Display record button
@@ -435,11 +434,10 @@ void Display::recordButton(bool recordStatus) {
 
   if (!recordStatus) { // button is set inactive, redraw button inactive
     tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_BLACK);
-    tft.print("Record");
   } else { // button is active, redraw button active
-    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_GREEN);
-    tft.print("Recording");
+    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_RED);
   }
+  tft.print("Record");
 }
 
 // Set / Display stop button
@@ -448,13 +446,12 @@ void Display::stopButton(bool stopStatus) {
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
-  if (!stopStatus) { // button is set inactive, redraw button inactive
-    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_RED);
-    tft.print("Stop");
+  if (stopStatus) { // button is set inactive, redraw button inactive
+    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_GREEN);
   } else { // button is active, redraw button active
     tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_BLACK);
-    tft.print("Stop");
   }
+  tft.print("Pause");
 }
 
 void Display::drawNextButton() {
