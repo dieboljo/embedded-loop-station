@@ -39,11 +39,13 @@ AudioConnection playbackToSinkRight(controller.outMixRight, 0, sink, 1);
 AudioConnection sourceToPeakLeft(source, 0, sourcePeakLeft, 0);
 AudioConnection sourceToPeakRight(source, 1, sourcePeakRight, 0);
 AudioConnection playbackToPeakLeft(controller.outMixLeft, 0, sinkPeakLeft, 0);
-AudioConnection playbackToPeakRight(controller.outMixRight, 0, sinkPeakRight,
-                                    0);
+AudioConnection
+    playbackToPeakRight(controller.outMixRight, 0, sinkPeakRight, 0);
 
 // Global state
-AppState state = {0., 0, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.};
+AppState state = {
+    0., 0, false, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.,
+};
 
 Buttons buttons = {
     Bounce(buttonStopPin, 8),       Bounce(buttonRecordPin, 8),
@@ -101,9 +103,8 @@ void loop() {
 
   // Next track button clicked
   if (disp.clickedNextTrack()) {
-    if (state.status == Status::Record) {
+    if (state.status == Status::Record)
       state.status = Status::Play;
-    }
     state.track = controller.nextTrack();
     Serial.print("Current track: ");
     Serial.println(state.track + 1);
@@ -128,15 +129,13 @@ void loop() {
       state.status = Status::Record;
       break;
     case Status::Pause:
-      if (controller.record(state.mode)) {
+      if (controller.record(state.mode))
         Serial.println("Resumed recording");
-      }
       state.status = Status::Record;
       break;
     case Status::Stop:
-      if (controller.startRecording(state.mode)) {
+      if (controller.startRecording(state.mode))
         Serial.println("Recording started");
-      }
       state.status = Status::Record;
       break;
     default:
@@ -147,9 +146,8 @@ void loop() {
   // Stop button clicked
   if (buttons.stop.fallingEdge()) {
     Serial.println("Stop Button Pressed");
-    if (controller.stop(true)) {
+    if (controller.stop(true))
       Serial.println("Loop stopped");
-    }
     state.status = Status::Stop;
   }
 
@@ -159,21 +157,18 @@ void loop() {
     switch (state.status) {
     case Status::Play:
     case Status::Record:
-      if (controller.pause()) {
+      if (controller.pause())
         Serial.println("Paused");
-      }
       state.status = Status::Pause;
       break;
     case Status::Pause:
-      if (controller.play()) {
+      if (controller.play())
         Serial.println("Resumed playback");
-      }
       state.status = Status::Play;
       break;
     case Status::Stop:
-      if (controller.startPlaying()) {
+      if (controller.startPlaying())
         Serial.println("Playback started");
-      }
       state.status = Status::Play;
       break;
     default:
@@ -200,11 +195,9 @@ void loop() {
   }
 
   if (disp.clickedLibraryEntry()) {
-    const char *fileName = disp.getSelectedEntry();
-    if (strcmp(fileName, "") != 0) {
-      controller.loadLoop(fileName);
-    }
+    controller.stop(true);
     state.status = Status::Stop;
+    state.loading = true;
   }
 
   /*
@@ -212,9 +205,8 @@ void loop() {
   */
 
   interface.volume(state.volume);
-  if (input == AUDIO_INPUT_MIC) {
+  if (input == AUDIO_INPUT_MIC)
     adjustMicLevel();
-  }
 
   controller.pan(state.pan, state.mode);
   controller.fade(state.fade, state.mode);
@@ -234,6 +226,14 @@ void loop() {
     state.saving = false;
   }
 
+  if (state.loading) {
+    const char *fileName = disp.getSelectedEntry();
+    if (strcmp(fileName, "") != 0)
+      controller.loadLoop(fileName);
+    state.loading = false;
+    disp.showMainScreen();
+  }
+
   /*
   ## 5. Log
   */
@@ -242,10 +242,8 @@ void loop() {
   monitorAudioEngine();
 
   // Print input or output levels to the serial monitor.
-  if (monitorInput) {
+  if (monitorInput)
     showInputLevels(&sourcePeakLeft, &sourcePeakRight);
-  }
-  if (monitorOutput) {
+  if (monitorOutput)
     showOutputLevels(&sinkPeakLeft, &sinkPeakRight);
-  }
 }

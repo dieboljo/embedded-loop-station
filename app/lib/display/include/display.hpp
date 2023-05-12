@@ -70,7 +70,7 @@ private:
   const char *selectedLibEntry = "";
 
   AppState state = {
-      0., 0, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.,
+      0., 0, false, Mode::Overdub, 0., 0, false, Status::Stop, 0, 0.,
   };
   Screen screen = Screen::Main;
 
@@ -85,7 +85,7 @@ private:
   bool clickedNext();
   bool clickedPrevious();
   void drawLibraryNavButton();
-  void drawLibraryEntries();
+  void drawLibraryEntries(bool l);
   void drawMainNavButton();
   void drawModeButton(Mode m);
   void drawNextButton();
@@ -99,8 +99,6 @@ private:
   void drawVolume(float v);
   void playButton(bool audio);
   void recordButton(bool audio);
-  void showLibraryScreen();
-  void showMainScreen();
   void stopButton(bool audio);
 
 public:
@@ -118,6 +116,8 @@ public:
   bool clickedReverse();
   const char *getSelectedEntry() { return selectedLibEntry; };
   void readTouch();
+  void showLibraryScreen();
+  void showMainScreen();
   void update(AppState newState);
 };
 

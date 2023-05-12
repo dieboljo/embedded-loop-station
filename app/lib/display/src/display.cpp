@@ -41,6 +41,7 @@ bool Display::clickedLibraryEntry() {
     return false;
   if (screen != Screen::Library)
     return false;
+
   for (int i = 0; i < numLibEntries; i++) {
     const Layout *entry = libraryEntries[i];
     if ((p.x > entry->x) && (p.x < (entry->x + entry->w))) {
@@ -182,8 +183,9 @@ void Display::drawLibraryNavButton() {
   tft.setCursor(library.x + 50, library.y + 10);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.fillRoundRect(library.x, library.y, library.w, library.h, 4,
-                    ILI9341_BLACK);
+  tft.fillRoundRect(
+      library.x, library.y, library.w, library.h, 4, ILI9341_BLACK
+  );
   tft.print("Library");
 }
 
@@ -212,8 +214,9 @@ void Display::drawPan(float p) {
   tft.setCursor(panBar.x + 40, panBar.y + 10);
   tft.setFont(Arial_14);
   tft.setTextColor(ILI9341_BLACK);
-  tft.fillRoundRect(panBar.x, panBar.y, panBar.w, panBar.h, 8,
-                    ILI9341_DARKGREY);
+  tft.fillRoundRect(
+      panBar.x, panBar.y, panBar.w, panBar.h, 8, ILI9341_DARKGREY
+  );
   tft.print("PAN");
   tft.fillCircle(panDot.x + panVal, panDot.y, panDot.w, ILI9341_NAVY);
 
@@ -282,8 +285,9 @@ void Display::drawTrackName(int track) {
   tft.setCursor(trackInfo.x + 50, trackInfo.y + 16);
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
-  tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8,
-                    ILI9341_BLACK);
+  tft.fillRoundRect(
+      trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK
+  );
   tft.print("Track ");
   tft.print(track + 1);
 
@@ -358,7 +362,7 @@ void Display::update(AppState newState) {
     drawMainNavButton();
     drawPreviousButton();
     drawNextButton();
-    drawLibraryEntries();
+    drawLibraryEntries(newState.loading);
   }
 
   redraw = false;
@@ -401,13 +405,15 @@ void Display::reverseButton() {
   tft.setCursor(reverse.x + 7, reverse.y + 10);
 
   if (reverseBool) {
-    tft.fillRoundRect(reverse.x, reverse.y, reverse.w, reverse.h, 8,
-                      ILI9341_RED);
+    tft.fillRoundRect(
+        reverse.x, reverse.y, reverse.w, reverse.h, 8, ILI9341_RED
+    );
     tft.print("Rev ON");
 
   } else {
-    tft.fillRoundRect(reverse.x, reverse.y, reverse.w, reverse.h, 8,
-                      ILI9341_DARKGREY);
+    tft.fillRoundRect(
+        reverse.x, reverse.y, reverse.w, reverse.h, 8, ILI9341_DARKGREY
+    );
     tft.print("Rev OFF");
   }
 }
@@ -474,8 +480,9 @@ void Display::drawNextTrackButton() {
   tft.setTextColor(ILI9341_WHITE);
 
   tft.setCursor(nextTrack.x + 7, nextTrack.y + 10);
-  tft.fillRoundRect(nextTrack.x, nextTrack.y, nextTrack.w, nextTrack.h, 8,
-                    ILI9341_BLACK);
+  tft.fillRoundRect(
+      nextTrack.x, nextTrack.y, nextTrack.w, nextTrack.h, 8, ILI9341_BLACK
+  );
   tft.print("Next Track");
 }
 
@@ -499,12 +506,13 @@ void Display::drawMainNavButton() {
   tft.setTextColor(ILI9341_WHITE);
 
   tft.setCursor(trackInfo.x + 50, trackInfo.y + 20);
-  tft.fillRoundRect(trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8,
-                    ILI9341_BLACK);
+  tft.fillRoundRect(
+      trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK
+  );
   tft.print("Select loop file - tap to exit");
 }
 
-void Display::drawLibraryEntries() {
+void Display::drawLibraryEntries(bool l) {
   int p = libPage;
   if (clickedNext() && (p + 1) * numLibEntries < lib.size) {
     p++;
@@ -512,7 +520,7 @@ void Display::drawLibraryEntries() {
     p--;
   }
 
-  if (!redraw && p == libPage)
+  if (!redraw && p == libPage && l == state.loading)
     return;
 
   tft.setFont(BUTTON_FONT);
@@ -523,10 +531,16 @@ void Display::drawLibraryEntries() {
 
     tft.fillRoundRect(entry->x, entry->y, entry->w, entry->h, 8, ILI9341_BLACK);
     tft.setCursor(entry->x + 25, entry->y + 8);
-    tft.print(lib.fileArray[p * numLibEntries + i]);
+    String fileName = lib.fileArray[p * numLibEntries + i];
+    if (l && fileName == String(selectedLibEntry)) {
+      tft.print("Loading");
+    } else {
+      tft.print(lib.fileArray[p * numLibEntries + i]);
+    }
   }
 
   libPage = p;
+  state.loading = l;
 }
 
 /* // displays the reverse button.

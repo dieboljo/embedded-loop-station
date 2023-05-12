@@ -21,6 +21,7 @@ enum class Status { Stop, Record, Play, Pause };
 struct AppState {
   float fade;
   uint32_t length;
+  bool loading;
   Mode mode;
   float pan;
   uint32_t position;

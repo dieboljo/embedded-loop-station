@@ -198,7 +198,8 @@ Track::Track(const char *f1, const char *f2, AudioInputUSB &s)
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),
-      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
+      busRightToRecording(busRight, 0, recording, 1),
+      readFileName(f1),
       writeFileName(f2){};
 #else
 Track::Track(const char *f1, const char *f2, AudioInputI2S &s)
@@ -207,6 +208,7 @@ Track::Track(const char *f1, const char *f2, AudioInputI2S &s)
       feedbackToBusLeft(feedback, 0, busLeft, Channel::Feedback),
       feedbackToBusRight(feedback, 1, busRight, Channel::Feedback),
       busLeftToRecording(busLeft, 0, recording, 0),
-      busRightToRecording(busRight, 0, recording, 1), readFileName(f1),
+      busRightToRecording(busRight, 0, recording, 1),
+      readFileName(f1),
       writeFileName(f2){};
 #endif
