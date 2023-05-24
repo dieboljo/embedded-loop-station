@@ -1,4 +1,3 @@
-#include "ILI9341_t3.h"
 #include <Arduino.h>
 #include <SD.h>
 #include <display.hpp>
@@ -417,7 +416,6 @@ void Display::update(AppState newState) {
     drawVolume(newState.volume);
     drawTrackName(newState.track);
     drawLibraryNavButton();
-    // reverseButton();
   } else {
     drawMainNavButton();
     drawPreviousButton();
@@ -431,8 +429,8 @@ void Display::update(AppState newState) {
 // Get touch screen location
 void Display::getPoint() {
   p = ts.getPoint();
-  p.x = map(p.x, touchScreen.y, touchScreen.h, 0, tft.width());
-  p.y = map(p.y, touchScreen.x, touchScreen.w, 0, tft.height());
+  p.x = map(p.x, touchScreen.x, touchScreen.w, 0, tft.width());
+  p.y = map(p.y, touchScreen.y, touchScreen.h, 0, tft.height());
 }
 
 // Display setup - call during setup
@@ -523,7 +521,9 @@ void Display::drawMainNavButton() {
   tft.setFont(BUTTON_FONT);
   tft.setTextColor(ILI9341_WHITE);
 
-  tft.setCursor(trackInfo.x + 50, trackInfo.y + 20);
+  tft.setCursor(
+      trackInfo.x + 10, trackInfo.y + (trackInfo.h - tft.fontCapHeight()) / 2
+  );
   tft.fillRoundRect(
       trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK
   );
