@@ -32,7 +32,6 @@ TrackController controller(source);
 Library lib;
 // Display instance
 Display disp(lib);
-// String myString;
 
 AudioConnection playbackToSinkLeft(controller.outMixLeft, 0, sink, 0);
 AudioConnection playbackToSinkRight(controller.outMixRight, 0, sink, 1);
@@ -48,10 +47,9 @@ AppState state = {
 };
 
 Buttons buttons = {
-    Bounce(buttonStopPin, 8),       Bounce(buttonRecordPin, 8),
-    Bounce(buttonPlayPin, 8),       Bounce(buttonModePin, 8),
-    Bounce(buttonSavePin, 8),       Bounce(buttonNextTrackPin, 8),
-    Bounce(buttonClearTrackPin, 8),
+    Bounce(buttonStopPin, 8),
+    Bounce(buttonRecordPin, 8),
+    Bounce(buttonPlayPin, 8),
 };
 
 void setup() {
@@ -111,10 +109,10 @@ void loop() {
   }
 
   // Clear track button clicked
-  if (buttons.clearTrack.fallingEdge()) {
+  /* if (buttons.clearTrack.fallingEdge()) {
     state.status = Status::Stop;
     controller.clearTrack();
-  }
+  } */
 
   // Record button clicked
   if (buttons.record.fallingEdge()) {

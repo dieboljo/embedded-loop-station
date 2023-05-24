@@ -1,3 +1,4 @@
+#include "ILI9341_t3.h"
 #include <Arduino.h>
 #include <SD.h>
 #include <display.hpp>
@@ -6,35 +7,27 @@
 const Display::Layout Display::touchScreen = {400, 400, 3879, 3843};
 
 // Display item location values - Screen is 320x240
+const Display::Layout Display::alert = {60, 110, 200, 50};
 const Display::Layout Display::boot = {40, 120, 240, 360};
-const Display::Layout Display::play = {190, 70, 105, 32};
-const Display::Layout Display::stop = {110, 70, 70, 32};
-const Display::Layout Display::record = {10, 70, 90, 32};
-const Display::Layout Display::volume = {260, 185, 50, 50};
-const Display::Layout Display::mode = {10, 195, 90, 40};
-const Display::Layout Display::reverse = {10, 148, 90, 40};
 const Display::Layout Display::library = {140, 110, 170, 30};
-const Display::Layout Display::trackInfo = {10, 10, 300, 50};
-const Display::Layout Display::track1 = {70, 70, 180, 32};
-const Display::Layout Display::track2 = {70, 110, 180, 32};
-const Display::Layout Display::track3 = {70, 150, 180, 32};
-const Display::Layout Display::track4 = {70, 190, 180, 32};
+const Display::Layout Display::mode = {10, 195, 90, 40};
 const Display::Layout Display::next = {260, 100, 50, 50};
 const Display::Layout Display::nextTrack = {110, 148, 105, 40};
 const Display::Layout Display::prev = {10, 100, 50, 50};
 const Display::Layout Display::panBar = {10, 110, 120, 30};
 const Display::Layout Display::panDot = {16, 125, 5, 0};
+const Display::Layout Display::play = {190, 70, 105, 32};
+const Display::Layout Display::record = {10, 70, 90, 32};
+const Display::Layout Display::reverse = {10, 148, 90, 40};
 const Display::Layout Display::save = {110, 195, 90, 40};
-const Display::Layout Display::alert = {60, 110, 200, 50};
-
-void Display::clearScreen() {
-  for (int y = 0; y < 240; y++) {
-    uint8_t r = map(y, 0, 240, 255, 0);
-    uint8_t b = map(y, 0, 240, 0, 255);
-    uint16_t color = tft.color565(r, 0, b);
-    tft.fillRect(0, y, 320, 1, color);
-  }
-}
+const Display::Layout Display::status = {270, 10, 50, 50};
+const Display::Layout Display::stop = {110, 70, 70, 32};
+const Display::Layout Display::trackInfo = {10, 10, 260, 50};
+const Display::Layout Display::track1 = {70, 70, 180, 32};
+const Display::Layout Display::track2 = {70, 110, 180, 32};
+const Display::Layout Display::track3 = {70, 150, 180, 32};
+const Display::Layout Display::track4 = {70, 190, 180, 32};
+const Display::Layout Display::volume = {260, 185, 50, 50};
 
 bool Display::clickedLibraryEntry() {
   if (!isTouched)
@@ -223,30 +216,73 @@ void Display::drawPan(float p) {
   state.pan = p;
 }
 
+void Display::drawPause() {
+  const int padding = 15;
+  const int barWidth = (status.w - padding * 2) / 3;
+  tft.fillRect(status.x, status.y, status.w, status.h, bgColor);
+  tft.fillRect(
+      status.x + padding, status.y + padding, barWidth, status.h - padding * 2,
+      ILI9341_ORANGE
+  );
+  tft.fillRect(
+      status.x + status.w - padding - barWidth, status.y + padding, barWidth,
+      status.h - padding * 2, ILI9341_ORANGE
+  );
+  return;
+}
+
+void Display::drawPlay() {
+  const int padding = 15;
+  tft.fillRect(status.x, status.y, status.w, status.h, bgColor);
+  tft.fillTriangle(
+      status.x + padding, status.y + padding, status.x + status.w - padding,
+      status.y + status.h / 2, status.x + padding,
+      status.y + status.h - padding, ILI9341_GREEN
+  );
+}
+
 void Display::drawPosition(uint32_t position, uint32_t length) {
   if (!redraw && position == state.position && length == state.length)
     return;
   if (position == length)
     return;
 
-  int x = map(position, 0, length, 20, 290);
+  const int padding = 10;
+  const int trackNameWidth = tft.measureTextWidth("Track X");
+  const uint16_t start = trackInfo.x + trackNameWidth + padding * 2;
+  const uint16_t width = trackInfo.w - (trackNameWidth + padding * 2) - padding;
 
-  tft.drawFastHLine(20, 50, 285, ILI9341_BLACK);
-  tft.drawFastHLine(20, 51, 285, ILI9341_BLACK);
-  tft.drawFastHLine(20, 52, 285, ILI9341_BLACK);
-  tft.drawFastHLine(20, 53, 285, ILI9341_BLACK);
-  tft.drawFastHLine(20, 54, 285, ILI9341_BLACK);
-  tft.drawFastHLine(20, 55, 285, ILI9341_BLACK);
+  int x = map(position, 0, length, start, trackInfo.w - padding);
 
-  tft.drawFastHLine(x, 50, 5, ILI9341_WHITE);
-  tft.drawFastHLine(x, 51, 5, ILI9341_WHITE);
-  tft.drawFastHLine(x, 52, 5, ILI9341_WHITE);
-  tft.drawFastHLine(x, 53, 5, ILI9341_WHITE);
-  tft.drawFastHLine(x, 54, 5, ILI9341_WHITE);
-  tft.drawFastHLine(x, 55, 5, ILI9341_WHITE);
+  int midY = trackInfo.y + trackInfo.h / 2;
+
+  tft.drawFastHLine(start, midY - 3, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY - 2, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY - 1, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY + 1, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY + 2, width, ILI9341_BLACK);
+  tft.drawFastHLine(start, midY + 3, width, ILI9341_BLACK);
+
+  tft.drawFastHLine(x, midY - 3, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY - 2, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY - 1, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY + 1, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY + 2, 5, ILI9341_WHITE);
+  tft.drawFastHLine(x, midY + 3, 5, ILI9341_WHITE);
 
   state.position = position;
   state.length = length;
+}
+
+void Display::drawRecord() {
+  const int padding = 15;
+  tft.fillRect(status.x, status.y, status.w, status.h, bgColor);
+  tft.fillCircle(
+      status.x + status.w / 2, status.y + status.h / 2,
+      (status.w - padding * 2) / 2, ILI9341_RED
+  );
 }
 
 void Display::drawSaveButton(bool s) {
@@ -270,11 +306,33 @@ void Display::drawStatus(Status status) {
   if (!redraw && status == state.status)
     return;
 
-  recordButton(status == Status::Record);
-  stopButton(status == Status::Pause);
-  playButton(status == Status::Play);
+  switch (status) {
+  case Status::Stop:
+    drawStop();
+    break;
+  case Status::Play:
+    drawPlay();
+    break;
+  case Status::Pause:
+    drawPause();
+    break;
+  case Status::Record:
+    drawRecord();
+    break;
+  default:
+    Serial.println("!!! Unhandled status !!!");
+  }
 
   state.status = status;
+}
+
+void Display::drawStop() {
+  const int padding = 15;
+  tft.fillRect(status.x, status.y, status.w, status.h, bgColor);
+  tft.fillRect(
+      status.x + padding, status.y + padding, status.w - padding * 2,
+      status.h - padding * 2, ILI9341_PURPLE
+  );
 }
 
 // Display Track name
@@ -282,11 +340,13 @@ void Display::drawTrackName(int track) {
   if (!redraw && track == state.track)
     return;
 
-  tft.setCursor(trackInfo.x + 50, trackInfo.y + 16);
-  tft.setFont(BUTTON_FONT);
-  tft.setTextColor(ILI9341_WHITE);
   tft.fillRoundRect(
       trackInfo.x, trackInfo.y, trackInfo.w, trackInfo.h, 8, ILI9341_BLACK
+  );
+  tft.setFont(BUTTON_FONT);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setCursor(
+      trackInfo.x + 10, trackInfo.y + (trackInfo.h - tft.fontCapHeight()) / 2
   );
   tft.print("Track ");
   tft.print(track + 1);
@@ -357,7 +417,7 @@ void Display::update(AppState newState) {
     drawVolume(newState.volume);
     drawTrackName(newState.track);
     drawLibraryNavButton();
-    reverseButton();
+    // reverseButton();
   } else {
     drawMainNavButton();
     drawPreviousButton();
@@ -418,48 +478,6 @@ void Display::reverseButton() {
   }
 }
 
-// Set / Display play button
-void Display::playButton(bool playStatus) {
-  tft.setCursor(play.x + 8, play.y + 8);
-  tft.setFont(BUTTON_FONT);
-  tft.setTextColor(ILI9341_WHITE);
-
-  if (!playStatus) { // button is set inactive, redraw button inactive
-    tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_BLACK);
-  } else { // button is active, redraw button active
-    tft.fillRoundRect(play.x, play.y, play.w, play.h, 4, ILI9341_GREEN);
-  }
-  tft.print("Play");
-}
-
-// Set / Display record button
-void Display::recordButton(bool recordStatus) {
-  tft.setCursor(record.x + 8, record.y + 8);
-  tft.setFont(BUTTON_FONT);
-  tft.setTextColor(ILI9341_WHITE);
-
-  if (!recordStatus) { // button is set inactive, redraw button inactive
-    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_BLACK);
-  } else { // button is active, redraw button active
-    tft.fillRoundRect(record.x, record.y, record.w, record.h, 4, ILI9341_RED);
-  }
-  tft.print("Record");
-}
-
-// Set / Display stop button
-void Display::stopButton(bool stopStatus) {
-  tft.setCursor(stop.x + 8, stop.y + 8);
-  tft.setFont(BUTTON_FONT);
-  tft.setTextColor(ILI9341_WHITE);
-
-  if (stopStatus) { // button is set inactive, redraw button inactive
-    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_GREEN);
-  } else { // button is active, redraw button active
-    tft.fillRoundRect(stop.x, stop.y, stop.w, stop.h, 4, ILI9341_BLACK);
-  }
-  tft.print("Pause");
-}
-
 void Display::drawNextButton() {
   if (!redraw)
     return;
@@ -514,7 +532,8 @@ void Display::drawMainNavButton() {
 
 void Display::drawLibraryEntries(bool l) {
   int p = libPage;
-  if (clickedNext() && (p + 1) * numLibEntries < lib.size) {
+  if (clickedNext() && (p + 1) * numLibEntries < lib.size &&
+      lib.fileArray[(p + 1) * numLibEntries]) {
     p++;
   } else if (clickedPrevious() && p > 0) {
     p--;
@@ -528,14 +547,14 @@ void Display::drawLibraryEntries(bool l) {
 
   for (int i = 0; i < numLibEntries; i++) {
     const Layout *entry = libraryEntries[i];
+    const String fileName = lib.fileArray[p * numLibEntries + i];
 
     tft.fillRoundRect(entry->x, entry->y, entry->w, entry->h, 8, ILI9341_BLACK);
     tft.setCursor(entry->x + 25, entry->y + 8);
-    String fileName = lib.fileArray[p * numLibEntries + i];
     if (l && fileName == String(selectedLibEntry)) {
       tft.print("Loading");
     } else {
-      tft.print(lib.fileArray[p * numLibEntries + i]);
+      tft.print(fileName);
     }
   }
 

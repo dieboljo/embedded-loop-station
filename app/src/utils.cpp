@@ -49,10 +49,6 @@ void configureButtons() {
   pinMode(buttonRecordPin, INPUT_PULLUP);
   pinMode(buttonStopPin, INPUT_PULLUP);
   pinMode(buttonPlayPin, INPUT_PULLUP);
-  pinMode(buttonModePin, INPUT_PULLUP);
-  pinMode(buttonSavePin, INPUT_PULLUP);
-  pinMode(buttonNextTrackPin, INPUT_PULLUP);
-  pinMode(buttonClearTrackPin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -106,6 +102,7 @@ void initializeSdCard() {
 void initializeSerialCommunication() {
   Serial.begin(9600);
 
+#ifdef DEBUG
   // Wait for Serial Monitor to open
   while (!Serial)
     ;
@@ -114,6 +111,7 @@ void initializeSerialCommunication() {
     Serial.println(CrashReport);
     CrashReport.clear();
   }
+#endif
 }
 
 void monitorAudioEngine() {
@@ -136,15 +134,13 @@ void readButtons(Buttons &buttons) {
   buttons.record.update();
   buttons.stop.update();
   buttons.play.update();
-  buttons.mode.update();
-  buttons.save.update();
-  buttons.nextTrack.update();
-  buttons.clearTrack.update();
 }
 
 // Read and display stereo input or output channels
-void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
-                elapsedMillis *ms, const char *label) {
+void showLevels(
+    AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR, elapsedMillis *ms,
+    const char *label
+) {
   if (*ms > 1000) {
     int lp = 0, rp = 0, scale = 20;
     char cl = '?', cr = '?';

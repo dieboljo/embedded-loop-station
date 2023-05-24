@@ -7,7 +7,7 @@ class Library {
 
 private:
   String *fileArray;
-  static const int SIZE = 20;
+  static const int SIZE = 100;
   int size;
   int index;
 
@@ -15,7 +15,9 @@ private:
 
 public:
   // Constructor and Destructor - Defualt array size is 20
-  Library(int size = SIZE) : size(size), index(0) {
+  Library(int size = SIZE)
+      : size(size),
+        index(0) {
     fileArray = new String[size];
   }
   ~Library() { delete[] fileArray; }

@@ -55,11 +55,14 @@ private:
   static const Layout panDot;
   static const Layout reverse;
   static const Layout save;
+  static const Layout status;
   static const Layout alert;
 
+  const uint16_t bgColor;
+
   static const int numLibEntries = 4;
-  const Layout *libraryEntries[numLibEntries] = {&track1, &track2, &track3,
-                                                 &track4};
+  const Layout *libraryEntries[numLibEntries] = {
+      &track1, &track2, &track3, &track4};
 
   bool reverseBool = false;
   bool isTouched = false;
@@ -78,7 +81,7 @@ private:
   XPT2046_Touchscreen ts = XPT2046_Touchscreen(TS_CS);
   TS_Point p;
 
-  void clearScreen();
+  void clearScreen() { tft.fillRect(0, 0, 320, 240, bgColor); }
   void getPoint();
   bool clickedLibraryNav();
   bool clickedMainNav();
@@ -97,12 +100,15 @@ private:
   void drawStatus(Status status);
   void drawTrackName(int track);
   void drawVolume(float v);
-  void playButton(bool audio);
-  void recordButton(bool audio);
-  void stopButton(bool audio);
+  void drawPlay();
+  void drawStop();
+  void drawRecord();
+  void drawPause();
 
 public:
-  Display(Library &lib) : lib(lib){};
+  Display(Library &lib)
+      : bgColor(tft.color565(0, 0, 255)),
+        lib(lib){};
 
   void reverseButton();
   // void handleReverseButton();
