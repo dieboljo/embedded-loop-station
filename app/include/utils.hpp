@@ -15,8 +15,10 @@ void readButtons(Buttons &buttons);
 void readFade(AppState &appState);
 void readPan(AppState &appState);
 void readVolume(AppState &appState);
-void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
-                elapsedMillis *ms, const char *label);
+void showLevels(
+    AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR, elapsedMillis *ms,
+    const char *label
+);
 void showInputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);
 void showOutputLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR);
 

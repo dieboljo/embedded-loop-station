@@ -13,6 +13,7 @@ struct Buttons {
 
 enum class Mode { Replace, Overdub };
 enum class Status { Stop, Record, Play, Pause };
+enum class PotTaper { Linear, Logarithmic };
 
 struct AppState {
   float fade;

@@ -10,6 +10,8 @@ void Library::array() {
   index = 0;
   File loops = SD.open("/loops");
   while (true) {
+    if (index >= size)
+      break;
     File track = loops.openNextFile();
     if (!track) {
       break;

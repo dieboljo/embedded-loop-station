@@ -1,11 +1,15 @@
 #include <config.h>
+#include <math.h>
 #include <utils.hpp>
 
 const float knobMax = 1023.0;
 
 void readFade(AppState &appState) {
   int knob = analogRead(fadePin);
-  float fadePos = (float)knob / knobMax;
+  float fadePos = knob / knobMax;
+  if (panTaper == PotTaper::Logarithmic) {
+    fadePos = map(exp10f(fadePos), 1, 10, 0, 1);
+  }
   // Return current if knob change doesn't exceed threshold
   if (fadePos < appState.fade + 0.05 && fadePos > appState.fade - 0.05) {
     return;
@@ -21,7 +25,10 @@ void adjustMicLevel() {}
 
 void readPan(AppState &appState) {
   int knob = analogRead(panPin);
-  float panPos = (float)knob / knobMax;
+  float panPos = knob / knobMax;
+  if (panTaper == PotTaper::Logarithmic) {
+    panPos = map(exp10f(panPos), 1, 10, 0, 1);
+  }
   // Return current if knob change doesn't exceed threshold
   if (panPos < appState.pan + 0.05 && panPos > appState.pan - 0.05) {
     return;
@@ -34,7 +41,10 @@ void readPan(AppState &appState) {
 // Read the volume knob position (analog input A1)
 void readVolume(AppState &appState) {
   int knob = analogRead(volumePin);
-  float volPos = (float)knob / knobMax;
+  float volPos = knob / knobMax;
+  if (volumeTaper == PotTaper::Logarithmic) {
+    volPos = map(exp10f(volPos), 1, 10, 0, 1);
+  }
   // Return current if knob change doesn't exceed threshold
   if (volPos < appState.volume + 0.05 && volPos > appState.volume - 0.05) {
     return;
