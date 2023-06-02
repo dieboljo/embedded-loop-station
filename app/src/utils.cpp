@@ -1,31 +1,57 @@
 #include <config.h>
+#include <math.h>
 #include <utils.hpp>
 
 const float knobMax = 1023.0;
+
+void readFade(AppState &appState) {
+  int knob = analogRead(fadePin);
+  float fadePos = knob / knobMax;
+  if (panTaper == PotTaper::Logarithmic) {
+    fadePos = map(exp10f(fadePos), 1, 10, 0, 1);
+  }
+  // Return current if knob change doesn't exceed threshold
+  if (fadePos < appState.fade + 0.05 && fadePos > appState.fade - 0.05) {
+    return;
+  }
+  Serial.print("Fade: ");
+  Serial.println(fadePos);
+  appState.fade = fadePos;
+}
 
 // Adjust the mic gain in response to the peak level
 // TODO Implement or delete this
 void adjustMicLevel() {}
 
-// Read the volume knob position (analog input A1)
-float adjustVolume(AudioControlSGTL5000 &interface) {
-  int knob = analogRead(volumePin);
-  float vol = (float)knob / knobMax;
-  interface.volume(vol);
-  return vol;
-}
-
-void adjustPan(float *currentPan, Track &track, Mode mode) {
+void readPan(AppState &appState) {
   int knob = analogRead(panPin);
-  float panPos = (float)knob / knobMax;
-  // Check that knob change exceeds threshold before changing state
-  if (panPos < *currentPan + 0.05 && panPos > *currentPan - 0.05) {
+  float panPos = knob / knobMax;
+  if (panTaper == PotTaper::Logarithmic) {
+    panPos = map(exp10f(panPos), 1, 10, 0, 1);
+  }
+  // Return current if knob change doesn't exceed threshold
+  if (panPos < appState.pan + 0.05 && panPos > appState.pan - 0.05) {
     return;
   }
-  track.pan(panPos, mode);
-  *currentPan = panPos;
   Serial.print("Pan: ");
   Serial.println(panPos - 0.5);
+  appState.pan = panPos;
+}
+
+// Read the volume knob position (analog input A1)
+void readVolume(AppState &appState) {
+  int knob = analogRead(volumePin);
+  float volPos = knob / knobMax;
+  if (volumeTaper == PotTaper::Logarithmic) {
+    volPos = map(exp10f(volPos), 1, 10, 0, 1);
+  }
+  // Return current if knob change doesn't exceed threshold
+  if (volPos < appState.volume + 0.05 && volPos > appState.volume - 0.05) {
+    return;
+  }
+  Serial.print("Volume: ");
+  Serial.println(volPos);
+  appState.volume = volPos;
 }
 
 // Configure the pushbutton pins
@@ -33,8 +59,6 @@ void configureButtons() {
   pinMode(buttonRecordPin, INPUT_PULLUP);
   pinMode(buttonStopPin, INPUT_PULLUP);
   pinMode(buttonPlayPin, INPUT_PULLUP);
-  pinMode(buttonModePin, INPUT_PULLUP);
-  pinMode(buttonSavePin, INPUT_PULLUP);
 }
 
 // Find and start the audio shield
@@ -88,6 +112,7 @@ void initializeSdCard() {
 void initializeSerialCommunication() {
   Serial.begin(9600);
 
+#ifdef DEBUG
   // Wait for Serial Monitor to open
   while (!Serial)
     ;
@@ -96,6 +121,7 @@ void initializeSerialCommunication() {
     Serial.println(CrashReport);
     CrashReport.clear();
   }
+#endif
 }
 
 void monitorAudioEngine() {
@@ -118,13 +144,13 @@ void readButtons(Buttons &buttons) {
   buttons.record.update();
   buttons.stop.update();
   buttons.play.update();
-  buttons.mode.update();
-  buttons.save.update();
 }
 
 // Read and display stereo input or output channels
-void showLevels(AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR,
-                elapsedMillis *ms, const char *label) {
+void showLevels(
+    AudioAnalyzePeak *peakL, AudioAnalyzePeak *peakR, elapsedMillis *ms,
+    const char *label
+) {
   if (*ms > 1000) {
     int lp = 0, rp = 0, scale = 20;
     char cl = '?', cr = '?';

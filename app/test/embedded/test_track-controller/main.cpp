@@ -1,11 +1,15 @@
 #include "Audio.h"
 #include <config.h>
 #include <include/track-test.hpp>
+#include <track-controller.hpp>
 #include <unity.h>
 
 AudioInputI2S source;
 AudioControlSGTL5000 interface;
+TrackController controllerBase(source);
+TrackController controller = controllerBase;
 TrackTest trackBase("FILE1.WAV", "FILE2.WAV", &source);
+TrackTest track = trackBase;
 const char *testFile = "FILE.WAV";
 
 int i = 0;
@@ -16,52 +20,75 @@ bool stopLoopTests = false;
 ## Tests
 */
 
-void test_advance() {
-  TrackTest track = trackBase;
-  track.begin();
-  track.startPlaying();
-  TEST_ASSERT_TRUE(track.advance(Status::Play));
-  TEST_ASSERT_EQUAL_STRING("FILE2.WAV", track.getReadFileName());
-  TEST_ASSERT_EQUAL_STRING("FILE1.WAV", track.getWriteFileName());
-}
+// Single track tests
 
-void test_begin() {
-  TrackTest track = trackBase;
+void test_beginTrack() {
   bool hasBegun = track.begin();
   TEST_ASSERT_TRUE(hasBegun);
 }
 
-void test_pause() {
-  TrackTest track = trackBase;
+// TODO: Fix this test (need to wait several loops)
+void test_pauseTrack() {
   track.begin();
-  track.startRecording();
+  track.startRecording(Mode::Replace);
   TEST_ASSERT_TRUE(track.pause());
 }
 
-void test_startPlaying() {
-  TrackTest track = trackBase;
+void test_startPlayingTrack() {
   track.begin();
   TEST_ASSERT_TRUE(track.startPlaying());
 }
 
-void test_startRecording() {
-  TrackTest track = trackBase;
+void test_startRecordingTrack() {
   track.begin();
-  TEST_ASSERT_TRUE(track.startRecording());
+  TEST_ASSERT_TRUE(track.startRecording(Mode::Replace, 0.0));
 }
 
-void test_stop() {
-  TrackTest track = trackBase;
+void test_stopTrack() {
   track.begin();
   track.startPlaying();
   TEST_ASSERT_TRUE(track.stop());
+}
+
+// Multi track tests
+
+void test_begin() {
+  bool hasBegun = controller.begin();
+  TEST_ASSERT_TRUE(hasBegun);
+}
+
+void test_setSelectedTrack() {
+  controller.setSelectedTrack(2);
+  TEST_ASSERT_EQUAL_INT(controller.getSelectedTrack(), 2);
+  int overflow = controller.getNumTracks();
+  controller.setSelectedTrack(overflow);
+  TEST_ASSERT_NOT_EQUAL_INT(controller.getSelectedTrack(), overflow);
+}
+
+void test_startPlaying() {
+  controller.begin();
+  TEST_ASSERT_TRUE(controller.startPlaying());
+}
+
+void test_startRecording() {
+  controller.begin();
+  TEST_ASSERT_TRUE(controller.startRecording(Mode::Replace, 0.0));
+}
+
+void test_stop() {
+  controller.begin();
+  controller.startPlaying();
+  TEST_ASSERT_TRUE(controller.stop());
 }
 
 /*
 ## Test Runner
 */
 
-void setUp(void) {}
+void setUp(void) {
+  track = trackBase;
+  controller = controllerBase;
+}
 
 void tearDown(void) {
   i = 0;
@@ -94,7 +121,9 @@ void setup() {
   delay(2000);
 
   UNITY_BEGIN();
+  RUN_TEST(test_beginTrack);
   RUN_TEST(test_begin);
+  RUN_TEST(test_setSelectedTrack);
   delay(500);
 }
 
@@ -102,16 +131,21 @@ void loop() {
   if (!loopTestsStarted) {
     // Only run these tests once, not in every loop
     loopTestsStarted = true;
+    RUN_TEST(test_startPlayingTrack);
+    delay(500);
+    RUN_TEST(test_startRecordingTrack);
+    delay(500);
+    RUN_TEST(test_pauseTrack);
+    delay(500);
+    RUN_TEST(test_stopTrack);
+    delay(500);
     RUN_TEST(test_startPlaying);
     delay(500);
     RUN_TEST(test_startRecording);
     delay(500);
-    RUN_TEST(test_pause);
-    delay(500);
     RUN_TEST(test_stop);
     delay(500);
-    RUN_TEST(test_advance);
-    delay(500);
+
     // Toggle the stop flag so the program stops looping
     stopLoopTests = true;
   }

@@ -25,7 +25,6 @@ class Track {
 
   elapsedMillis ms;
 
-  bool isRecording = false;
   bool loopEstablished = false;
 
   File playbackFile;
@@ -33,11 +32,6 @@ class Track {
   File feedbackFile;
 
   // Order of signal flow
-#ifdef USE_USB_INPUT
-  AudioInputUSB *source;
-#else
-  AudioInputI2S *source;
-#endif
   AudioMixer4 busLeft;
   AudioMixer4 busRight;
   AudioRecordWAVstereo recording;
@@ -52,11 +46,6 @@ class Track {
 
   bool configureBuffers();
   bool initializeFiles();
-  float panLeft(float gain, float panPos);
-  float panRight(float gain, float panPos);
-  bool resume();
-  bool start();
-  Status swapBuffers();
 
 protected:
   const char *readFileName;
@@ -64,29 +53,26 @@ protected:
 
 public:
 #ifdef USE_USB_INPUT
-  Track(const char *f1, const char *f2, AudioInputUSB *s);
+  Track(const char *f1, const char *f2, AudioInputUSB &s);
 #else
-  Track(const char *f1, const char *f2, AudioInputI2S *s);
+  Track(const char *f1, const char *f2, AudioInputI2S &s);
 #endif
 
   AudioPlayWAVstereo playback;
 
   bool begin();
-  Status checkLoopEnded(Status status);
-  void pan(float panPos, Mode mode);
-  bool play();
+  void clear();
+  bool checkEnded(uint32_t loopLength);
+  void establishLoop() { loopEstablished = true; };
+  uint32_t getPosition() { return recording.positionMillis(); };
+  void load(const char *fileName);
   bool pause();
-  void punchIn(Mode mode, float pan);
+  void punchIn(Mode mode);
   void punchOut();
-  bool record(Mode mode, float pan);
-  void save();
-  bool startPlaying();
-  bool startRecording(Mode mode, float pan);
+  bool resume();
+  bool start();
   bool stop(bool cancel = false);
-
-  const char *getTrackName() { return readFileName; }
-  uint32_t getPosition() { return playback.positionMillis(); }
-  uint32_t getLength() { return playback.lengthMillis(); }
+  bool swapBuffers();
 };
 
 #endif

@@ -5,8 +5,13 @@
 
 // create the array of filenames
 void Library::array() {
+  delete[] fileArray;
+  fileArray = new String[size];
+  index = 0;
   File loops = SD.open("/loops");
   while (true) {
+    if (index >= size)
+      break;
     File track = loops.openNextFile();
     if (!track) {
       break;
