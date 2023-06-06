@@ -1,75 +1,73 @@
 # Development Environment Setup
 
-While the Arduino IDE is the most common environment for deploying to the
-device, it is also possible to use command line tools. Both methods will be
-outlined below.
+This project uses the
+[PlatformIO](https://docs.platformio.org/en/latest/what-is-platformio.html) tool
+for configuration and deployment. This is available as a VSCode extension, which
+includes PlatformIO Core, and as a standalone PlatformIO CLI tool.
 
 ## IDE
 
 ### Install Software & Libraries
 
-1. Version 2.0.0 of the Arduino IDE ships with native support for the Teensy
-   board. Platform-specific installers can be found at
-   [https://www.arduino.cc/en/software](https://www.arduino.cc/en/software).
-2. In the IDE, add the Teensy board manager by clicking _File > Preferences_,
-   then copying the link `https://www.pjrc.com/teensy/package_teensy_index.json`
-   into the **Additional boards manager URLs** field and clicking **OK**.
-3. Verify the board manager is added by opening the **Boards Manager** sidebar
-   menu and typing "teensy" into the search box. The Teensy package should be
-   present and display **INSTALLED**. If the package is present but there is no
-   **INSTALLED** indicator, click the **INSTALL** button.
-4. This software requires the Teensy Audio Library. To install it into the
-   Arduino IDE, first download the library's ZIP file from
-   [https://github.com/PaulStoffregen/Audio/releases/tag/v1.03](https://github.com/PaulStoffregen/Audio/releases/tag/v1.03).
-5. Without extracting the ZIP file, navigate to _Sketch > Include Library > Add
-   .ZIP Library_ in the IDE, then select the ZIP file downloaded in the previous
-   step.
-6. Restart the IDE.
+1. Clone this repository.
+2. Install [Visual Studio Code](https://code.visualstudio.com/download).
+3. In VSCode, open the package manager (_Extensions_).
+4. Search for official `platformio ide` extension.
+5. Install **PlatformIO IDE**.
 
 ### Deploy to the device
 
-1. To test compiling a project and deploying it to the device, a Teensy example
-   will be used. To execute the program, a Teensy board with an attached audio
-   adaptor is required, as well as a FAT32 formatted SD card.
-2. Go to
-   [https://www.pjrc.com/teensy/td_libs_AudioDataFiles.html](https://www.pjrc.com/teensy/td_libs_AudioDataFiles.html)
-   and save the four WAV files to the SD card, then insert the SD card into the
-   slot on the audio adaptor.
-3. Open the IDE, and connect the device to the computer with a USB cord.
-4. In the IDE, click _File > Examples > Audio > Tutorial >
-   Part_1_03_Playing_Music_ to open the example program.
-5. Click **Verify**, then wait for the program to compile.
-6. Once finished, click **Upload**.
-7. Plug headphones into the audio adaptor, music should be playing.
+1. Connect the Teensy to the development computer via USB.
+2. Open the project's `app` directory in VSCode.
+3. VSCode will recognize the project as a PlatformIO project, and add a
+   PlatformIO toolbar to the VSCode Status Bar.
+4. In the PlatformIO toolbar, select the check mark icon (&check;) to build the
+   application.
+5. In the same toolbar, select the right arrow (&#10142;) to deploy the
+   application to the Teensy board.
+
+See the
+[PlatformIO IDE docs](https://docs.platformio.org/en/latest/integration/ide/pioide.html)
+for more details.
 
 ## CLI
 
 ### Install Software & Libraries
 
-1. Navigate to
-   [https://arduino.github.io/arduino-cli/0.27/installation/](https://arduino.github.io/arduino-cli/0.27/installation/),
-   and follow the instructions for your development platform to install the
-   Arduino CLI.
-
-2. Run the following script from the project root directory:
+1. Clone this repository.
+2. Install the PlatformIO Core CLI. The simplest way to do this is to use the
+   recommended installer script, found at
+   https://raw.githubusercontent.com/platformio/platformio-core-installer/master/get-platformio.py.
+   This script will install all dependencies into a designated Python virtual
+   environment. Copy or download the script, then navigate to the directory in
+   which the script is located and run it with:
 
 ```
-./setup
+python get-platformio.py
 ```
+
+3. Complete the OS-specific instructions found at
+   [Install Shell Commands](https://docs.platformio.org/en/latest/core/installation/shell-commands.html).
+4. If running a Linux OS, follow the instructions for
+   [Installing `udev` Rules](https://docs.platformio.org/en/latest/core/installation/udev-rules.html)
+
+See the
+[PlatformIO Core (CLI) docs](https://docs.platformio.org/en/latest/core/index.html)
+for more details.
 
 ### Deploy to the device
 
-1. Connect the board to your computer.
-
-2. In the sketch directory (`project`), execute the following command to compile
-   and upload the sketch:
-
-```
-arduino-cli compile -tu --build-path ./build
-```
-
-3. Then execute the following command to monitor the program's output:
+1. Connect the Teensy to the development computer via USB.
+2. In the `app` directory of the project, execute the following command to
+   compile and upload the application:
 
 ```
-arduino-cli monitor
+pio run -t upload
+```
+
+3. After the upload is complete, execute the following command to monitor the
+   program's output:
+
+```
+pio device monitor
 ```
